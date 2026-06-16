@@ -19,3 +19,5 @@
 10 Declare the bool input port named clk inside a module and add clk.pos() in a SC_METHOD sensitivity list to make that function run on every rising edge and add clk.neg() in the sensitivity list to run it on every falling edge. 
 
 11. To add an asynchronous reset to the system create a bool input port name reset in the module and add that in the SC_METHOD sensitivity list too. Now when ever the reset signal changes the function will run.
+
+12. sc_start is not like a wait.
