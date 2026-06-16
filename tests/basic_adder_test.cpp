@@ -1,5 +1,5 @@
 #include <systemc.h>
-#include "basic_adder.cpp"
+#include "../src/basic_adder.cpp"
 
 int sc_main(int argc, char* argv[]) {
     // signals
