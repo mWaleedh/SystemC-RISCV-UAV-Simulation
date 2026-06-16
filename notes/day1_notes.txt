@@ -1,0 +1,17 @@
+1. C++ datatypes should be preferred over systemC datatypes unless absolutely necessary, because systemC datatypes consume more memory and slow down simulation.
+
+2. SC_MODULE: Is like a class or Entity+Architecture combination in VHDL, declares all the input/output pins, the internal signals (local variables), and all the functions that it performs.
+
+3. SC_METHOD: Is a function that executes immediately (doesn't have wait) based on an event and returns control back to scheduler immediately until woken up again. We can tie it to an event/variable. It is like a process block in VHDL and is synthesizable. And it is used for combinational logic.
+
+4. SC_THREAD: Executes onces at the start, can have wait, and it can have a while loop. But it isn't synthesizable so it is mostly used for testbenches.
+
+5. SC_CTHREAD: Is the most commonly used construct because it is synthesizable as apposed to SC_THREAD, and we almost always add a infinite while loop to it along with waits. And we bind one or more clocks with it.
+
+6. sc_main: This is the main or top level entity like in VHDL, we use this to write testbenches
+
+7. sc_signal: Used when creating signals in main to connect them with a module.
+
+8. Declare the bool input port named clk inside a module and add clk.pos() in a SC_METHOD sensitivity list to make that function run on every rising edge and add clk.neg() in the sensitivity list to run it on every falling edge. 
+
+9. To add an asynchronous reset to the system create a bool input port name reset in the module and add that in the SC_METHOD sensitivity list too. Now when ever the reset signal changes the function will run.
