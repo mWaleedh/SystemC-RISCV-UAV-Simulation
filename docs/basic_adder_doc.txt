@@ -1,6 +1,0 @@
-One problem I faced was that I wasn't using sc_signal in testbench which was giving an error.
-I tried to rename the signals because they were the same name as the in/out ports in the module, but that didn't work.
-I then went through the examples codes in asic-worl (particularly the counter code) and saw that it used sc_signal in the testbench.
-When I tried sc_signal all the errors went away and the code worked.
-
-When I was using sc_start the same was as in asic-world it was giving me an error, when I searched about it, I found out that it was updated in the new verions and we also need to pass the time unit to it.
