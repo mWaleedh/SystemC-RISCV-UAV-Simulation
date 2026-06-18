@@ -1,12 +1,12 @@
 ## clk_i
 ### Type
-sc_in<bool>
+sc_in<<bool>>
 ### Purpose
 This is the main clock that controls the entire system. In this RISC-V model, on every positive edge of this clock the main thread is called, and the full fetch, decode, execute, writeback pipeline is executed for the current instruction.
 
 ## rst_i
 ### Type
-sc_in<bool>
+sc_in<<bool>>
 ### Purpose
 This is the reset port of this system. When the system first starts, this pin is set to high, setting all the registers, flags, and busses to initial state (0). When it is set to high mid execution, the main thread halts everything and starts executing the reset section of code.
 
