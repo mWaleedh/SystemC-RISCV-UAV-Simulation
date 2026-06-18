@@ -1,0 +1,8 @@
+address_bus
+data_bus_in
+data_bus_out
+read_en
+write_en
+interrupt
+clock
+reset
