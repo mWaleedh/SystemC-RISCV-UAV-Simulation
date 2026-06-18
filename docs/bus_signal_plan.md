@@ -1,5 +1,6 @@
 ## clk_i
 This is the main clock that controls the entire system. 
+
 In this RISC-V model, on every positive edge of this clock the main thread is called, and the full fetch, decode, execute, writeback pipeline is executed for the current instruction.
 
 ## rst_i
