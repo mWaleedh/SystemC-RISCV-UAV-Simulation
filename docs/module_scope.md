@@ -7,7 +7,7 @@ clock
 reset
 data_bus_in
 interrupt
-
+f
 output signals
 address_bus
 data_bus_out
