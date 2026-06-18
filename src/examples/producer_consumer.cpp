@@ -5,37 +5,38 @@ But since there was no delay between them sometimes the rising edge did register
 But since I was using SC_METHOD, I couldn't place a wait() call in it so I had to switched it to SC_THREAD.
 
 Another problem that I faced was, I was getting an error when I ran wait(consumer.pos()), it was giving invalid type error
+
+In my new implementation I was writing to a singla using two different functions (THREADS) inside a MODULE but it was giving me an error (sc_signal can't have more than one driver),
+I fixed this by removing the write from the second function and making an sc_event that called the other function to write to it.
 */
 
 #include <iostream>
 #include <systemc.h>
+#include <semaphore.h>
+#include <mutex>
 using namespace std;
 
 SC_MODULE(producer) {
-    // input/output ports
-    sc_in<bool> consumed_i;
+    sc_in<bool> full_i;
     sc_out<sc_uint<8>> item_o;
     sc_out<bool> produced_o;
 
-    // local variables
-    sc_uint<8> item_s;
-
     void produceItem() {
         while (true) {
-            // wait for consumer to consume the item and set the flag to true
-            wait(consumed_i.posedge_event());
+            if (full_i.read()) {
+                wait(full_i.negedge_event());
+            }
 
-            // generate new value and write to output port (produce)
-            item_s = rand() % 255;
-            item_o.write(item_s);
+            int item = rand() % 255;
+            item_o.write(item);
 
-            cout << "PRODUCER: " << item_s << endl;
+            cout << "PRODUCER: " << item << endl;
 
-            // set flag to true first so that consumer is called
             produced_o.write(true);
             wait(1, SC_NS);
-            // set it back to false immediately
             produced_o.write(false);
+
+            wait(2, SC_NS);
         }
     }   
 
@@ -47,28 +48,57 @@ SC_MODULE(producer) {
 SC_MODULE(consumer) {
     sc_in<bool> produced_i;
     sc_in<sc_uint<8>> item_i;
-    sc_out<bool> consumed_o;
+    sc_out<bool> full_o;
 
-    sc_uint<8> item_s;
+    static const int BUFFER_SIZE = 5;
+    sc_uint<8> buffer[BUFFER_SIZE];
+    int count, head, tail;
+
+    sc_event item_added;
+    sc_event item_removed;
+
+    void addItem() {
+        while (true) {
+            if (count == BUFFER_SIZE) {
+                full_o.write(true);
+                wait(item_removed);
+                full_o.write(false);
+            }    
+
+            wait(produced_i.posedge_event());
+
+            buffer[head] = item_i.read();
+            head = (head + 1) % BUFFER_SIZE;
+            count++;
+
+            item_added.notify();
+        }
+    }
 
     void consumeItem() {
         while (true) {
-            // wait for producer to produce an item and set the flag to true
-            wait(produced_i.posedge_event());
+            if (count == 0) {
+                wait(item_added);
+            }
 
-            // read generated value (consume)
-            item_s = item_i.read();
+            int item = buffer[tail];
+            tail = (tail + 1) % BUFFER_SIZE;
+            count--;
 
-            cout << "CONSUMER: " << item_s << endl;
+            item_removed.notify();
 
-            // set flag to true first so that producer is called
-            consumed_o.write(true);
-            // set it back to false immediately
-            consumed_o.write(false);
+            cout << "CONSUMER: " << item << endl;
+
+            wait(8, SC_NS);
         }
     }
 
     SC_CTOR(consumer) {
+        count = 0;
+        head = 0;
+        tail = 0;
+
+        SC_THREAD(addItem);
         SC_THREAD(consumeItem);
     }
 };
@@ -76,35 +106,24 @@ SC_MODULE(consumer) {
 int sc_main(int argc, char* argv[]) {
     srand(time(0));
 
-    // signals
-    sc_signal<bool> consumed_s;
+    sc_signal<bool> full_s;
     sc_signal<bool> produced_s;
     sc_signal<sc_uint<8>> item_s;
 
-    // input/output ports to signal for producer
     producer producer_inst("produer_inst");
-        producer_inst.consumed_i(consumed_s);
-        producer_inst.produced_o(produced_s);
-        producer_inst.item_o(item_s);
+    producer_inst.full_i(full_s);
+    producer_inst.produced_o(produced_s);
+    producer_inst.item_o(item_s);
 
-    // input/output ports to signal for producer
     consumer consumer_inst("consumer_inst");
-        consumer_inst.produced_i(produced_s);
-        consumer_inst.consumed_o(consumed_s);
-        consumer_inst.item_i(item_s);
+    consumer_inst.item_i(item_s);
+    consumer_inst.produced_i(produced_s);
+    consumer_inst.full_o(full_s);
 
-    // initially both flags are set to false
-    consumed_s.write(false);
+    full_s.write(false);
     produced_s.write(false);
 
-    sc_start(1, SC_NS);
-
-    // set consumed flag to true (0 -> 1) so that producer function is called
-    consumed_s.write(true);
-    sc_start(1, SC_NS);
-    consumed_s.write(false);
-
-    sc_start(50, SC_NS);
+    sc_start(25, SC_NS);
 
     return 0;
 }
