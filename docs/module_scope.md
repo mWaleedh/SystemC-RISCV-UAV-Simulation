@@ -190,9 +190,19 @@ This acts as the decision maker for the physical hardware. It takes the CPU's so
 ### Purpose
 
 ### Input Signals
+- clk_i
+- rst_i
+- pwm_i
+- motor_enable_i
 
 ### Output Signals
+- sensor_status_o
+- obstacle_flag_o
 
 ### Expected Behavior
+- When motor_enable_i is high, it reads pwm_i and slowly increases the internal speed. When enable drops to 0, the speed decreases back to zero.
+- Based on the internal speed, it toggles the encoder_ticks_o pin (faster speed = faster toggling).
+- As the motor moves, this module changes the environment. For example, after 1000 clock cycles of moving forward, it can set obstacle_flag_o to high inorder to force the Control Logic to react.
 
 ### Possible Faults to Test
+- Randomly setting the obstacle_flag_o for just a single clock cycle to see if the Control Logic has proper sensor glitch handling, or if it instantly stops the system.
