@@ -9,6 +9,9 @@ SC_MODULE(risc_v_model) {
     // input ports
     sc_in<bool> clk_i;
     sc_in<bool> rst_i;
+    sc_in<bool> irq_timer_i;
+    sc_in<bool> irq_ext_i;
+    sc_in<bool> irq_sw_i;
     sc_in<sc_uint<WIDTH>> data_bus_i;
 
     // output ports
@@ -74,11 +77,22 @@ SC_MODULE(risc_v_model) {
             write_en_o.write(false);
             read_en_o.write(false);
 
+            fetch();
+
+            decode();
+
+            execute();
+            
+            memoryAccess();
+
+            writeBack();
+
+            wait();
         }
     }
 
     SC_CTOR(risc_v_model) {
-        SC_CTHREAD(mainThread, clk_i);
+        SC_CTHREAD(mainThread, clk_i.pos());
         reset_signal_is(rst_i, true);
     }
 };
