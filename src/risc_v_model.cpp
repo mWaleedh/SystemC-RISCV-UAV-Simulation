@@ -65,6 +65,8 @@ SC_MODULE(risc_v_model) {
             registers[i] = 0;
         }
 
+        write_en_o.write(false);
+        read_en_o.write(false);
         addr_bus_o.write(0);
         data_bus_o.write(0);
 
@@ -100,6 +102,49 @@ SC_MODULE(risc_v_model) {
 // Test Bench
 // ------------------------------
 int sc_main(int argc, char* argv[]) {
+    sc_clock clk_s("clk");
+
+    sc_signal<bool> rst_s;
+    sc_signal<bool> irq_timer_s;
+    sc_signal<bool> irq_ext_s;
+    sc_signal<bool> irq_sw_s;
+    sc_signal<sc_uint<32>> data_bus_i_s;
+    
+    sc_signal<bool> write_en_s;
+    sc_signal<bool> read_en_s;
+    sc_signal<sc_uint<32>> addr_bus_o_s;
+    sc_signal<sc_uint<32>> data_bus_o_s;
+
+    risc_v_model cpu("cpu");
+
+    cpu.clk_i(clk_s);
+    cpu.rst_i(rst_s);
+    cpu.irq_timer_i(irq_timer_s);
+    cpu.irq_ext_i(irq_ext_s);
+    cpu.irq_sw_i(irq_sw_s);
+    cpu.data_bus_i(data_bus_i_s);
+    
+    cpu.write_en_o(write_en_s);
+    cpu.read_en_o(read_en_s);
+    cpu.addr_bus_o(addr_bus_o_s);
+    cpu.data_bus_o(data_bus_o_s);
+
+    irq_timer_s.write(false);
+    irq_ext_s.write(false);
+    irq_sw_s.write(false);
+    data_bus_i_s.write(0);
+    
+    cout << "@" << sc_time_stamp() << " Resetting CPU..." << endl;
+    rst_s.write(true);
+
+    sc_start(2, SC_NS); 
+
+    cout << "@" << sc_time_stamp() << " Starting Execution..." << endl;
+    rst_s.write(false);
+
+    sc_start(10, SC_NS);
+
+    cout << "@" << sc_time_stamp() << " Simulation complete!" << endl;
 
     return 0;
 }
