@@ -48,33 +48,43 @@ SC_MODULE(risc_v_model) {
 
             // I-type
             case 0x13:
+                // [11:0]
                 immediate = (cur_inst >> 20 ) & 0xFFF;
 
                 // Sign extension
                 if (immediate & 0x800) { 
+                    // [31:12]
                     immediate |= 0xFFFFF000; 
                 }
 
             // S-type
             case 0x3:
             case 0x23:
+                // [11:5]
                 immediate = ((cur_inst >> 25 ) & 0x7F) << 5;
+                // [4:0]
                 immediate |= (cur_inst >> 7) & 0x1F;
 
                 // Sign extension
                 if (immediate & 0x800) { 
+                    // [31:12]
                     immediate |= 0xFFFFF000; 
                 }
 
             // B-type
             case 0x63:
+                // [12]
                 immediate = ((cur_inst >> 32) & 0x1) << 12;
+                // [11]
                 immediate |= ((cur_inst >> 7) & 0x1) << 11;
+                // [10:5]
                 immediate |= ((cur_inst >> 25) & 0x3F) << 5;
+                // [4:1]
                 immediate |= ((cur_inst >> 8) & 0xF) << 1;
 
                 // Sign extension
-                if (immediate & 0x1000) { 
+                if (immediate & 0x1000) {
+                    // 
                     immediate |= 0xFFFFE000; 
                 }
 
