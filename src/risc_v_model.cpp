@@ -24,17 +24,110 @@ SC_MODULE(risc_v_model) {
     sc_uint<WIDTH> pc;
     sc_uint<WIDTH> cur_inst;
     sc_uint<WIDTH> registers[WIDTH];
+    sc_uint<7> opcode;
+    sc_uint<5> rd;
+    sc_uint<3> funct3;
+    sc_uint<5> rs1;
+    sc_uint<5> rs2;    
+    sc_uint<7> funct7;
+    sc_uint<WIDTH> rs1_data;
+    sc_uint<WIDTH> rs2_data;
+    sc_int<WIDTH> imm;
+
+    // ------------------------------------------------------------
+    // Helper Functions
+    // ------------------------------------------------------------
+
+    sc_int<32> immediateGenerator() {
+        int immediate = 0;
+        switch (opcode) {
+            // R-type
+            case 0x33:
+                immediate = 0;
+                break;
+
+            // I-type
+            case 0x13:
+                immediate = (cur_inst >> 20 ) & 0xFFF;
+
+                // Sign extension
+                if (immediate & 0x800) { 
+                    immediate |= 0xFFFFF000; 
+                }
+
+            // S-type
+            case 0x3:
+            case 0x23:
+                immediate = ((cur_inst >> 25 ) & 0x7F) << 5;
+                immediate |= (cur_inst >> 7) & 0x1F;
+
+                // Sign extension
+                if (immediate & 0x800) { 
+                    immediate |= 0xFFFFF000; 
+                }
+
+            // B-type
+            case 0x63:
+                immediate = ((cur_inst >> 32) & 0x1) << 12;
+                immediate |= ((cur_inst >> 7) & 0x1) << 11;
+                immediate |= ((cur_inst >> 25) & 0x3F) << 5;
+                immediate |= ((cur_inst >> 8) & 0xF) << 1;
+
+                // Sign extension
+                if (immediate & 0x1000) { 
+                    immediate |= 0xFFFFE000; 
+                }
+
+            // U-type
+            case 0x37:
+            case 0x17:
+
+            // J-type
+            case 0x6F:
+            case 0x67:
+                
+            default:
+                break;
+        }
+    }
+
+    // ------------------------------------------------------------
+    // Pipeline
+    // ------------------------------------------------------------
 
     // IF: Instruction Fetch
     // ------------------------------
     void fetch() {
+        addr_bus_o.write(pc);
+        read_en_o.write(true);
 
-    }
+        wait();
+
+        cur_inst = data_bus_i.read();
+        read_en_o.write(false);
+    }    
 
     // ID: Instruction Decode
     // ------------------------------
     void decode() {
+        opcode = cur_inst & 0x7F;
+        rd = (cur_inst >> 7) & 0x1F;
+        funct3 = (cur_inst >> 12) & 0x7;
+        rs1 = (cur_inst >> 15) & 0x1F;
+        rs2 = (cur_inst >> 20) & 0x1F;
+        funct7 = (cur_inst >> 25) & 0x7F;
 
+        imm = immediateGenerator();
+
+        if (rs1 == 0)
+            rs1_data = 0;
+        else
+            rs1_data = registers[rs1];
+
+        if (rs2 == 0)
+            rs2_data = 0;
+        else
+            rs2_data = registers[rs2];
     }
 
     // EX: Instruction Execute
@@ -54,9 +147,13 @@ SC_MODULE(risc_v_model) {
     void writeBack() {
 
     }
+    // ------------------------------------------------------------
+    // ------------------------------------------------------------
+    // ------------------------------------------------------------
 
+    // ------------------------------------------------------------
     // Main Thread
-    // ------------------------------
+    // ------------------------------------------------------------
     void mainThread() {
         // reset/initial state logic
         pc = 0;
@@ -99,8 +196,13 @@ SC_MODULE(risc_v_model) {
     }
 };
 
+// ------------------------------------------------------------
+// ------------------------------------------------------------
+// ------------------------------------------------------------
+
+// ------------------------------------------------------------
 // Test Bench
-// ------------------------------
+// ------------------------------------------------------------
 int sc_main(int argc, char* argv[]) {
     sc_clock clk_s("clk");
 
