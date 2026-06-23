@@ -1,5 +1,5 @@
 $date
-     Jun 22, 2026       12:00:43
+     Jun 23, 2026       11:10:37
 $end
 
 $version
@@ -29,7 +29,7 @@ $dumpvars
 1aaaaa
 1aaaab
 b0 aaaac
-b10100000000000100010011 aaaad
+b10011 aaaad
 b0 aaaae
 0aaaaf
 0aaaag
@@ -93,39 +93,5 @@ $end
 1aaaaa
 
 #9500
-0aaaaa
-
-#10000
-1aaaaa
-b100 aaaac
-b10000011010000100000011 aaaad
-1aaaaf
-
-#10500
-0aaaaa
-
-#11000
-1aaaaa
-0aaaaf
-
-#11500
-0aaaaa
-
-#12000
-1aaaaa
-
-#12500
-0aaaaa
-
-#13000
-1aaaaa
-
-#13500
-0aaaaa
-
-#14000
-1aaaaa
-
-#14500
 0aaaaa
 
