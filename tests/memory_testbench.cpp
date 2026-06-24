@@ -1,7 +1,7 @@
 #include <systemc.h>
 #include "../src/memory_model.cpp"
 
-int ssc_main(int argc, char* argv[]) {
+int sc_main(int argc, char* argv[]) {
     // Create sc_clock object
     sc_clock clk_s("clk");
 
@@ -41,12 +41,105 @@ int ssc_main(int argc, char* argv[]) {
     addr_bus_s.write(0);
     data_bus_in_s.write(0);    
 
-    cout << "@" << sc_time_stamp() << " Applying Reset...\n" << endl;
+    // Reset
+    cout << "@" << sc_time_stamp() << " Applying Reset..." << endl;
     rst_s.write(true);
-    sc_start(5, SC_NS); 
+
+    sc_start(1, SC_NS);
+
+    cout << (data_bus_out_s.read() == 0? "PASS" : "FAIL") << endl << endl;
 
     cout << "@" << sc_time_stamp() << " Releasing Reset...\n" << endl;
     rst_s.write(false);
+
+    // Test 1
+    // ------------------------------
+    // Write
+    write_en_s.write(true);
+    addr_bus_s.write(0);
+    data_bus_in_s.write(0xABCD1234);
+
+    sc_start(1, SC_NS);
+
+    write_en_s.write(false);
+
+    // Read
+    read_en_s.write(true);
+    addr_bus_s.write(0);
+
+    sc_start(1, SC_NS);
+
+    read_en_s.write(false);
+
+    cout << (data_bus_out_s.read() == 0xABCD1234? "PASS" : "FAIL") << endl << endl;
+
+    // Test 2
+    // ------------------------------
+    // Write
+    write_en_s.write(true);
+    addr_bus_s.write(4);
+    data_bus_in_s.write(0x12345678);    
+
+    sc_start(1, SC_NS);
+
+    write_en_s.write(false);
+
+    // Read
+    read_en_s.write(true);
+    addr_bus_s.write(4);
+
+    sc_start(1, SC_NS);
+
+    read_en_s.write(false);
+
+    cout << (data_bus_out_s.read() == 0x12345678? "PASS" : "FAIL") << endl << endl;
+
+    // Test 3
+    // ------------------------------
+    // Write
+    write_en_s.write(true);
+    addr_bus_s.write(8);
+    data_bus_in_s.write(0xDEADBEEF);    
+
+    sc_start(1, SC_NS);
+
+    write_en_s.write(false);
+
+    // Read
+    read_en_s.write(true);
+    addr_bus_s.write(8);
+
+    sc_start(1, SC_NS);
+
+    read_en_s.write(false);
+
+    cout << (data_bus_out_s.read() == 0xDEADBEEF? "PASS" : "FAIL") << endl << endl;
+
+    // read_en = false, write_en = false
+    cout << "Testing read_en and write_en disabled\n" << endl;
+
+    sc_start(1, SC_NS);
+
+    cout << (data_bus_out_s.read() == 0xDEADBEEF? "PASS" : "FAIL") << endl << endl;
+
+    // read_en = true, write_en = true
+    cout << "Testing read_en and write_en enabled" << endl;
+    read_en_s.write(true);
+    write_en_s.write(true);
+
+    sc_start(1, SC_NS);
+
+    read_en_s.write(false);
+    write_en_s.write(false);
+
+    // invalid memory address
+    cout << "Testing invalid memory accessing" << endl;
+    read_en_s.write(true);
+    addr_bus_s.write(300);
+
+    sc_start(1, SC_NS);
+
+    read_en_s.write(false);
 
     return 0;
 }

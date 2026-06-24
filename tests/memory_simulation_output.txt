@@ -1,0 +1,47 @@
+@0 s Applying Reset...
+
+@1 ns Releasing Reset...
+
+@1 ns Write: 
+1. Address -> 0x000000000
+2. Data -> 0x0abcd1234
+
+@2 ns Read: 
+1. Address -> 0x000000000
+2. Data -> 0x0abcd1234
+
+PASS
+
+@3 ns Write: 
+1. Address -> 0x000000004
+2. Data -> 0x012345678
+
+@4 ns Read: 
+1. Address -> 0x000000004
+2. Data -> 0x012345678
+
+PASS
+
+@5 ns Write: 
+1. Address -> 0x000000008
+2. Data -> 0x0deadbeef
+
+@6 ns Read: 
+1. Address -> 0x000000008
+2. Data -> 0x0deadbeef
+
+PASS
+
+Testing read_en and write_en disabled
+
+PASS
+
+Testing read_en and write_en enabled
+@8 ns Warning: Both read_en and write_en are true
+
+@8 ns Write: 
+1. Address -> 0x000000008
+2. Data -> 0x0deadbeef
+
+Testing invalid memory accessing
+@9 ns Error: Trying to access invalid memory 0x00000012c

@@ -9,10 +9,10 @@ SC_MODULE(memory_model) {
     // input ports
     sc_in<bool> clk_i;
     sc_in<bool> rst_i;
-    sc_out<bool> write_en_i;
-    sc_out<bool> read_en_i;
-    sc_out<sc_uint<WIDTH>> addr_bus_i;
-    sc_out<sc_uint<WIDTH>> data_bus_i;
+    sc_in<bool> write_en_i;
+    sc_in<bool> read_en_i;
+    sc_in<sc_uint<WIDTH>> addr_bus_i;
+    sc_in<sc_uint<WIDTH>> data_bus_i;
 
     // output ports
     sc_out<sc_uint<WIDTH>> data_bus_o;
@@ -32,28 +32,36 @@ SC_MODULE(memory_model) {
 
         // Main loop
         while (true) {
-            if (addr_bus_i.read() > SIZE - 1) {
+            // If address is out of bounds don't perform any action
+            if (addr_bus_i.read() > SIZE - 1 && (read_en_i.read() == true || write_en_i.read() == true)) {
+                // If it is a read operation, write 0 to data_bus
                 if (read_en_i.read() == true) {
                     data_bus_o.write(0);
                 }
                 cout << "@" << sc_time_stamp() << " Error: Trying to access invalid memory 0x" << hex << addr_bus_i.read() << dec << endl << endl;
             }
             else {
+                // Give warning if both read and write are enabled
+                if (write_en_i.read() == true && read_en_i.read() == true) {
+                    cout << "@" << sc_time_stamp() << " Warning: Both read_en and write_en are true\n" << endl;
+                }
+
+                // give preference to write
                 if (write_en_i.read() == true) {
+                    // write data to target address
                     memory[addr_bus_i.read()] = data_bus_i.read();
+
                     cout << "@" << sc_time_stamp() << " Write: " << endl;
                     cout << "1. Address -> 0x" << hex << addr_bus_i.read() << endl;
                     cout << "2. Data -> 0x" << data_bus_i.read() << dec << endl << endl;
                 }
-
-                if (read_en_i.read() == true) {
+                else if (read_en_i.read() == true) {
+                    // read data from target address
                     data_bus_o.write(memory[addr_bus_i.read()]);
+
                     cout << "@" << sc_time_stamp() << " Read: " << endl;
                     cout << "1. Address -> 0x" << hex << addr_bus_i.read() << endl;
-                    cout << "2. Data -> 0x" << data_bus_o.read() << dec << endl << endl;
-                }
-                else {
-                    data_bus_o.write(0);
+                    cout << "2. Data -> 0x" << memory[addr_bus_i.read()] << dec << endl << endl;
                 }
             }
 
