@@ -1,0 +1,24 @@
+@0 s Applying Reset...
+
+@5 ns Releasing Reset...
+
+@6 ns Fetch: Instruction -> 0x000000013
+
+@6 ns Decode:
+1. opcode: 0x13
+2. rd: 0
+3. funct3: 0
+4. rs1: 0
+5. rs2: 0
+6. funct7: 0
+7. imm: 0
+8. rs1_data: 0
+9. rs2_data: 0
+
+@7 ns Execute: Instruction is being executed
+
+@8 ns Memory Access: No memory/peripheral access needed
+
+@9 ns Write Back: Program Counter -> 0x000000004
+
+@10 ns Simulation complete!

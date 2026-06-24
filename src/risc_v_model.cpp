@@ -230,15 +230,12 @@ SC_MODULE(risc_v_model) {
 
         // Wait marking end of reset
         wait();
-        int i = 0;
+
         // Main loop
         while (true) {
             // Reset flags to default before executing each instruction
             write_en_o.write(false);
             read_en_o.write(false);
-
-            cout << i << " ------------------------------" << endl;
-            i++;
 
             fetch();
             decode();
