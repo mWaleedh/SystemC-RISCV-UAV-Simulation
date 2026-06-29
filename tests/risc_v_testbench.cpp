@@ -18,7 +18,7 @@ int sc_main(int argc, char* argv[]) {
     sc_signal<sc_uint<32>> data_bus_out_s;
 
     // Initialize risc_v_model and connect input/output ports
-    risc_v_model cpu("cpu");
+    risc_v_model cpu("CPU");
         cpu.clk_i(clk_s);
         cpu.rst_i(rst_s);
         cpu.irq_timer_i(irq_timer_s);
@@ -50,10 +50,12 @@ int sc_main(int argc, char* argv[]) {
     // dummy instruction
     data_bus_in_s.write(0x00000013); 
 
+    // Reset
     cout << "@" << sc_time_stamp() << " Applying Reset...\n" << endl;
     rst_s.write(true);
     sc_start(5, SC_NS); 
 
+    // Release Reset
     cout << "@" << sc_time_stamp() << " Releasing Reset...\n" << endl;
     rst_s.write(false);
 

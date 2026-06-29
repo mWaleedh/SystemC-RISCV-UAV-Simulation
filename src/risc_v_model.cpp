@@ -136,18 +136,23 @@ SC_MODULE(risc_v_model) {
         addr_bus_o.write(pc);
         read_en_o.write(true);
 
+        cout << "@" << sc_time_stamp() << " Fetch: PC -> 0x" << hex << pc << dec << endl << endl;
+
+        wait();
+
+        read_en_o.write(false);
+
         wait();
 
         // Read instruction sent by memory
         cur_inst = data_bus_i.read();
-        read_en_o.write(false);
-
-        cout << "@" << sc_time_stamp() << " Fetch: Instruction -> 0x" << hex << cur_inst << dec << endl << endl;
-    }    
+    }
 
     // ID: Instruction Decode
     // ------------------------------
     void decode() {
+        cout << "@" << sc_time_stamp() << " Decode: Instruction -> 0x" << hex << cur_inst << dec << endl << endl;
+
         // Divide instruction into required parts
         opcode = cur_inst & 0x7F;
         rd = (cur_inst >> 7) & 0x1F;
@@ -180,7 +185,7 @@ SC_MODULE(risc_v_model) {
     // EX: Instruction Execute
     // ------------------------------
     void execute() {
-        cout << "@" << sc_time_stamp() << " Execute: Instruction is being executed" << endl << endl;
+        cout << "@" << sc_time_stamp() << " Execute: Instruction 0x" << hex << cur_inst << dec << " is being executed" << endl << endl;
 
         wait();
     }
@@ -202,15 +207,15 @@ SC_MODULE(risc_v_model) {
     // WB: Write Back
     // ------------------------------
     void writeBack() {
+        cout << "@" << sc_time_stamp() << " Write Back: Old PC -> 0x" << hex << pc << endl << endl;
+
         // Move to next instruction
         pc += 4;
-        cout << "@" << sc_time_stamp() << " Write Back: Program Counter -> 0x" << hex << pc << dec << endl << endl;
+
+        cout << "@" << sc_time_stamp() << " Write Back: New PC -> 0x" << pc << dec << endl << endl;
 
         wait();
     }
-    // ------------------------------------------------------------
-    // ------------------------------------------------------------
-    // ------------------------------------------------------------
 
     // ------------------------------------------------------------
     // Main Thread
