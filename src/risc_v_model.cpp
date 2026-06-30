@@ -33,6 +33,7 @@ SC_MODULE(risc_v_model) {
     sc_uint<WIDTH> rs1_data;
     sc_uint<WIDTH> rs2_data;
     sc_int<WIDTH> imm;
+    sc_uint<WIDTH> alu_res;
 
     // ------------------------------------------------------------
     // Helper Functions
@@ -41,88 +42,124 @@ SC_MODULE(risc_v_model) {
     sc_int<WIDTH> immediateGenerator() {
         int immediate = 0;
         switch (opcode) {
-            // R-type
-            case 0x33:
-                immediate = 0;
-                break;
+        // R-type
+        case 0x33:
+            immediate = 0;
+            break;
 
-            // I-type
-            case 0x13:
-            case 0x3:
-                // [11:0]
-                immediate = (cur_inst >> 20 ) & 0xFFF;
+        // I-type
+        case 0x13:
+        case 0x3:
+            // [11:0]
+            immediate = (cur_inst >> 20 ) & 0xFFF;
 
-                // Sign extension
-                if (immediate & 0x800) { 
-                    // [31:12]
-                    immediate |= 0xFFFFF000; 
-                }
-                break;
-
-            // S-type
-            case 0x23:
-                // [11:5]
-                immediate = ((cur_inst >> 25 ) & 0x7F) << 5;
-                // [4:0]
-                immediate |= (cur_inst >> 7) & 0x1F;
-
-                // Sign extension
-                if (immediate & 0x800) { 
-                    // [31:12]
-                    immediate |= 0xFFFFF000; 
-                }
-                break;
-
-            // B-type
-            case 0x63:
-                // [12]
-                immediate = ((cur_inst >> 31) & 0x1) << 12;
-                // [11]
-                immediate |= ((cur_inst >> 7) & 0x1) << 11;
-                // [10:5]
-                immediate |= ((cur_inst >> 25) & 0x3F) << 5;
-                // [4:1]
-                immediate |= ((cur_inst >> 8) & 0xF) << 1;
-
-                // Sign extension
-                if (immediate & 0x1000) {
-                    // 31:13
-                    immediate |= 0xFFFFE000; 
-                }
-                break;
-
-            // U-type
-            case 0x37:
-            case 0x17:
+            // Sign extension
+            if (immediate & 0x800) { 
                 // [31:12]
-                immediate = ((cur_inst >> 12) & 0xFFFFF) << 12;
-                break;
+                immediate |= 0xFFFFF000; 
+            }
+            break;
 
-            // J-type
-            case 0x6F:
-            case 0x67:
-                // [20]
-                immediate = ((cur_inst >> 31) & 0x1) << 20;
-                // [19:12]
-                immediate |= ((cur_inst >> 12) & 0xFF) << 12;
-                // [11]
-                immediate |= ((cur_inst >> 20) &0x1) << 11;
-                // [10:1]
-                immediate |= ((cur_inst >> 21) & 0x3FF) << 1;
+        // S-type
+        case 0x23:
+            // [11:5]
+            immediate = ((cur_inst >> 25 ) & 0x7F) << 5;
+            // [4:0]
+            immediate |= (cur_inst >> 7) & 0x1F;
 
-                // Sign extension
-                if (immediate & 0x4FFFF) {
-                    // [31:21]
-                    immediate |= 0xFFF00000; 
-                }
-                break;
+            // Sign extension
+            if (immediate & 0x800) { 
+                // [31:12]
+                immediate |= 0xFFFFF000; 
+            }
+            break;
 
-            default:
-                immediate = 0;
-                break;
+        // B-type
+        case 0x63:
+            // [12]
+            immediate = ((cur_inst >> 31) & 0x1) << 12;
+            // [11]
+            immediate |= ((cur_inst >> 7) & 0x1) << 11;
+            // [10:5]
+            immediate |= ((cur_inst >> 25) & 0x3F) << 5;
+            // [4:1]
+            immediate |= ((cur_inst >> 8) & 0xF) << 1;
+
+            // Sign extension
+            if (immediate & 0x1000) {
+                // 31:13
+                immediate |= 0xFFFFE000; 
+            }
+            break;
+
+        // U-type
+        case 0x37:
+        case 0x17:
+            // [31:12]
+            immediate = ((cur_inst >> 12) & 0xFFFFF) << 12;
+            break;
+
+        // J-type
+        case 0x6F:
+        case 0x67:
+            // [20]
+            immediate = ((cur_inst >> 31) & 0x1) << 20;
+            // [19:12]
+            immediate |= ((cur_inst >> 12) & 0xFF) << 12;
+            // [11]
+            immediate |= ((cur_inst >> 20) &0x1) << 11;
+            // [10:1]
+            immediate |= ((cur_inst >> 21) & 0x3FF) << 1;
+
+            // Sign extension
+            if (immediate & 0x4FFFF) {
+                // [31:21]
+                immediate |= 0xFFF00000; 
+            }
+            break;
+
+        default:
+            immediate = 0;
+            break;
         }
 
         return immediate;
+    }
+
+    sc_uint<WIDTH> alu() {
+        sc_uint<WIDTH> alu_result;
+
+        switch (opcode) {
+        // R-type
+        case 0x33: 
+            if (funct3 == 0x0) {
+                // ADD
+                if (funct7 == 0x00) {
+                    alu_result = rs1_data + rs2_data;
+                    cout << "@" << sc_time_stamp() << " ALU: " << rs1_data << " + " << rs2_data << " = " << alu_result << endl << endl;
+                }
+                // SUB
+                else if (funct7 == 0x20) {
+                    alu_result = rs1_data - rs2_data;
+                    cout << "@" << sc_time_stamp() << " ALU: " << rs1_data << " - " << rs2_data << " = " << alu_result << endl << endl;
+                }
+            }
+            break;
+
+        // I-type
+        case 0x13: 
+            // ADDI
+            if (funct3 == 0x0) {
+                alu_result = rs1_data + imm;
+                cout << "@" << sc_time_stamp() << " ALU: " << rs1_data << " + " << imm << " = " << alu_result << endl << endl;
+            }
+            break;
+            
+        default:
+            alu_result = 0;
+       }
+
+       return alu_result;
     }
 
     // ------------------------------------------------------------
@@ -187,6 +224,9 @@ SC_MODULE(risc_v_model) {
     void execute() {
         cout << "@" << sc_time_stamp() << " Execute: Instruction 0x" << hex << cur_inst << dec << " is being executed" << endl << endl;
 
+        // Perform ALU operation
+        alu_res = alu();
+
         wait();
     }
 
@@ -208,6 +248,15 @@ SC_MODULE(risc_v_model) {
     // ------------------------------
     void writeBack() {
         cout << "@" << sc_time_stamp() << " Write Back: Old PC -> 0x" << hex << pc << endl << endl;
+
+        // Write back alu_result to register file
+        if (opcode == 0x33 || opcode == 0x13) {
+            // x0 register stays 0
+            if (rd != 0) {
+                registers[rd] = alu_res;
+                cout << "@" << sc_time_stamp() << " Write Back: Register x" << rd << " -> " << alu_res << endl << endl;
+            }
+        }
 
         // Move to next instruction
         pc += 4;

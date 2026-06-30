@@ -1,7 +1,7 @@
 CXX = g++
 CXXFLAGS = -I. -lsystemc
 TARGET = run_sys
-SRC = riscv_memory_testbench.cpp
+SRC = riscv_decode_testbench.cpp
 
 all: $(TARGET)
 

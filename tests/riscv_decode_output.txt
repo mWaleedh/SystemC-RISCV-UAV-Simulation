@@ -1,0 +1,141 @@
+@0 s Applying Reset...
+
+@5 ns Releasing Reset...
+
+@5 ns Fetch: PC -> 0x000000000
+
+@6 ns Memory Read: 
+1. Address -> 0x000000000
+2. Data -> 0x000500093
+
+@7 ns Decode: Instruction -> 0x000500093
+
+@7 ns Decode:
+1. opcode: 0x13
+2. rd: 1
+3. funct3: 0
+4. rs1: 0
+5. rs2: 5
+6. funct7: 0
+7. imm: 5
+8. rs1_data: 0
+9. rs2_data: 0
+
+@8 ns Execute: Instruction 0x000500093 is being executed
+
+@8 ns ALU: 0 + 5 = 5
+
+@9 ns Memory Access: No memory/peripheral access needed
+
+@10 ns Write Back: Old PC -> 0x000000000
+
+@10 ns Write Back: Register x01 -> 000000005
+
+@10 ns Write Back: New PC -> 0x000000004
+
+PASS
+
+@11 ns Fetch: PC -> 0x000000004
+
+@12 ns Memory Read: 
+1. Address -> 0x000000004
+2. Data -> 0x000a00113
+
+@13 ns Decode: Instruction -> 0x000a00113
+
+@13 ns Decode:
+1. opcode: 0x13
+2. rd: 2
+3. funct3: 0
+4. rs1: 0
+5. rs2: 10
+6. funct7: 0
+7. imm: 10
+8. rs1_data: 0
+9. rs2_data: 0
+
+@14 ns Execute: Instruction 0x000a00113 is being executed
+
+@14 ns ALU: 0 + 10 = 10
+
+@15 ns Memory Access: No memory/peripheral access needed
+
+@16 ns Write Back: Old PC -> 0x000000004
+
+@16 ns Write Back: Register x02 -> 00000000a
+
+@16 ns Write Back: New PC -> 0x000000008
+
+PASS
+
+@17 ns Fetch: PC -> 0x000000008
+
+@18 ns Memory Read: 
+1. Address -> 0x000000008
+2. Data -> 0x0002081b3
+
+@19 ns Decode: Instruction -> 0x0002081b3
+
+@19 ns Decode:
+1. opcode: 0x33
+2. rd: 3
+3. funct3: 0
+4. rs1: 1
+5. rs2: 2
+6. funct7: 0
+7. imm: 0
+8. rs1_data: 5
+9. rs2_data: 10
+
+@20 ns Execute: Instruction 0x0002081b3 is being executed
+
+@20 ns ALU: 5 + 10 = 15
+
+@21 ns Memory Access: No memory/peripheral access needed
+
+@22 ns Write Back: Old PC -> 0x000000008
+
+@22 ns Write Back: Register x03 -> 00000000f
+
+@22 ns Write Back: New PC -> 0x00000000c
+
+PASS
+
+@23 ns Fetch: PC -> 0x00000000c
+
+@24 ns Memory Read: 
+1. Address -> 0x00000000c
+2. Data -> 0x040110233
+
+@25 ns Decode: Instruction -> 0x040110233
+
+@25 ns Decode:
+1. opcode: 0x33
+2. rd: 4
+3. funct3: 0
+4. rs1: 2
+5. rs2: 1
+6. funct7: 32
+7. imm: 0
+8. rs1_data: 10
+9. rs2_data: 5
+
+@26 ns Execute: Instruction 0x040110233 is being executed
+
+@26 ns ALU: 10 - 5 = 5
+
+@27 ns Memory Access: No memory/peripheral access needed
+
+@28 ns Write Back: Old PC -> 0x00000000c
+
+@28 ns Write Back: Register x04 -> 000000005
+
+@28 ns Write Back: New PC -> 0x000000010
+
+PASS
+
+Testing x0 = 0
+
+PASS
+
+@29 ns Simulation complete!
