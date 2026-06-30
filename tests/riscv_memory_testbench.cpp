@@ -23,9 +23,11 @@ int sc_main(int argc, char* argv[]) {
     sc_trace_file *wf = sc_create_vcd_trace_file("riscv_memory_waveform");
     sc_trace(wf, clk_s, "clock");
     sc_trace(wf, rst_s, "reset");
+    sc_trace(wf, sys.read_en_s, "read_en");
+    sc_trace(wf, sys.write_en_s, "write_en");
     sc_trace(wf, sys.addr_bus_s, "address_bus");
-    sc_trace(wf, sys.read_en_s, "read_enable");
     sc_trace(wf, sys.mem_cpu_data_bus_s, "mem_to_cpu_bus");
+    sc_trace(wf, sys.cpu_mem_data_bus_s, "cpu_to_mem_bus");
 
     // Clear input ports
     irq_timer_s.write(false);

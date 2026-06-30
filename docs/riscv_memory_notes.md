@@ -52,3 +52,13 @@ After CPU-memory instruction fetch works, we will add:
 - Register Read/Write behavior
 - Load/Store Instruction behavior
 - Address Decoder
+
+### Why Two Waits are Need in Fetch
+The CPU initially tried to read the data bus before the memory had time to update it. Because synchronous memory takes exactly 1 clock cycle to register an address and 1 more cycle to place the data on the bus, a second wait() was added in the Fetch stage to fix this.
+
+ ### Why read_en Needs to be Turned False
+ During early testing, a duplicate memory read occurred. This happened because read_en was left true for the entire 2-cycle fetch wait duration. Memory checks its inputs on every clock edge, so it saw read_en = true two times. We fixed this by turning read_en false immediately after the first wait().
+
+### Why we are using load_data Function
+We could not push the dummy instructions onto the data bus from the testbench because the memory module already had that bus as an input port. To fix this, we created a load_data() function method directly in the memory module.
+This function is only for simulation or testbench only to test execution. Otherwise we will directly load a hex file into memory.
