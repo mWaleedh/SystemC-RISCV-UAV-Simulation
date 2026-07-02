@@ -1,5 +1,6 @@
 #include <systemc.h>
 #include "../src/system_top.cpp"
+using namespace std;
 
 int sc_main(int argc, char* argv[]) {
     // Create sc_clock object

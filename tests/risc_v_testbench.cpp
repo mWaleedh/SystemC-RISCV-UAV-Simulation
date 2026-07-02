@@ -1,5 +1,6 @@
 #include <systemc.h>
 #include "../src/risc_v_model.cpp"
+using namespace std;
 
 int sc_main(int argc, char* argv[]) {
     // Create sc_clock object

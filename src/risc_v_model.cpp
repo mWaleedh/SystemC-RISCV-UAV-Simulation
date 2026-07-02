@@ -34,6 +34,7 @@ SC_MODULE(risc_v_model) {
     sc_uint<WIDTH> rs2_data;
     sc_int<WIDTH> imm;
     sc_uint<WIDTH> alu_res;
+    sc_uint<WIDTH> mem_data;
 
     // ------------------------------------------------------------
     // Helper Functions
@@ -146,12 +147,30 @@ SC_MODULE(risc_v_model) {
             }
             break;
 
-        // I-type
-        case 0x13: 
+        // I-type (ALU)
+        case 0x13:
             // ADDI
             if (funct3 == 0x0) {
                 alu_result = rs1_data + imm;
                 cout << "@" << sc_time_stamp() << " ALU: " << rs1_data << " + " << imm << " = " << alu_result << endl << endl;
+            }
+            break;
+            
+        // I-type (Load)
+        case 0x3:
+            // LW
+            if (funct3 == 0x2) {
+                alu_result = rs1_data + imm;
+                cout << "@" << sc_time_stamp() << " ALU (LW): " << rs1_data << " + " << imm << " = 0x" << hex << alu_result << dec << endl << endl;
+            }
+            break;
+        
+        // S-type
+        case 0x23:
+            // SW
+            if (funct3 == 0x2) {
+                alu_result = rs1_data + imm;
+                cout << "@" << sc_time_stamp() << " ALU (SW): " << rs1_data << " + " << imm << " = 0x" << hex << alu_result << dec << endl << endl;
             }
             break;
             
@@ -233,9 +252,34 @@ SC_MODULE(risc_v_model) {
     // MEM: Memory/Peripheral Access
     // ------------------------------
     void memoryAccess() {
-        // Only load/store require memory access
-        if (opcode == 0x3 || opcode == 0x23) {
-            cout << "@" << sc_time_stamp() << " Memory Access: Accessing memory/peripheral for load/store" << endl << endl;
+        // Load
+        if (opcode == 0x3) {
+            read_en_o.write(true);
+            addr_bus_o.write(alu_res);
+
+            wait();
+
+            read_en_o.write(false);
+
+            wait();
+
+            mem_data = data_bus_i.read();
+
+            cout << "@" << sc_time_stamp() << " Memory Access: Loaded 0x" << hex << mem_data << " from address 0x" << alu_res << dec << endl << endl;
+
+            return;
+        }
+        // Store
+        else if (opcode == 0x23) {
+            write_en_o.write(true);
+            addr_bus_o.write(alu_res);
+            data_bus_o.write(rs2_data);
+
+            wait();
+
+            write_en_o.write(false);
+
+            cout << "@" << sc_time_stamp() << " Memory Access: Stored 0x" << hex << rs2_data << " to address 0x" << alu_res << dec << endl << endl;
         }
         else {
             cout << "@" << sc_time_stamp() << " Memory Access: No memory/peripheral access needed" << endl << endl;
@@ -247,21 +291,28 @@ SC_MODULE(risc_v_model) {
     // WB: Write Back
     // ------------------------------
     void writeBack() {
-        cout << "@" << sc_time_stamp() << " Write Back: Old PC -> 0x" << hex << pc << endl << endl;
+        cout << "@" << sc_time_stamp() << " Write Back: Old PC value was 0x" << hex << pc << dec << endl << endl;
 
         // Write back alu_result to register file
         if (opcode == 0x33 || opcode == 0x13) {
             // x0 register stays 0
             if (rd != 0) {
                 registers[rd] = alu_res;
-                cout << "@" << sc_time_stamp() << " Write Back: Register x" << rd << " -> " << alu_res << endl << endl;
+                cout << "@" << sc_time_stamp() << " Write Back: Register x" << rd << " updated to " << alu_res << endl << endl;
+            }
+        }
+        // Write back mem_data to register file for Load
+        else if (opcode == 0x3) {
+            if (rd != 0) {
+                registers[rd] = mem_data;
+                cout << "@" << sc_time_stamp() << " Write Back: Register x" << rd << " updated to " << alu_res << endl << endl;
             }
         }
 
         // Move to next instruction
         pc += 4;
 
-        cout << "@" << sc_time_stamp() << " Write Back: New PC -> 0x" << pc << dec << endl << endl;
+        cout << "@" << sc_time_stamp() << " Write Back: New PC value is 0x" << hex << pc << dec << endl << endl;
 
         wait();
     }

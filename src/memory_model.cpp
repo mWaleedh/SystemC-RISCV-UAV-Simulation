@@ -1,5 +1,8 @@
 #include <iostream>
 #include <systemc.h>
+#include <fstream>
+#include <string>
+using namespace std;
 
 SC_MODULE(memory_model) {
     // constants
@@ -30,6 +33,37 @@ SC_MODULE(memory_model) {
         }
     }
 
+    // Function to load entire program 
+    void load_file(const string& filename) {
+        ifstream file(filename.c_str());
+        if (!file.is_open()) {
+            cout << "Error: Unable to open file " << filename << endl << endl;
+            return;
+        }
+
+        string temp;
+        uint32_t addr = 0;
+        while (getline(file, temp)) {
+            // Ignore empty lines
+            if (temp.empty()) {
+                continue;
+            }
+            
+            // Convert hex string to integer
+            uint32_t data = stoul(temp, nullptr, 16);
+            
+            if (addr < SIZE) {
+                memory[addr] = data;
+                // Move to next address
+                addr += 4;
+            }
+        }
+        file.close();
+
+        cout << "Memory: Loaded data from file " << filename << endl << endl;
+    }
+
+    // Main thread
     void mainThread() {
         // Reset/initial stage logic
         for(int i = 0; i < SIZE; i++) {

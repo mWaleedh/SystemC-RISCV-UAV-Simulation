@@ -30,6 +30,11 @@ SC_MODULE(system_top) {
     void load_data(uint32_t addr, uint32_t data) {
         mem->load_data(addr, data);
     }
+    
+    // Function to load entire program 
+    void load_file(const string& filename = "program.hex") {
+        mem->load_file(filename);
+    }
 
     SC_CTOR(system_top) {
         // Module instantiations

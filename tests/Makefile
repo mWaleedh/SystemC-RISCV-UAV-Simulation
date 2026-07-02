@@ -1,12 +1,16 @@
 CXX = g++
 CXXFLAGS = -I. -lsystemc
-TARGET = run_sys
-SRC = riscv_decode_testbench.cpp
 
-all: $(TARGET)
+all: memory_test decode_test load_store_test
 
-$(TARGET): $(SRC)
-	$(CXX) -o $(TARGET) $(SRC) $(CXXFLAGS)
+memory_test: riscv_memory_testbench.cpp
+	$(CXX) -o memory_test riscv_memory_testbench.cpp $(CXXFLAGS)
+
+decode_test: riscv_decode_testbench.cpp
+	$(CXX) -o decode_test riscv_decode_testbench.cpp $(CXXFLAGS)
+
+load_store_test: riscv_load_store_testbench.cpp
+	$(CXX) -o load_store_test riscv_load_store_testbench.cpp $(CXXFLAGS)
 
 clean:
-	rm -f $(TARGET) *.vcd
+	rm -f memory_test decode_test load_store_test *.vcd
