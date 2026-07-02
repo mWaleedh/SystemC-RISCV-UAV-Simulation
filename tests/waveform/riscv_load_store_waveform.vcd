@@ -1,5 +1,5 @@
 $date
-     Jul 02, 2026       10:13:53
+     Jul 02, 2026       10:33:55
 $end
 
 $version
@@ -343,21 +343,5 @@ b0 aaaaj
 b11000 aaaac
 
 #42500
-0aaaaa
-
-#43000
-1aaaaa
-b11000 aaaae
-1aaaah
-
-#43500
-0aaaaa
-
-#44000
-1aaaaa
-b0 aaaaf
-0aaaah
-
-#44500
 0aaaaa
 
