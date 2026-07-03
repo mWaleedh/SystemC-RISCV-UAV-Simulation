@@ -2,7 +2,7 @@
 
 @5 ns Releasing Reset...
 
-Memory: Loaded data from file program.hex
+Memory: Loaded data from file ./hex/riscv_load_store_program.hex
 
 @5 ns Fetch: PC -> 0x000000000
 
@@ -206,4 +206,5 @@ mem[64] = 25: PASS
 x5 = 25: PASS
 x6 = 50: PASS
 x0 = 0: PASS
+
 @45 ns Simulation complete!

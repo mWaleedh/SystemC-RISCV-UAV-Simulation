@@ -1,0 +1,231 @@
+@0 s Applying Reset...
+
+@5 ns Releasing Reset...
+
+Memory: Loaded data from file ./hex/riscv_branch_program.hex
+
+@5 ns Fetch: PC -> 0x000000000
+
+@6 ns Memory Read: 
+1. Address -> 0x000000000
+2. Data -> 0x000500093
+
+@7 ns Decode: Instruction -> 0x000500093
+
+@7 ns Decode:
+1. opcode: 0x13
+2. rd: 1
+3. funct3: 0
+4. rs1: 0
+5. rs2: 5
+6. funct7: 0
+7. imm: 5
+8. rs1_data: 0
+9. rs2_data: 0
+
+@8 ns Execute: Instruction 0x000500093 is being executed
+
+@8 ns ALU: 0 + 5 = 5
+
+@9 ns Memory Access: No memory/peripheral access needed
+
+@10 ns Write Back: Old PC value was 0x000000000
+
+@10 ns Write Back: Register x1 updated to 5
+
+@10 ns Write Back: New PC value is 0x000000004
+
+@11 ns Fetch: PC -> 0x000000004
+
+@12 ns Memory Read: 
+1. Address -> 0x000000004
+2. Data -> 0x000500113
+
+@13 ns Decode: Instruction -> 0x000500113
+
+@13 ns Decode:
+1. opcode: 0x13
+2. rd: 2
+3. funct3: 0
+4. rs1: 0
+5. rs2: 5
+6. funct7: 0
+7. imm: 5
+8. rs1_data: 0
+9. rs2_data: 0
+
+@14 ns Execute: Instruction 0x000500113 is being executed
+
+@14 ns ALU: 0 + 5 = 5
+
+@15 ns Memory Access: No memory/peripheral access needed
+
+@16 ns Write Back: Old PC value was 0x000000004
+
+@16 ns Write Back: Register x2 updated to 5
+
+@16 ns Write Back: New PC value is 0x000000008
+
+@17 ns Fetch: PC -> 0x000000008
+
+@18 ns Memory Read: 
+1. Address -> 0x000000008
+2. Data -> 0x000208463
+
+@19 ns Decode: Instruction -> 0x000208463
+
+@19 ns Decode:
+1. opcode: 0x63
+2. rd: 8
+3. funct3: 0
+4. rs1: 1
+5. rs2: 2
+6. funct7: 0
+7. imm: 8
+8. rs1_data: 5
+9. rs2_data: 5
+
+@20 ns Execute: Instruction 0x000208463 is being executed
+
+@20 ns Execute: BEQ x1(5), x2(5) | Branch Taken: YES | Target: 0x10
+
+@21 ns Memory Access: No memory/peripheral access needed
+
+@22 ns Write Back: Old PC value was 0x000000008
+
+@22 ns Write Back: No register write back for branch instruction
+
+@22 ns Write Back: New PC value is 0x000000010
+
+@23 ns Fetch: PC -> 0x000000010
+
+@24 ns Memory Read: 
+1. Address -> 0x000000010
+2. Data -> 0x000a00193
+
+@25 ns Decode: Instruction -> 0x000a00193
+
+@25 ns Decode:
+1. opcode: 0x13
+2. rd: 3
+3. funct3: 0
+4. rs1: 0
+5. rs2: 10
+6. funct7: 0
+7. imm: 10
+8. rs1_data: 0
+9. rs2_data: 0
+
+@26 ns Execute: Instruction 0x000a00193 is being executed
+
+@26 ns ALU: 0 + 10 = 10
+
+@27 ns Memory Access: No memory/peripheral access needed
+
+@28 ns Write Back: Old PC value was 0x000000010
+
+@28 ns Write Back: Register x3 updated to 10
+
+@28 ns Write Back: New PC value is 0x000000014
+
+@29 ns Fetch: PC -> 0x000000014
+
+@30 ns Memory Read: 
+1. Address -> 0x000000014
+2. Data -> 0x000209463
+
+@31 ns Decode: Instruction -> 0x000209463
+
+@31 ns Decode:
+1. opcode: 0x63
+2. rd: 8
+3. funct3: 1
+4. rs1: 1
+5. rs2: 2
+6. funct7: 0
+7. imm: 8
+8. rs1_data: 5
+9. rs2_data: 5
+
+@32 ns Execute: Instruction 0x000209463 is being executed
+
+@32 ns Execute: BNE x1(5), x2(5) | Branch Taken: NO | Target: 0x18
+
+@33 ns Memory Access: No memory/peripheral access needed
+
+@34 ns Write Back: Old PC value was 0x000000014
+
+@34 ns Write Back: No register write back for branch instruction
+
+@34 ns Write Back: New PC value is 0x000000018
+
+@35 ns Fetch: PC -> 0x000000018
+
+@36 ns Memory Read: 
+1. Address -> 0x000000018
+2. Data -> 0x000700213
+
+@37 ns Decode: Instruction -> 0x000700213
+
+@37 ns Decode:
+1. opcode: 0x13
+2. rd: 4
+3. funct3: 0
+4. rs1: 0
+5. rs2: 7
+6. funct7: 0
+7. imm: 7
+8. rs1_data: 0
+9. rs2_data: 0
+
+@38 ns Execute: Instruction 0x000700213 is being executed
+
+@38 ns ALU: 0 + 7 = 7
+
+@39 ns Memory Access: No memory/peripheral access needed
+
+@40 ns Write Back: Old PC value was 0x000000018
+
+@40 ns Write Back: Register x4 updated to 7
+
+@40 ns Write Back: New PC value is 0x00000001c
+
+@41 ns Fetch: PC -> 0x00000001c
+
+@42 ns Memory Read: 
+1. Address -> 0x00000001c
+2. Data -> 0x0004182b3
+
+@43 ns Decode: Instruction -> 0x0004182b3
+
+@43 ns Decode:
+1. opcode: 0x33
+2. rd: 5
+3. funct3: 0
+4. rs1: 3
+5. rs2: 4
+6. funct7: 0
+7. imm: 0
+8. rs1_data: 10
+9. rs2_data: 7
+
+@44 ns Execute: Instruction 0x0004182b3 is being executed
+
+@44 ns ALU: 10 + 7 = 17
+
+@45 ns Memory Access: No memory/peripheral access needed
+
+@46 ns Write Back: Old PC value was 0x00000001c
+
+@46 ns Write Back: Register x5 updated to 17
+
+@46 ns Write Back: New PC value is 0x000000020
+
+x1 = 5: PASS
+x2 = 5: PASS
+x3 = 10: PASS
+x4 = 7: PASS
+x5 = 17: PASS
+x0 = 0: PASS
+
+@47 ns Simulation complete!

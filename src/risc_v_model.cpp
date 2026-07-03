@@ -35,6 +35,9 @@ SC_MODULE(risc_v_model) {
     sc_int<WIDTH> imm;
     sc_uint<WIDTH> alu_res;
     sc_uint<WIDTH> mem_data;
+    sc_uint<WIDTH> pc_next;
+    bool branch_taken;
+
 
     // ------------------------------------------------------------
     // Helper Functions
@@ -246,6 +249,40 @@ SC_MODULE(risc_v_model) {
         // Perform ALU operation
         alu_res = alu();
 
+        branch_taken = false;
+
+        // Check if branch is taken or not
+        if (opcode == 0x63) {
+            // BEQ
+            if (funct3 == 0x0) {
+                branch_taken = (rs1_data == rs2_data);
+                
+                cout << "@" << sc_time_stamp() << " Execute: BEQ x" << rs1 << "(" << rs1_data << "), x" << rs2 << "(" << rs2_data << ")";
+                cout << " | Branch Taken: " << (branch_taken ? "YES" : "NO");
+            }
+            // BNE
+            else if (funct3 == 0x1) {
+                branch_taken = (rs1_data != rs2_data);
+                
+                cout << "@" << sc_time_stamp() << " Execute: BNE x" << rs1 << "(" << rs1_data << "), x" << rs2 << "(" << rs2_data << ")";
+                cout << " | Branch Taken: " << (branch_taken ? "YES" : "NO");
+            }
+
+            // Find next instruction address
+            if (branch_taken) {
+                pc_next = pc + imm;
+            }
+            else {
+                pc_next = pc + 4;
+            }
+
+            cout << " | Target: 0x" << hex << pc_next << dec << endl << endl;
+        }
+        // Move to next instruction by default
+        else {
+            pc_next = pc + 4;
+        }
+
         wait();
     }
 
@@ -308,9 +345,12 @@ SC_MODULE(risc_v_model) {
                 cout << "@" << sc_time_stamp() << " Write Back: Register x" << rd << " updated to " << alu_res << endl << endl;
             }
         }
+        else if (opcode == 0x63) {
+            cout << "@" << sc_time_stamp() << " Write Back: No register write back for branch instruction" << endl << endl;
+        }
 
         // Move to next instruction
-        pc += 4;
+        pc = pc_next;
 
         cout << "@" << sc_time_stamp() << " Write Back: New PC value is 0x" << hex << pc << dec << endl << endl;
 
