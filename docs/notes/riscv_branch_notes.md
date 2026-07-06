@@ -11,6 +11,11 @@ Branch if Not Equal is also a B-Type instruction. The ALU compares the two sourc
 The RISC-V specification has the immediate bits scattered across the 32-bit instruction placing them at bits 31, 7, 25:30, and 8:11.
 In our immediateGenerator(), we are using multiple bitwise shifts and masks to extract these pieces, and join them back together in the correct order, and then we sign-extend the 12th bit up to 32 bits.
 
+### How branch_taken is Calculated
+In the execute stage we evaluate the following conditions based on opcode.
+- For BEQ: branch_taken = (rs1_data == rs2_data);
+- For BNE: branch_taken = (rs1_data != rs2_data);
+
 ### How PC is Updated for Branch Taken
 If the ALU determines the branch condition is met, the CPU calculates a new target address by adding the extracted immediate value to the current Program Counter. The CPU then jumps to this new address.
 
@@ -19,6 +24,9 @@ If the condition is not met, the CPU ignores the immediate value. It updates the
 
 ### Why Branch Instructions Do Not Use Write Back
 Branch instructions do not produce a numerical answer that needs to be saved into a destination register. Their purpose is to just modify the Program Counter. Therefore, the Write Back stage does nothing to the register file during a branch instruction, it only updates the pc variable.
+
+### How the .hex File is Loaded into Memory
+Instead of manually writing instructions one by one, we changed the memory module to load entire .hex files. The testbench now calls sys.load_hex(filename). This function uses the ifstream library to open the .hex file and read it line by line, then we use stoul to convert the strings into 32-bit hex integers, and finally place then into the memory.
 
 ### What Test Program Was Used
 We verified the branch logic using an 8-instruction assembly program.
