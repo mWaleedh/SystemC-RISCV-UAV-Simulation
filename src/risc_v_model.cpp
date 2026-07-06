@@ -54,6 +54,7 @@ SC_MODULE(risc_v_model) {
         // I-type
         case 0x13:
         case 0x3:
+        case 0x67:
             // [11:0]
             immediate = (cur_inst >> 20 ) & 0xFFF;
 
@@ -91,7 +92,7 @@ SC_MODULE(risc_v_model) {
 
             // Sign extension
             if (immediate & 0x1000) {
-                // 31:13
+                // [31:13]
                 immediate |= 0xFFFFE000; 
             }
             break;
@@ -104,8 +105,7 @@ SC_MODULE(risc_v_model) {
             break;
 
         // J-type
-        case 0x6F:
-        case 0x67:
+        case 0x6F:        
             // [20]
             immediate = ((cur_inst >> 31) & 0x1) << 20;
             // [19:12]
@@ -116,7 +116,7 @@ SC_MODULE(risc_v_model) {
             immediate |= ((cur_inst >> 21) & 0x3FF) << 1;
 
             // Sign extension
-            if (immediate & 0x4FFFF) {
+            if (immediate & 0x100000) {
                 // [31:21]
                 immediate |= 0xFFF00000; 
             }
@@ -278,6 +278,22 @@ SC_MODULE(risc_v_model) {
 
             cout << " | Target: 0x" << hex << pc_next << dec << endl << endl;
         }
+        // For JAL calculate the return address and the PC value
+        else if (opcode == 0x6F) {
+            branch_taken = true;
+            pc_next = pc + imm;
+            alu_res = pc + 4;
+            
+            cout << "@" << sc_time_stamp() << " Execute: JAL | Return Address: 0x" << hex << alu_res << " | PC: 0x" << pc_next << dec << endl << endl;
+        }
+        // For JAL calculate the return address and the PC value
+        else if (opcode == 0x67) {
+            branch_taken = true;
+            pc_next = (rs1_data + imm) & ~1; 
+            alu_res = pc + 4;
+            
+            cout << "@" << sc_time_stamp() << " Execute: JALR | Return Address: 0x" << hex << alu_res << " | PC: 0x" << pc_next << dec << endl << endl;
+        }
         // Move to next instruction by default
         else {
             pc_next = pc + 4;
@@ -345,8 +361,16 @@ SC_MODULE(risc_v_model) {
                 cout << "@" << sc_time_stamp() << " Write Back: Register x" << rd << " updated to " << alu_res << endl << endl;
             }
         }
+        // No write back for Branch
         else if (opcode == 0x63) {
             cout << "@" << sc_time_stamp() << " Write Back: No register write back for branch instruction" << endl << endl;
+        }
+        // Write back return address to destination register for Jump
+        else if (opcode == 0x6F || opcode == 0x67) {
+            if (rd != 0) {
+                registers[rd] = alu_res;
+                cout << "@" << sc_time_stamp() << " Write Back: Register x" << rd << " updated to " << alu_res << endl << endl;
+            }
         }
 
         // Move to next instruction
