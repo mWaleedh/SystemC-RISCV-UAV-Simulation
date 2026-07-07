@@ -1,0 +1,38 @@
+1. Test run riscv_memory_test:
+cur_inst = 0x00000013: PASS
+cur_inst = 0x00500093: PASS
+cur_inst = 0x00100113: PASS
+
+2. Test run riscv_decode_test:
+x1 = 5: PASS
+X2 = 10: PASS
+x3 = 15: PASS
+x4 = 5: PASS
+x0 = 0: PASS
+
+3. Test run riscv_load_store_test:
+x1 = 64: PASS
+x2 = 25: PASS
+mem[64] = 25: PASS
+x5 = 25: PASS
+x6 = 50: PASS
+x0 = 0: PASS
+
+4. Test run riscv_branch_test:
+x1 = 5: PASS
+x2 = 5: PASS
+x3 = 10: PASS
+x4 = 7: PASS
+x5 = 17: PASS
+x0 = 0: PASS
+
+5. Test run riscv_jump_test:
+JAL Test:
+x1 = 5: PASS
+x2 = 10: PASS
+x3 = 15: PASS
+x5 = 8: PASS
+
+JALR Test:
+x4 = 7: PASS
+x6 = 8: PASS

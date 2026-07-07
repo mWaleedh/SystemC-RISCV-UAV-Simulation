@@ -1,7 +1,7 @@
 CXX = g++
 CXXFLAGS = -I. -lsystemc
 
-all: memory_test decode_test load_store_test branch_test jump_test
+all: memory_test decode_test load_store_test branch_test jump_test mini_program_test
 
 memory_test: ./tests/riscv_memory_testbench.cpp
 	$(CXX) -o memory_test ./tests/riscv_memory_testbench.cpp $(CXXFLAGS)
@@ -18,5 +18,16 @@ branch_test: ./tests/riscv_branch_testbench.cpp
 jump_test: ./tests/riscv_jump_testbench.cpp
 	$(CXX) -o jump_test ./tests/riscv_jump_testbench.cpp $(CXXFLAGS)
 
+mini_program_test: ./tests/riscv_mini_program_testbench.cpp
+	$(CXX) -o mini_program_test ./tests/riscv_mini_program_testbench.cpp $(CXXFLAGS)
+
+all_tests: all
+	./memory_test
+	./decode_test
+	./load_store_test
+	./branch_test
+	./jump_test
+	./mini_program_test
+
 clean:
-	rm -f memory_test decode_test load_store_test branch_test jump_test
+	rm -f memory_test decode_test load_store_test branch_test jump_test mini_program_test *.vcd

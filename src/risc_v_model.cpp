@@ -37,6 +37,7 @@ SC_MODULE(risc_v_model) {
     sc_uint<WIDTH> mem_data;
     sc_uint<WIDTH> pc_next;
     bool branch_taken;
+    bool is_valid_instruction;
 
 
     // ------------------------------------------------------------
@@ -124,7 +125,8 @@ SC_MODULE(risc_v_model) {
 
         default:
             immediate = 0;
-            break;
+            is_valid_instruction = false;
+            cout << "Warning: Invalid instruction type, skipping to next instruction" << endl << endl;
         }
 
         return immediate;
@@ -178,7 +180,7 @@ SC_MODULE(risc_v_model) {
             break;
             
         default:
-            alu_result = 0;
+            alu_result = 0;            
        }
 
        return alu_result;
@@ -220,8 +222,15 @@ SC_MODULE(risc_v_model) {
         rs2 = (cur_inst >> 20) & 0x1F;
         funct7 = (cur_inst >> 25) & 0x7F;
 
+        is_valid_instruction = true;
+
         // Extract immediate
         imm = immediateGenerator();
+
+        // Skip if invalid opcode
+        if (!is_valid_instruction) {
+            return;
+        }
 
         // Read required registers
         rs1_data = registers[rs1];
@@ -358,7 +367,7 @@ SC_MODULE(risc_v_model) {
         else if (opcode == 0x3) {
             if (rd != 0) {
                 registers[rd] = mem_data;
-                cout << "@" << sc_time_stamp() << " Write Back: Register x" << rd << " updated to " << alu_res << endl << endl;
+                cout << "@" << sc_time_stamp() << " Write Back: Register x" << rd << " updated to " << mem_data << endl << endl;
             }
         }
         // No write back for Branch
@@ -408,6 +417,13 @@ SC_MODULE(risc_v_model) {
 
             fetch();
             decode();
+
+            // Skip instruction if invalid opcode
+            if (!is_valid_instruction) {
+                pc += 4;
+                continue;
+            }
+
             execute();
             memoryAccess();
             writeBack();

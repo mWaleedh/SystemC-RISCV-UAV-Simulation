@@ -21,7 +21,7 @@ int sc_main(int argc, char* argv[]) {
         sys.irq_sw_i(irq_sw_s);
 
     // VCD waveform trace
-    sc_trace_file *wf = sc_create_vcd_trace_file("riscv_load_store_waveform");
+    sc_trace_file *wf = sc_create_vcd_trace_file("./tests/waveform/riscv_load_store_waveform");
     sc_trace(wf, clk_s, "clock");
     sc_trace(wf, rst_s, "reset");
     sc_trace(wf, sys.cpu->pc, "pc");
@@ -48,7 +48,7 @@ int sc_main(int argc, char* argv[]) {
     rst_s.write(false);
 
     // Load instructions
-    sys.load_file("./hex/riscv_load_store_program.hex");
+    sys.load_file("./tests/hex/riscv_load_store_program.hex");
 
     // Run system
     sc_start(38, SC_NS);

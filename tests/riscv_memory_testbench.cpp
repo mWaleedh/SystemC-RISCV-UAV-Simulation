@@ -21,7 +21,7 @@ int sc_main(int argc, char* argv[]) {
         sys.irq_sw_i(irq_sw_s);
 
     // VCD waveform trace
-    sc_trace_file *wf = sc_create_vcd_trace_file("riscv_memory_waveform");
+    sc_trace_file *wf = sc_create_vcd_trace_file("./tests/waveform/riscv_memory_waveform");
     sc_trace(wf, clk_s, "clock");
     sc_trace(wf, rst_s, "reset");
     sc_trace(wf, sys.read_en_s, "read_en");

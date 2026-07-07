@@ -1,0 +1,669 @@
+$date
+     Jul 07, 2026       12:16:00
+$end
+
+$version
+ SystemC 2.3.4-Accellera --- Apr 22 2024 14:54:19
+$end
+
+$timescale
+     1 ps
+$end
+
+$scope module SystemC $end
+$var wire    1  aaaaa  clock       $end
+$var wire    1  aaaab  reset       $end
+$var wire   32  aaaac  pc [31:0]  $end
+$var wire   32  aaaad  pc_next [31:0]  $end
+$var wire   32  aaaae  cur_inst [31:0]  $end
+$var wire    7  aaaaf  opcode [6:0]  $end
+$var wire    5  aaaag  rd [4:0]  $end
+$var wire    5  aaaah  rs1 [4:0]  $end
+$var wire    5  aaaai  rs2 [4:0]  $end
+$var wire   32  aaaaj  immediate [31:0]  $end
+$var wire   32  aaaak  alu_rest [31:0]  $end
+$var wire    1  aaaal  branch_taken       $end
+$var wire   32  aaaam  mem_data_out [31:0]  $end
+$var wire   32  aaaan  mem_data_in [31:0]  $end
+$var wire    1  aaaao  read_en       $end
+$var wire    1  aaaap  write_en       $end
+$upscope $end
+$enddefinitions  $end
+
+$comment
+All initial values are dumped below at time 0 sec = 0 timescale units.
+$end
+
+$dumpvars
+1aaaaa
+1aaaab
+b0 aaaac
+b0 aaaad
+b0 aaaae
+b0 aaaaf
+b0 aaaag
+b0 aaaah
+b0 aaaai
+b0 aaaaj
+b0 aaaak
+0aaaal
+b0 aaaam
+b0 aaaan
+0aaaao
+0aaaap
+$end
+
+#500
+0aaaaa
+
+#1000
+1aaaaa
+
+#1500
+0aaaaa
+
+#2000
+1aaaaa
+
+#2500
+0aaaaa
+
+#3000
+1aaaaa
+
+#3500
+0aaaaa
+
+#4000
+1aaaaa
+
+#4500
+0aaaaa
+
+#5000
+1aaaaa
+0aaaab
+1aaaao
+
+#5500
+0aaaaa
+
+#6000
+1aaaaa
+b1010000000000000010010011 aaaam
+0aaaao
+
+#6500
+0aaaaa
+
+#7000
+1aaaaa
+b1010000000000000010010011 aaaae
+b10011 aaaaf
+b1 aaaag
+b10100 aaaai
+b10100 aaaaj
+
+#7500
+0aaaaa
+
+#8000
+1aaaaa
+b100 aaaad
+b10100 aaaak
+
+#8500
+0aaaaa
+
+#9000
+1aaaaa
+
+#9500
+0aaaaa
+
+#10000
+1aaaaa
+b100 aaaac
+
+#10500
+0aaaaa
+
+#11000
+1aaaaa
+1aaaao
+
+#11500
+0aaaaa
+
+#12000
+1aaaaa
+b1010000000000000100010011 aaaam
+0aaaao
+
+#12500
+0aaaaa
+
+#13000
+1aaaaa
+b1010000000000000100010011 aaaae
+b10 aaaag
+
+#13500
+0aaaaa
+
+#14000
+1aaaaa
+b1000 aaaad
+
+#14500
+0aaaaa
+
+#15000
+1aaaaa
+
+#15500
+0aaaaa
+
+#16000
+1aaaaa
+b1000 aaaac
+
+#16500
+0aaaaa
+
+#17000
+1aaaaa
+1aaaao
+
+#17500
+0aaaaa
+
+#18000
+1aaaaa
+b1000001000010001100011 aaaam
+0aaaao
+
+#18500
+0aaaaa
+
+#19000
+1aaaaa
+b1000001000010001100011 aaaae
+b1100011 aaaaf
+b1000 aaaag
+b1 aaaah
+b10 aaaai
+b1000 aaaaj
+
+#19500
+0aaaaa
+
+#20000
+1aaaaa
+b10000 aaaad
+b0 aaaak
+1aaaal
+
+#20500
+0aaaaa
+
+#21000
+1aaaaa
+
+#21500
+0aaaaa
+
+#22000
+1aaaaa
+b10000 aaaac
+
+#22500
+0aaaaa
+
+#23000
+1aaaaa
+1aaaao
+
+#23500
+0aaaaa
+
+#24000
+1aaaaa
+b110010000000000000110010011 aaaam
+0aaaao
+
+#24500
+0aaaaa
+
+#25000
+1aaaaa
+b110010000000000000110010011 aaaae
+b10011 aaaaf
+b11 aaaag
+b0 aaaah
+b100 aaaai
+b1100100 aaaaj
+
+#25500
+0aaaaa
+
+#26000
+1aaaaa
+b10100 aaaad
+b1100100 aaaak
+0aaaal
+
+#26500
+0aaaaa
+
+#27000
+1aaaaa
+
+#27500
+0aaaaa
+
+#28000
+1aaaaa
+b10100 aaaac
+
+#28500
+0aaaaa
+
+#29000
+1aaaaa
+1aaaao
+
+#29500
+0aaaaa
+
+#30000
+1aaaaa
+b1100001010000000100011 aaaam
+0aaaao
+
+#30500
+0aaaaa
+
+#31000
+1aaaaa
+b1100001010000000100011 aaaae
+b100011 aaaaf
+b0 aaaag
+b1 aaaah
+b11 aaaai
+b0 aaaaj
+
+#31500
+0aaaaa
+
+#32000
+1aaaaa
+b11000 aaaad
+b10100 aaaak
+
+#32500
+0aaaaa
+
+#33000
+1aaaaa
+b1100100 aaaan
+1aaaap
+
+#33500
+0aaaaa
+
+#34000
+1aaaaa
+0aaaap
+
+#34500
+0aaaaa
+
+#35000
+1aaaaa
+b11000 aaaac
+
+#35500
+0aaaaa
+
+#36000
+1aaaaa
+1aaaao
+
+#36500
+0aaaaa
+
+#37000
+1aaaaa
+b1010001000000011 aaaam
+0aaaao
+
+#37500
+0aaaaa
+
+#38000
+1aaaaa
+b1010001000000011 aaaae
+b11 aaaaf
+b100 aaaag
+b0 aaaai
+
+#38500
+0aaaaa
+
+#39000
+1aaaaa
+b11100 aaaad
+
+#39500
+0aaaaa
+
+#40000
+1aaaaa
+1aaaao
+
+#40500
+0aaaaa
+
+#41000
+1aaaaa
+b1100100 aaaam
+0aaaao
+
+#41500
+0aaaaa
+
+#42000
+1aaaaa
+b11100 aaaac
+
+#42500
+0aaaaa
+
+#43000
+1aaaaa
+1aaaao
+
+#43500
+0aaaaa
+
+#44000
+1aaaaa
+b10000001001010001100011 aaaam
+0aaaao
+
+#44500
+0aaaaa
+
+#45000
+1aaaaa
+b10000001001010001100011 aaaae
+b1100011 aaaaf
+b1000 aaaag
+b100 aaaai
+b1000 aaaaj
+
+#45500
+0aaaaa
+
+#46000
+1aaaaa
+b100100 aaaad
+b0 aaaak
+1aaaal
+
+#46500
+0aaaaa
+
+#47000
+1aaaaa
+
+#47500
+0aaaaa
+
+#48000
+1aaaaa
+b100100 aaaac
+
+#48500
+0aaaaa
+
+#49000
+1aaaaa
+1aaaao
+
+#49500
+0aaaaa
+
+#50000
+1aaaaa
+b10000011000001010110011 aaaam
+0aaaao
+
+#50500
+0aaaaa
+
+#51000
+1aaaaa
+b10000011000001010110011 aaaae
+b110011 aaaaf
+b101 aaaag
+b11 aaaah
+b0 aaaaj
+
+#51500
+0aaaaa
+
+#52000
+1aaaaa
+b101000 aaaad
+b11001000 aaaak
+0aaaal
+
+#52500
+0aaaaa
+
+#53000
+1aaaaa
+
+#53500
+0aaaaa
+
+#54000
+1aaaaa
+b101000 aaaac
+
+#54500
+0aaaaa
+
+#55000
+1aaaaa
+1aaaao
+
+#55500
+0aaaaa
+
+#56000
+1aaaaa
+b1000000000100101000001100110011 aaaam
+0aaaao
+
+#56500
+0aaaaa
+
+#57000
+1aaaaa
+b1000000000100101000001100110011 aaaae
+b110 aaaag
+b101 aaaah
+b1 aaaai
+
+#57500
+0aaaaa
+
+#58000
+1aaaaa
+b101100 aaaad
+b10110100 aaaak
+
+#58500
+0aaaaa
+
+#59000
+1aaaaa
+
+#59500
+0aaaaa
+
+#60000
+1aaaaa
+b101100 aaaac
+
+#60500
+0aaaaa
+
+#61000
+1aaaaa
+1aaaao
+
+#61500
+0aaaaa
+
+#62000
+1aaaaa
+b100000000000001111101111 aaaam
+0aaaao
+
+#62500
+0aaaaa
+
+#63000
+1aaaaa
+b100000000000001111101111 aaaae
+b1101111 aaaaf
+b111 aaaag
+b0 aaaah
+b1000 aaaai
+b1000 aaaaj
+
+#63500
+0aaaaa
+
+#64000
+1aaaaa
+b110100 aaaad
+b110000 aaaak
+1aaaal
+
+#64500
+0aaaaa
+
+#65000
+1aaaaa
+
+#65500
+0aaaaa
+
+#66000
+1aaaaa
+b110100 aaaac
+
+#66500
+0aaaaa
+
+#67000
+1aaaaa
+1aaaao
+
+#67500
+0aaaaa
+
+#68000
+1aaaaa
+b100000000000000010000010011 aaaam
+0aaaao
+
+#68500
+0aaaaa
+
+#69000
+1aaaaa
+b100000000000000010000010011 aaaae
+b10011 aaaaf
+b1000 aaaag
+b0 aaaai
+b1000000 aaaaj
+
+#69500
+0aaaaa
+
+#70000
+1aaaaa
+b111000 aaaad
+b1000000 aaaak
+0aaaal
+
+#70500
+0aaaaa
+
+#71000
+1aaaaa
+
+#71500
+0aaaaa
+
+#72000
+1aaaaa
+b111000 aaaac
+
+#72500
+0aaaaa
+
+#73000
+1aaaaa
+1aaaao
+
+#73500
+0aaaaa
+
+#74000
+1aaaaa
+b1000000010011100111 aaaam
+0aaaao
+
+#74500
+0aaaaa
+
+#75000
+1aaaaa
+b1000000010011100111 aaaae
+b1100111 aaaaf
+b1001 aaaag
+b1000 aaaah
+b0 aaaaj
+
+#75500
+0aaaaa
+
+#76000
+1aaaaa
+b1000000 aaaad
+b111100 aaaak
+1aaaal
+
+#76500
+0aaaaa
+
+#77000
+1aaaaa
+
+#77500
+0aaaaa
+
+#78000
+1aaaaa
+b1000000 aaaac
+
+#78500
+0aaaaa
+
