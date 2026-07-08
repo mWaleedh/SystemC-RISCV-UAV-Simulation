@@ -1,4 +1,4 @@
- #include <systemc.h>
+#include <systemc.h>
 #include "../src/system_top.cpp"
 using namespace std;
 
@@ -21,19 +21,17 @@ int sc_main(int argc, char* argv[]) {
         sys.irq_sw_i(irq_sw_s);
 
     // VCD waveform trace
-    sc_trace_file *wf = sc_create_vcd_trace_file("./tests/waveform/riscv_branch_waveform");
+    sc_trace_file *wf = sc_create_vcd_trace_file("./waveforms/riscv_load_store_waveform");
     sc_trace(wf, clk_s, "clock");
     sc_trace(wf, rst_s, "reset");
     sc_trace(wf, sys.cpu->pc, "pc");
     sc_trace(wf, sys.cpu->cur_inst, "cur_inst");
-    sc_trace(wf, sys.cpu->opcode, "opcode");
-    sc_trace(wf, sys.cpu->rs1, "rs1");
-    sc_trace(wf, sys.cpu->rs2, "rs2");
-    sc_trace(wf, sys.cpu->imm, "branch_immediate");
-    sc_trace(wf, sys.cpu->branch_taken, "branch_taken");
-    sc_trace(wf, sys.cpu->pc_next, "branch_target");
+    sc_trace(wf, sys.addr_bus_s, "addr_bus");
+    sc_trace(wf, sys.mem_cpu_data_bus_s, "mem_to_cpu_bus");
+    sc_trace(wf, sys.cpu_mem_data_bus_s, "cpu_to_mem_bus");
     sc_trace(wf, sys.read_en_s, "read_en");
     sc_trace(wf, sys.write_en_s, "write_en");
+    sc_trace(wf, sys.cpu->alu_res, "alu_res");
 
     // Clear input ports
     irq_timer_s.write(false);
@@ -50,23 +48,23 @@ int sc_main(int argc, char* argv[]) {
     rst_s.write(false);
 
     // Load instructions
-    sys.load_file("./tests/hex/riscv_branch_program.hex");
+    sys.load_file("./hex/riscv_load_store_program.hex");
 
     // Run system
-    sc_start(42, SC_NS);
+    sc_start(38, SC_NS);
 
     // Verify results
-    cout << "x1 = 5: " << (sys.cpu->registers[1] == 5 ? "PASS" : "FAIL") << endl;
+    cout << "x1 = 64: " << (sys.cpu->registers[1] == 64 ? "PASS" : "FAIL") << endl;
 
-    cout << "x2 = 5: " << (sys.cpu->registers[2] == 5 ? "PASS" : "FAIL") << endl;
+    cout << "x2 = 25: " << (sys.cpu->registers[2] == 25 ? "PASS" : "FAIL") << endl;
 
-    cout << "x3 = 10: " << (sys.cpu->registers[3] == 10 ? "PASS" : "FAIL") << endl;
+    cout << "mem[64] = 25: " << (sys.mem->memory[64] == 25 ? "PASS" : "FAIL") << endl;
 
-    cout << "x4 = 7: " << (sys.cpu->registers[4] == 7 ? "PASS" : "FAIL") << endl;
+    cout << "x5 = 25: " << (sys.cpu->registers[5] == 25 ? "PASS" : "FAIL") << endl;
 
-    cout << "x5 = 17: " << (sys.cpu->registers[5] == 17 ? "PASS" : "FAIL") << endl;
+    cout << "x6 = 50: " << (sys.cpu->registers[6] == 50 ? "PASS" : "FAIL") << endl;
 
-    cout << "x0 = 0: " << (sys.cpu->registers[0] == 0 ? "PASS" : "FAIL") << endl << endl;
+    cout << "x0 = 0: " << (sys.cpu->registers[0] == 0 ? "PASS" : "FAIL") << endl;
 
     cout << "@" << sc_time_stamp() << " Simulation complete!" << endl;
 

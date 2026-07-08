@@ -21,7 +21,7 @@ int sc_main(int argc, char* argv[]) {
     sys.irq_sw_i(irq_sw_s);
 
     // VCD waveform trace
-    sc_trace_file *wf = sc_create_vcd_trace_file("./tests/waveform/riscv_gpio_waveform");
+    sc_trace_file *wf = sc_create_vcd_trace_file("./waveforms/riscv_gpio_waveform");
     sc_trace(wf, clk_s, "clock");
     sc_trace(wf, rst_s, "reset");
     sc_trace(wf, sys.cpu->pc, "pc");
@@ -51,7 +51,7 @@ int sc_main(int argc, char* argv[]) {
     rst_s.write(false);
 
     // Load JAL instructions
-    sys.load_file("./tests/hex/riscv_gpio_program.hex");
+    sys.load_file("./hex/riscv_gpio_program.hex");
 
     // Run system for JAL
     sc_start(46, SC_NS);
