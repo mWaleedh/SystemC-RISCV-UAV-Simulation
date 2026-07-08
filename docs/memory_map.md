@@ -1,3 +1,4 @@
+### Overview
 - The architecture utilizes Memory-Mapped I/O (MMIO), meaning all hardware peripherals and memory modules share a single, unified 32-bit address space.
 - The CPU uses standard load (LW) and store (SW) instructions to interact with both the main memory and the external hardware registers.
 
