@@ -31,7 +31,7 @@ SC_MODULE(system_top) {
     sc_signal<sc_uint<WIDTH>> mem_data_in_s;
     sc_signal<sc_uint<WIDTH>> mem_data_out_s;
 
-    // CPU signals
+    // GPIO signals
     sc_signal<bool> gpio_write_en_s;
     sc_signal<bool> gpio_read_en_s;
     sc_signal<sc_uint<WIDTH>> gpio_addr_bus_s;

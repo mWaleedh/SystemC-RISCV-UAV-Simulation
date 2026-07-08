@@ -1,0 +1,406 @@
+$date
+     Jul 08, 2026       14:28:54
+$end
+
+$version
+ SystemC 2.3.4-Accellera --- Apr 22 2024 14:54:19
+$end
+
+$timescale
+     1 ps
+$end
+
+$scope module SystemC $end
+$var wire    1  aaaaa  clock       $end
+$var wire    1  aaaab  reset       $end
+$var wire   32  aaaac  pc [31:0]  $end
+$var wire   32  aaaad  cur_inst [31:0]  $end
+$var wire   32  aaaae  gpio_input_reg [31:0]  $end
+$var wire   32  aaaaf  gpio_output_reg [31:0]  $end
+$var wire   32  aaaag  gpio_data_out [31:0]  $end
+$var wire   32  aaaah  gpio_data_in [31:0]  $end
+$var wire    1  aaaai  gpio_read       $end
+$var wire    1  aaaaj  gpio_write       $end
+$var wire    1  aaaak  mem_read       $end
+$var wire    1  aaaal  mem_write       $end
+$var wire   32  aaaam  cpu_addr [31:0]  $end
+$upscope $end
+$enddefinitions  $end
+
+$comment
+All initial values are dumped below at time 0 sec = 0 timescale units.
+$end
+
+$dumpvars
+1aaaaa
+1aaaab
+b0 aaaac
+b0 aaaad
+b0 aaaae
+b0 aaaaf
+b0 aaaag
+b0 aaaah
+0aaaai
+0aaaaj
+0aaaak
+0aaaal
+b0 aaaam
+$end
+
+#500
+0aaaaa
+
+#1000
+1aaaaa
+
+#1500
+0aaaaa
+
+#2000
+1aaaaa
+
+#2500
+0aaaaa
+
+#3000
+1aaaaa
+
+#3500
+0aaaaa
+
+#4000
+1aaaaa
+
+#4500
+0aaaaa
+
+#5000
+1aaaaa
+0aaaab
+1aaaak
+
+#5500
+0aaaaa
+
+#6000
+1aaaaa
+0aaaak
+
+#6500
+0aaaaa
+
+#7000
+1aaaaa
+b1110000000010000010000011 aaaad
+
+#7500
+0aaaaa
+
+#8000
+1aaaaa
+
+#8500
+0aaaaa
+
+#9000
+1aaaaa
+1aaaak
+b11100 aaaam
+
+#9500
+0aaaaa
+
+#10000
+1aaaaa
+0aaaak
+
+#10500
+0aaaaa
+
+#11000
+1aaaaa
+b100 aaaac
+
+#11500
+0aaaaa
+
+#12000
+1aaaaa
+1aaaak
+b100 aaaam
+
+#12500
+0aaaaa
+
+#13000
+1aaaaa
+0aaaak
+
+#13500
+0aaaaa
+
+#14000
+1aaaaa
+b100000000000100010011 aaaad
+
+#14500
+0aaaaa
+
+#15000
+1aaaaa
+
+#15500
+0aaaaa
+
+#16000
+1aaaaa
+
+#16500
+0aaaaa
+
+#17000
+1aaaaa
+b1000 aaaac
+
+#17500
+0aaaaa
+
+#18000
+1aaaaa
+1aaaak
+b1000 aaaam
+
+#18500
+0aaaaa
+
+#19000
+1aaaaa
+0aaaak
+
+#19500
+0aaaaa
+
+#20000
+1aaaaa
+b1000001010000000100011 aaaad
+
+#20500
+0aaaaa
+
+#21000
+1aaaaa
+
+#21500
+0aaaaa
+
+#22000
+1aaaaa
+b1 aaaah
+1aaaaj
+b10000000000000000000000000000 aaaam
+
+#22500
+0aaaaa
+
+#23000
+1aaaaa
+b1 aaaaf
+0aaaaj
+
+#23500
+0aaaaa
+
+#24000
+1aaaaa
+b1100 aaaac
+
+#24500
+0aaaaa
+
+#25000
+1aaaaa
+1aaaak
+b1100 aaaam
+
+#25500
+0aaaaa
+
+#26000
+1aaaaa
+0aaaak
+
+#26500
+0aaaaa
+
+#27000
+1aaaaa
+b100010011 aaaad
+
+#27500
+0aaaaa
+
+#28000
+1aaaaa
+
+#28500
+0aaaaa
+
+#29000
+1aaaaa
+
+#29500
+0aaaaa
+
+#30000
+1aaaaa
+b10000 aaaac
+
+#30500
+0aaaaa
+
+#31000
+1aaaaa
+1aaaak
+b10000 aaaam
+
+#31500
+0aaaaa
+
+#32000
+1aaaaa
+0aaaak
+
+#32500
+0aaaaa
+
+#33000
+1aaaaa
+b1000001010000000100011 aaaad
+
+#33500
+0aaaaa
+
+#34000
+1aaaaa
+
+#34500
+0aaaaa
+
+#35000
+1aaaaa
+b0 aaaah
+1aaaaj
+b10000000000000000000000000000 aaaam
+
+#35500
+0aaaaa
+
+#36000
+1aaaaa
+b0 aaaaf
+0aaaaj
+
+#36500
+0aaaaa
+
+#37000
+1aaaaa
+b10100 aaaac
+
+#37500
+0aaaaa
+
+#38000
+1aaaaa
+1aaaak
+b10100 aaaam
+
+#38500
+0aaaaa
+
+#39000
+1aaaaa
+0aaaak
+
+#39500
+0aaaaa
+
+#40000
+1aaaaa
+b10000001010000110000011 aaaad
+
+#40500
+0aaaaa
+
+#41000
+1aaaaa
+
+#41500
+0aaaaa
+
+#42000
+1aaaaa
+1aaaai
+b10000000000000000000000000100 aaaam
+
+#42500
+0aaaaa
+
+#43000
+1aaaaa
+b1 aaaae
+b1 aaaag
+0aaaai
+
+#43500
+0aaaaa
+
+#44000
+1aaaaa
+b11000 aaaac
+b0 aaaag
+
+#44500
+0aaaaa
+
+#45000
+1aaaaa
+1aaaak
+b11000 aaaam
+
+#45500
+0aaaaa
+
+#46000
+1aaaaa
+0aaaak
+
+#46500
+0aaaaa
+
+#47000
+1aaaaa
+b10011 aaaad
+
+#47500
+0aaaaa
+
+#48000
+1aaaaa
+
+#48500
+0aaaaa
+
+#49000
+1aaaaa
+
+#49500
+0aaaaa
+
+#50000
+1aaaaa
+b11100 aaaac
+
+#50500
+0aaaaa
+

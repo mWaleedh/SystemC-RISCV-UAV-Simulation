@@ -1,0 +1,231 @@
+@0 s Applying Reset...
+
+@5 ns Releasing Reset...
+
+Memory: Loaded data from file ./tests/hex/riscv_gpio_program.hex
+
+@5 ns Fetch: PC -> 0x000000000
+
+@6 ns Memory Read: 
+1. Address -> 0x000000000
+2. Data -> 0x001c02083
+
+@7 ns Decode: Instruction -> 0x001c02083
+
+@7 ns Decode:
+1. opcode: 0x03
+2. rd: 1
+3. funct3: 2
+4. rs1: 0
+5. rs2: 28
+6. funct7: 0
+7. imm: 28
+8. rs1_data: 0
+9. rs2_data: 0
+
+@8 ns Execute: Instruction 0x001c02083 is being executed
+
+@8 ns ALU (LW): 0 + 28 = 0x00000001c
+
+@10 ns Memory Read: 
+1. Address -> 0x00000001c
+2. Data -> 0x010000000
+
+@11 ns Memory Access: Loaded 0x010000000 from address 0x00000001c
+
+@11 ns Write Back: Old PC value was 0x000000000
+
+@11 ns Write Back: Register x1 updated to 268435456
+
+@11 ns Write Back: New PC value is 0x000000004
+
+@12 ns Fetch: PC -> 0x000000004
+
+@13 ns Memory Read: 
+1. Address -> 0x000000004
+2. Data -> 0x000100113
+
+@14 ns Decode: Instruction -> 0x000100113
+
+@14 ns Decode:
+1. opcode: 0x13
+2. rd: 2
+3. funct3: 0
+4. rs1: 0
+5. rs2: 1
+6. funct7: 0
+7. imm: 1
+8. rs1_data: 0
+9. rs2_data: 268435456
+
+@15 ns Execute: Instruction 0x000100113 is being executed
+
+@15 ns ALU: 0 + 1 = 1
+
+@16 ns Memory Access: No memory/peripheral access needed
+
+@17 ns Write Back: Old PC value was 0x000000004
+
+@17 ns Write Back: Register x2 updated to 1
+
+@17 ns Write Back: New PC value is 0x000000008
+
+@18 ns Fetch: PC -> 0x000000008
+
+@19 ns Memory Read: 
+1. Address -> 0x000000008
+2. Data -> 0x00020a023
+
+@20 ns Decode: Instruction -> 0x00020a023
+
+@20 ns Decode:
+1. opcode: 0x23
+2. rd: 0
+3. funct3: 2
+4. rs1: 1
+5. rs2: 2
+6. funct7: 0
+7. imm: 0
+8. rs1_data: 268435456
+9. rs2_data: 1
+
+@21 ns Execute: Instruction 0x00020a023 is being executed
+
+@21 ns ALU (SW): 268435456 + 0 = 0x010000000
+
+@23 ns Memory Access: Stored 0x000000001 to address 0x010000000
+
+@23 ns GPIO: LED ON
+
+@24 ns Write Back: Old PC value was 0x000000008
+
+@24 ns Write Back: New PC value is 0x00000000c
+
+@25 ns Fetch: PC -> 0x00000000c
+
+@26 ns Memory Read: 
+1. Address -> 0x00000000c
+2. Data -> 0x000000113
+
+@27 ns Decode: Instruction -> 0x000000113
+
+@27 ns Decode:
+1. opcode: 0x13
+2. rd: 2
+3. funct3: 0
+4. rs1: 0
+5. rs2: 0
+6. funct7: 0
+7. imm: 0
+8. rs1_data: 0
+9. rs2_data: 0
+
+@28 ns Execute: Instruction 0x000000113 is being executed
+
+@28 ns ALU: 0 + 0 = 0
+
+@29 ns Memory Access: No memory/peripheral access needed
+
+@30 ns Write Back: Old PC value was 0x00000000c
+
+@30 ns Write Back: Register x2 updated to 0
+
+@30 ns Write Back: New PC value is 0x000000010
+
+@31 ns Fetch: PC -> 0x000000010
+
+@32 ns Memory Read: 
+1. Address -> 0x000000010
+2. Data -> 0x00020a023
+
+@33 ns Decode: Instruction -> 0x00020a023
+
+@33 ns Decode:
+1. opcode: 0x23
+2. rd: 0
+3. funct3: 2
+4. rs1: 1
+5. rs2: 2
+6. funct7: 0
+7. imm: 0
+8. rs1_data: 268435456
+9. rs2_data: 0
+
+@34 ns Execute: Instruction 0x00020a023 is being executed
+
+@34 ns ALU (SW): 268435456 + 0 = 0x010000000
+
+@36 ns Memory Access: Stored 0x000000000 to address 0x010000000
+
+@36 ns GPIO: LED OFF
+
+@37 ns Write Back: Old PC value was 0x000000010
+
+@37 ns Write Back: New PC value is 0x000000014
+
+@38 ns Fetch: PC -> 0x000000014
+
+@39 ns Memory Read: 
+1. Address -> 0x000000014
+2. Data -> 0x00040a183
+
+@40 ns Decode: Instruction -> 0x00040a183
+
+@40 ns Decode:
+1. opcode: 0x03
+2. rd: 3
+3. funct3: 2
+4. rs1: 1
+5. rs2: 4
+6. funct7: 0
+7. imm: 4
+8. rs1_data: 268435456
+9. rs2_data: 0
+
+@41 ns Execute: Instruction 0x00040a183 is being executed
+
+@41 ns ALU (LW): 268435456 + 4 = 0x010000004
+
+@43 ns GPIO Read: 0x000000001 read from input register
+
+@44 ns Memory Access: Loaded 0x000000001 from address 0x010000004
+
+@44 ns Write Back: Old PC value was 0x000000014
+
+@44 ns Write Back: Register x3 updated to 1
+
+@44 ns Write Back: New PC value is 0x000000018
+
+@45 ns Fetch: PC -> 0x000000018
+
+@46 ns Memory Read: 
+1. Address -> 0x000000018
+2. Data -> 0x000000013
+
+@47 ns Decode: Instruction -> 0x000000013
+
+@47 ns Decode:
+1. opcode: 0x13
+2. rd: 0
+3. funct3: 0
+4. rs1: 0
+5. rs2: 0
+6. funct7: 0
+7. imm: 0
+8. rs1_data: 0
+9. rs2_data: 0
+
+@48 ns Execute: Instruction 0x000000013 is being executed
+
+@48 ns ALU: 0 + 0 = 0
+
+@49 ns Memory Access: No memory/peripheral access needed
+
+@50 ns Write Back: Old PC value was 0x000000018
+
+@50 ns Write Back: New PC value is 0x00000001c
+
+x3 = 1: PASS
+x0 = 0: PASS
+
+@51 ns Simulation complete!
