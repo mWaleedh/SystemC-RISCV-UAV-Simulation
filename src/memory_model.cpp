@@ -7,7 +7,7 @@ using namespace std;
 SC_MODULE(memory_model) {
     // constants
     static const int WIDTH = 32;
-    static const int SIZE = 256;
+    static const int SIZE = 1024;
 
     // input ports
     sc_in<bool> clk_i;
@@ -25,6 +25,10 @@ SC_MODULE(memory_model) {
 
     // Function to load testbench data
     void load_data(uint32_t addr, uint32_t data) {
+        // Align address
+        addr /= 4;
+
+        // Write data to memory if within range
         if (addr < SIZE) {
             memory[addr] = data;
         } 
@@ -52,10 +56,10 @@ SC_MODULE(memory_model) {
             // Convert hex string to integer
             uint32_t data = stoul(temp, nullptr, 16);
             
-            if (addr < SIZE) {
+            if ( addr < SIZE) {
                 memory[addr] = data;
                 // Move to next address
-                addr += 4;
+                addr++;
             }
         }
         file.close();
@@ -76,8 +80,11 @@ SC_MODULE(memory_model) {
 
         // Main loop
         while (true) {
+            // Align address
+            uint32_t addr = addr_bus_i.read() / 4;
+
             // If address is out of bounds don't perform any action
-            if (addr_bus_i.read() > SIZE - 1 && (read_en_i.read() == true || write_en_i.read() == true)) {
+            if (addr > SIZE - 1 && (read_en_i.read() == true || write_en_i.read() == true)) {
                 // If it is a read operation, write 0 to data_bus
                 if (read_en_i.read() == true) {
                     data_bus_o.write(0);
@@ -93,19 +100,19 @@ SC_MODULE(memory_model) {
                 // give preference to write
                 if (write_en_i.read() == true) {
                     // write data to target address
-                    memory[addr_bus_i.read()] = data_bus_i.read();
+                    memory[addr] = data_bus_i.read();
 
                     cout << "@" << sc_time_stamp() << " Memory Write: " << endl;
-                    cout << "1. Address -> 0x" << hex << addr_bus_i.read() << endl;
+                    cout << "1. Address -> 0x" << hex << addr << endl;
                     cout << "2. Data -> 0x" << data_bus_i.read() << dec << endl << endl;
                 }
                 else if (read_en_i.read() == true) {
                     // read data from target address
-                    data_bus_o.write(memory[addr_bus_i.read()]);
+                    data_bus_o.write(memory[addr]);
 
                     cout << "@" << sc_time_stamp() << " Memory Read: " << endl;
-                    cout << "1. Address -> 0x" << hex << addr_bus_i.read() << endl;
-                    cout << "2. Data -> 0x" << memory[addr_bus_i.read()] << dec << endl << endl;
+                    cout << "1. Address -> 0x" << hex << addr << endl;
+                    cout << "2. Data -> 0x" << memory[addr] << dec << endl << endl;
                 }
                 else {
                     data_bus_o.write(0);
