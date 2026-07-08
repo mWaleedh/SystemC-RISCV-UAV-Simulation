@@ -1,5 +1,5 @@
 $date
-     Jun 30, 2026       12:00:24
+     Jul 08, 2026       10:22:39
 $end
 
 $version
@@ -13,9 +13,11 @@ $end
 $scope module SystemC $end
 $var wire    1  aaaaa  clock       $end
 $var wire    1  aaaab  reset       $end
-$var wire   32  aaaac  address_bus [31:0]  $end
-$var wire    1  aaaad  read_enable       $end
-$var wire   32  aaaae  mem_to_cpu_bus [31:0]  $end
+$var wire    1  aaaac  read_en       $end
+$var wire    1  aaaad  write_en       $end
+$var wire   32  aaaae  address_bus [31:0]  $end
+$var wire   32  aaaaf  mem_to_cpu_bus [31:0]  $end
+$var wire   32  aaaag  cpu_to_mem_bus [31:0]  $end
 $upscope $end
 $enddefinitions  $end
 
@@ -26,9 +28,11 @@ $end
 $dumpvars
 1aaaaa
 1aaaab
-b0 aaaac
+0aaaac
 0aaaad
 b0 aaaae
+b0 aaaaf
+b0 aaaag
 $end
 
 #500
@@ -61,15 +65,15 @@ $end
 #5000
 1aaaaa
 0aaaab
-1aaaad
+1aaaac
 
 #5500
 0aaaaa
 
 #6000
 1aaaaa
-0aaaad
-b10100000000000010010011 aaaae
+0aaaac
+b10011 aaaaf
 
 #6500
 0aaaaa
@@ -100,16 +104,16 @@ b10100000000000010010011 aaaae
 
 #11000
 1aaaaa
-b100 aaaac
-1aaaad
+1aaaac
+b100 aaaae
 
 #11500
 0aaaaa
 
 #12000
 1aaaaa
-0aaaad
-b101000000000000100010011 aaaae
+0aaaac
+b10100000000000010010011 aaaaf
 
 #12500
 0aaaaa
@@ -140,16 +144,16 @@ b101000000000000100010011 aaaae
 
 #17000
 1aaaaa
-b1000 aaaac
-1aaaad
+1aaaac
+b1000 aaaae
 
 #17500
 0aaaaa
 
 #18000
 1aaaaa
-0aaaad
-b1000001000000110110011 aaaae
+0aaaac
+b100000000000100010011 aaaaf
 
 #18500
 0aaaaa
@@ -176,45 +180,5 @@ b1000001000000110110011 aaaae
 1aaaaa
 
 #22500
-0aaaaa
-
-#23000
-1aaaaa
-b1100 aaaac
-1aaaad
-
-#23500
-0aaaaa
-
-#24000
-1aaaaa
-0aaaad
-b1000000000100010000001000110011 aaaae
-
-#24500
-0aaaaa
-
-#25000
-1aaaaa
-
-#25500
-0aaaaa
-
-#26000
-1aaaaa
-
-#26500
-0aaaaa
-
-#27000
-1aaaaa
-
-#27500
-0aaaaa
-
-#28000
-1aaaaa
-
-#28500
 0aaaaa
 
