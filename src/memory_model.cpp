@@ -107,6 +107,9 @@ SC_MODULE(memory_model) {
                     cout << "1. Address -> 0x" << hex << addr_bus_i.read() << endl;
                     cout << "2. Data -> 0x" << memory[addr_bus_i.read()] << dec << endl << endl;
                 }
+                else {
+                    data_bus_o.write(0);
+                }
             }
 
             wait();
