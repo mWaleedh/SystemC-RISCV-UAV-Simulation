@@ -26,11 +26,11 @@ int sc_main(int argc, char* argv[]) {
     sc_trace(wf, rst_s, "reset");
     sc_trace(wf, sys.cpu->pc, "pc");
     sc_trace(wf, sys.cpu->cur_inst, "cur_inst");
-    sc_trace(wf, sys.addr_bus_s, "addr_bus");
-    sc_trace(wf, sys.mem_cpu_data_bus_s, "mem_to_cpu_bus");
-    sc_trace(wf, sys.cpu_mem_data_bus_s, "cpu_to_mem_bus");
-    sc_trace(wf, sys.read_en_s, "read_en");
-    sc_trace(wf, sys.write_en_s, "write_en");
+    sc_trace(wf, sys.cpu_addr_bus_s, "addr_bus");
+    sc_trace(wf, sys.mem_data_out_s, "mem_to_cpu_bus");
+    sc_trace(wf, sys.cpu_data_out_s, "cpu_to_mem_bus");
+    sc_trace(wf, sys.cpu_read_en_s, "read_en");
+    sc_trace(wf, sys.cpu_write_en_s, "write_en");
     sc_trace(wf, sys.cpu->alu_res, "alu_res");
 
     // Clear input ports

@@ -32,8 +32,8 @@ int sc_main(int argc, char* argv[]) {
     sc_trace(wf, sys.cpu->imm, "branch_immediate");
     sc_trace(wf, sys.cpu->branch_taken, "branch_taken");
     sc_trace(wf, sys.cpu->pc_next, "branch_target");
-    sc_trace(wf, sys.read_en_s, "read_en");
-    sc_trace(wf, sys.write_en_s, "write_en");
+    sc_trace(wf, sys.cpu_read_en_s, "read_en");
+    sc_trace(wf, sys.cpu_write_en_s, "write_en");
 
     // Clear input ports
     irq_timer_s.write(false);
