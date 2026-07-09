@@ -96,7 +96,7 @@ int sc_main(int argc, char* argv[]) {
 
     cout << "x9 = 60: " << (sys.cpu->registers[9] == 60 ? "PASS" : "FAIL") << endl;
 
-    cout << "mem[20] = 100: " << (sys.mem->memory[20] == 100 ? "PASS" : "FAIL") << endl << endl;
+    cout << "mem[5] = 100: " << (sys.mem->memory[5] == 100 ? "PASS" : "FAIL") << endl << endl;
 
     cout << "@" << sc_time_stamp() << " Simulation complete!" << endl;
 

@@ -58,7 +58,7 @@ int sc_main(int argc, char* argv[]) {
 
     cout << "x2 = 25: " << (sys.cpu->registers[2] == 25 ? "PASS" : "FAIL") << endl;
 
-    cout << "mem[64] = 25: " << (sys.mem->memory[64] == 25 ? "PASS" : "FAIL") << endl;
+    cout << "mem[16] = 25: " << (sys.mem->memory[16] == 25 ? "PASS" : "FAIL") << endl;
 
     cout << "x5 = 25: " << (sys.cpu->registers[5] == 25 ? "PASS" : "FAIL") << endl;
 
