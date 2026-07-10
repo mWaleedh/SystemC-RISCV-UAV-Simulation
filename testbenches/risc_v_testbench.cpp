@@ -20,17 +20,17 @@ int sc_main(int argc, char* argv[]) {
 
     // Initialize risc_v_model and connect input/output ports
     risc_v_model cpu("CPU");
-        cpu.clk_i(clk_s);
-        cpu.rst_i(rst_s);
-        cpu.irq_timer_i(irq_timer_s);
-        cpu.irq_ext_i(irq_ext_s);
-        cpu.irq_sw_i(irq_sw_s);
-        cpu.data_bus_i(data_bus_in_s);
-        
-        cpu.write_en_o(write_en_s);
-        cpu.read_en_o(read_en_s);
-        cpu.addr_bus_o(addr_bus_s);
-        cpu.data_bus_o(data_bus_out_s);
+    cpu.clk_i(clk_s);
+    cpu.rst_i(rst_s);
+    cpu.irq_timer_i(irq_timer_s);
+    cpu.irq_ext_i(irq_ext_s);
+    cpu.irq_sw_i(irq_sw_s);
+    cpu.data_bus_i(data_bus_in_s);
+    
+    cpu.write_en_o(write_en_s);
+    cpu.read_en_o(read_en_s);
+    cpu.addr_bus_o(addr_bus_s);
+    cpu.data_bus_o(data_bus_out_s);
 
     // VCD waveform trace
     sc_trace_file *wf = sc_create_vcd_trace_file("./waveforms/risc_v_waveform");

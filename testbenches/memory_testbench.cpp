@@ -17,14 +17,14 @@ int sc_main(int argc, char* argv[]) {
 
     // Initialize memory_model and connect input/output ports
     memory_model mem("Memory");
-        mem.clk_i(clk_s);
-        mem.rst_i(rst_s);
-        mem.write_en_i(write_en_s);
-        mem.read_en_i(read_en_s);
-        mem.addr_bus_i(addr_bus_s);
-        mem.data_bus_i(data_bus_in_s);
+    mem.clk_i(clk_s);
+    mem.rst_i(rst_s);
+    mem.write_en_i(write_en_s);
+    mem.read_en_i(read_en_s);
+    mem.addr_bus_i(addr_bus_s);
+    mem.data_bus_i(data_bus_in_s);
 
-        mem.data_bus_o(data_bus_out_s);
+    mem.data_bus_o(data_bus_out_s);
 
     // VCD waveform trace
     sc_trace_file *wf = sc_create_vcd_trace_file("./waveforms/memory_waveform");

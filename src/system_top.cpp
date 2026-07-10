@@ -3,6 +3,7 @@
 #include "memory_model.cpp"
 #include "gpio_model.cpp"
 #include "system_bus.cpp"
+#include "timer_model.cpp"
 using namespace std;
 
 SC_MODULE(system_top) {
@@ -13,7 +14,6 @@ SC_MODULE(system_top) {
     // input ports
     sc_in<bool> clk_i;
     sc_in<bool> rst_i;
-    sc_in<bool> irq_timer_i;
     sc_in<bool> irq_ext_i;
     sc_in<bool> irq_sw_i;
 
@@ -23,6 +23,8 @@ SC_MODULE(system_top) {
     sc_signal<sc_uint<WIDTH>> cpu_addr_bus_s;
     sc_signal<sc_uint<WIDTH>> cpu_data_in_s;
     sc_signal<sc_uint<WIDTH>> cpu_data_out_s;
+
+    sc_signal<bool> irq_timer_s;
 
     // Memory signals
     sc_signal<bool> mem_write_en_s;
@@ -38,11 +40,19 @@ SC_MODULE(system_top) {
     sc_signal<sc_uint<WIDTH>> gpio_data_in_s;
     sc_signal<sc_uint<WIDTH>> gpio_data_out_s;
 
+    // Timer signals
+    sc_signal<bool> timer_write_en_s;
+    sc_signal<bool> timer_read_en_s;
+    sc_signal<sc_uint<WIDTH>> timer_addr_bus_s;
+    sc_signal<sc_uint<WIDTH>> timer_data_in_s;
+    sc_signal<sc_uint<WIDTH>> timer_data_out_s;
+
     // Module Pointers
     risc_v_model *cpu;
     memory_model *mem;
     gpio_model *gpio;
     system_bus *bus;
+    timer_model *timer;
 
     // Function to load testbench data into memory
     void load_data(uint32_t addr, uint32_t data) {
@@ -60,11 +70,12 @@ SC_MODULE(system_top) {
         mem = new memory_model("memory");
         gpio = new gpio_model("gpio");
         bus = new system_bus("bus");
+        timer = new timer_model("timer");
 
         // Connect CPU input/output ports
         cpu->clk_i(clk_i);
         cpu->rst_i(rst_i);
-        cpu->irq_timer_i(irq_timer_i);
+        cpu->irq_timer_i(irq_timer_s);
         cpu->irq_ext_i(irq_ext_i);
         cpu->irq_sw_i(irq_sw_i);
 
@@ -93,6 +104,18 @@ SC_MODULE(system_top) {
         gpio->addr_bus_i(gpio_addr_bus_s);
         gpio->data_bus_i(gpio_data_in_s);
         gpio->data_bus_o(gpio_data_out_s);
+
+        // Connect Timer input/output ports
+        timer->clk_i(clk_i);
+        timer->rst_i(rst_i);
+
+        timer->write_en_i(timer_write_en_s);
+        timer->read_en_i(timer_read_en_s);
+        timer->addr_bus_i(timer_addr_bus_s);
+        timer->data_bus_i(timer_data_in_s);
+        timer->data_bus_o(timer_data_out_s);
+
+        timer->irq_timer_o(irq_timer_s);
     
         // Connect System Bus input/output ports
         // CPU
@@ -101,18 +124,27 @@ SC_MODULE(system_top) {
         bus->cpu_addr_bus_i(cpu_addr_bus_s);
         bus->cpu_data_bus_i(cpu_data_out_s);
         bus->cpu_data_bus_o(cpu_data_in_s);
+        
         // Memory
         bus->mem_write_en_o(mem_write_en_s);
         bus->mem_read_en_o(mem_read_en_s);
         bus->mem_addr_bus_o(mem_addr_bus_s);
         bus->mem_data_bus_o(mem_data_in_s);
         bus->mem_data_bus_i(mem_data_out_s);
+
         // GPIO
         bus->gpio_write_en_o(gpio_write_en_s);
         bus->gpio_read_en_o(gpio_read_en_s);
         bus->gpio_addr_bus_o(gpio_addr_bus_s);
         bus->gpio_data_bus_o(gpio_data_in_s);
         bus->gpio_data_bus_i(gpio_data_out_s);
+
+        // Timer
+        bus->timer_write_en_o(timer_write_en_s);
+        bus->timer_read_en_o(timer_read_en_s);
+        bus->timer_addr_bus_o(timer_addr_bus_s);
+        bus->timer_data_bus_o(timer_data_in_s);
+        bus->timer_data_bus_i(timer_data_out_s);
     }
 
     ~system_top() {
@@ -120,5 +152,6 @@ SC_MODULE(system_top) {
         delete mem;
         delete gpio;
         delete bus;
+        delete timer;
     }
 };

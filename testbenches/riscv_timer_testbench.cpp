@@ -19,19 +19,19 @@ int sc_main(int argc, char* argv[]) {
     sys.irq_sw_i(irq_sw_s);
 
     // VCD waveform trace
-    sc_trace_file *wf = sc_create_vcd_trace_file("./waveforms/riscv_branch_waveform");
+    sc_trace_file *wf = sc_create_vcd_trace_file("./waveforms/riscv_timer_waveform");
     sc_trace(wf, clk_s, "clock");
     sc_trace(wf, rst_s, "reset");
     sc_trace(wf, sys.cpu->pc, "pc");
     sc_trace(wf, sys.cpu->cur_inst, "cur_inst");
-    sc_trace(wf, sys.cpu->opcode, "opcode");
-    sc_trace(wf, sys.cpu->rs1, "rs1");
-    sc_trace(wf, sys.cpu->rs2, "rs2");
-    sc_trace(wf, sys.cpu->imm, "branch_immediate");
-    sc_trace(wf, sys.cpu->branch_taken, "branch_taken");
-    sc_trace(wf, sys.cpu->pc_next, "branch_target");
-    sc_trace(wf, sys.cpu_read_en_s, "read_en");
-    sc_trace(wf, sys.cpu_write_en_s, "write_en");
+    sc_trace(wf, sys.cpu->addr_bus_o, "cpu_addr");
+    sc_trace(wf, sys.cpu->read_en_o, "read_en");
+    sc_trace(wf, sys.cpu->write_en_o, "write_en");
+    sc_trace(wf, sys.timer->count_reg, "count_reg");
+    sc_trace(wf, sys.timer->count_reg, "compare_reg");
+    sc_trace(wf, sys.timer->count_reg, "control_reg");
+    sc_trace(wf, sys.timer->count_reg, "status_reg");
+    sc_trace(wf, sys.timer->irq_timer_o, "timer_interrupt");
 
     // Clear input ports
     irq_ext_s.write(false);
@@ -46,22 +46,14 @@ int sc_main(int argc, char* argv[]) {
     cout << "@" << sc_time_stamp() << " Releasing Reset...\n" << endl;
     rst_s.write(false);
 
-    // Load instructions
-    sys.load_file("./hex/riscv_branch_program.hex");
+    // Load JAL instructions
+    sys.load_file("./hex/riscv_timer_program.hex");
 
-    // Run system
-    sc_start(42, SC_NS);
+    // Run system for JAL
+    sc_start(46, SC_NS);
 
-    // Verify results
-    cout << "x1 = 5: " << (sys.cpu->registers[1] == 5 ? "PASS" : "FAIL") << endl;
-
-    cout << "x2 = 5: " << (sys.cpu->registers[2] == 5 ? "PASS" : "FAIL") << endl;
-
-    cout << "x3 = 10: " << (sys.cpu->registers[3] == 10 ? "PASS" : "FAIL") << endl;
-
-    cout << "x4 = 7: " << (sys.cpu->registers[4] == 7 ? "PASS" : "FAIL") << endl;
-
-    cout << "x5 = 17: " << (sys.cpu->registers[5] == 17 ? "PASS" : "FAIL") << endl;
+    // Verify results for JAL
+    cout << "x3 = 1: " << (sys.cpu->registers[3] == 1 ? "PASS" : "FAIL") << endl;
 
     cout << "x0 = 0: " << (sys.cpu->registers[0] == 0 ? "PASS" : "FAIL") << endl << endl;
 
