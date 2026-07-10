@@ -1,4 +1,8 @@
- #include <systemc.h>
+/*
+Compare value is set to 5 meaning after 5 cycles the interrupt is triggered
+*/ 
+
+#include <systemc.h>
 #include "../src/system_top.cpp"
 using namespace std;
 
@@ -46,16 +50,19 @@ int sc_main(int argc, char* argv[]) {
     cout << "@" << sc_time_stamp() << " Releasing Reset...\n" << endl;
     rst_s.write(false);
 
-    // Load JAL instructions
+    // Load Timer test instructions
     sys.load_file("./hex/riscv_timer_program.hex");
 
-    // Run system for JAL
-    sc_start(46, SC_NS);
+    // Run system
+    sc_start(36, SC_NS);
 
-    // Verify results for JAL
-    cout << "x3 = 1: " << (sys.cpu->registers[3] == 1 ? "PASS" : "FAIL") << endl;
-
-    cout << "x0 = 0: " << (sys.cpu->registers[0] == 0 ? "PASS" : "FAIL") << endl << endl;
+    // Verify results
+    if (sys.irq_timer_s.read() == true) {
+        cout << "PASS: Timer Interrupt Triggered Successfully" << endl << endl;
+    }
+    else {
+        cout << "FAIL: Timer Interrupt not Triggered" << endl << endl;
+    }
 
     cout << "@" << sc_time_stamp() << " Simulation complete!" << endl;
 
