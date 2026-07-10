@@ -1,7 +1,7 @@
 CXX = g++
 CXXFLAGS = -I. -lsystemc
 
-all: memory_test decode_test load_store_test branch_test jump_test mini_program_test gpio_test timer_test
+all: memory_test decode_test load_store_test branch_test jump_test mini_program_test gpio_test timer_test interrupt_test
 
 memory_test: ./testbenches/riscv_memory_testbench.cpp
 	$(CXX) -o memory_test ./testbenches/riscv_memory_testbench.cpp $(CXXFLAGS)
@@ -27,6 +27,9 @@ gpio_test: ./testbenches/riscv_gpio_testbench.cpp
 timer_test: ./testbenches/riscv_timer_testbench.cpp
 	$(CXX) -o timer_test ./testbenches/riscv_timer_testbench.cpp $(CXXFLAGS)
 
+interrupt_test: ./testbenches/riscv_interrupt_testbench.cpp
+	$(CXX) -o interrupt_test ./testbenches/riscv_interrupt_testbench.cpp $(CXXFLAGS)
+
 all_tests: all
 	./memory_test
 	./decode_test
@@ -36,6 +39,7 @@ all_tests: all
 	./mini_program_test
 	./gpio_test
 	./timer_test
+	./interrupt_test
 
 clean:
-	rm -f memory_test decode_test load_store_test branch_test jump_test mini_program_test gpio_test timer_test
+	rm -f memory_test decode_test load_store_test branch_test jump_test mini_program_test gpio_test timer_test interrupt_test

@@ -28,14 +28,14 @@ int sc_main(int argc, char* argv[]) {
     sc_trace(wf, rst_s, "reset");
     sc_trace(wf, sys.cpu->pc, "pc");
     sc_trace(wf, sys.cpu->cur_inst, "cur_inst");
-    sc_trace(wf, sys.cpu->addr_bus_o, "cpu_addr");
-    sc_trace(wf, sys.cpu->read_en_o, "read_en");
-    sc_trace(wf, sys.cpu->write_en_o, "write_en");
     sc_trace(wf, sys.timer->count_reg, "count_reg");
-    sc_trace(wf, sys.timer->count_reg, "compare_reg");
-    sc_trace(wf, sys.timer->count_reg, "control_reg");
-    sc_trace(wf, sys.timer->count_reg, "status_reg");
+    sc_trace(wf, sys.timer->compare_reg, "compare_reg");
+    sc_trace(wf, sys.timer->status_reg, "status_reg");
     sc_trace(wf, sys.timer->irq_timer_o, "timer_interrupt");
+    sc_trace(wf, sys.cpu->irq_timer_i, "cpu_interrupt");
+    sc_trace(wf, sys.cpu->saved_pc, "saved_pc");
+    sc_trace(wf, sys.cpu->interrupt_vector, "interrupt_vector");
+    sc_trace(wf, sys.cpu->in_interrupt, "in_interrupt");
 
     // Clear input ports
     irq_ext_s.write(false);
