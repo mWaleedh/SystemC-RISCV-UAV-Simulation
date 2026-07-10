@@ -53,20 +53,16 @@ int sc_main(int argc, char* argv[]) {
     // Load Timer test instructions
     sys.load_file("./hex/riscv_interrupt_program.hex");
 
-    sys.load_data(0x80, 0x0000ae23);    // Clear Timer Status
+    // Load base address of Timer
+    sys.load_data(0x20, 0x10000010);
+
+    // Load ISR instructions
+    sys.load_data(0x80, 0x00c0a623);    // Clear Timer Status
     sys.load_data(0x84, 0x06300313);    // Update x6 to 99
     sys.load_data(0x88, 0x00000073);    // Custom simple MRET
 
     // Run system
-    sc_start(63, SC_NS);
-
-    // Verify results
-    if (sys.irq_timer_s.read() == true) {
-        cout << "PASS: Interrupt was Triggered Successfully" << endl << endl;
-    }
-    else {
-        cout << "FAIL: Interrupt was not Triggered" << endl << endl;
-    }
+    sc_start(70, SC_NS);
 
     // Verify CPU jumped to interrupt instruction
     cout << "x6 = 99: " << (sys.cpu->registers[6] == 99 ? "PASS" : "FAIL") << endl;
