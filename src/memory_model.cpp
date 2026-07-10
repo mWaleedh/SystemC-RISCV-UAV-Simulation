@@ -103,7 +103,7 @@ SC_MODULE(memory_model) {
                     memory[addr] = data_bus_i.read();
 
                     cout << "@" << sc_time_stamp() << " Memory Write: " << endl;
-                    cout << "1. Address -> 0x" << hex << addr << endl;
+                    cout << "1. Address -> 0x" << hex << addr * 4 << endl;
                     cout << "2. Data -> 0x" << data_bus_i.read() << dec << endl << endl;
                 }
                 else if (read_en_i.read() == true) {
@@ -111,7 +111,7 @@ SC_MODULE(memory_model) {
                     data_bus_o.write(memory[addr]);
 
                     cout << "@" << sc_time_stamp() << " Memory Read: " << endl;
-                    cout << "1. Address -> 0x" << hex << addr << endl;
+                    cout << "1. Address -> 0x" << hex << addr * 4 << endl;
                     cout << "2. Data -> 0x" << memory[addr] << dec << endl << endl;
                 }
                 else {

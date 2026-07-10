@@ -37,8 +37,11 @@ SC_MODULE(risc_v_model) {
     sc_uint<WIDTH> mem_data;
     sc_uint<WIDTH> pc_next;
     bool branch_taken;
-    bool is_valid_instruction;
-
+    bool is_valid_inst;
+    bool interrupt_enable;
+    bool in_interrupt;
+    sc_uint<WIDTH> saved_pc;
+    sc_uint<WIDTH> interrupt_vector;
 
     // ------------------------------------------------------------
     // Helper Functions
@@ -123,9 +126,12 @@ SC_MODULE(risc_v_model) {
             }
             break;
 
+        // Interrupts
+        case 0x73:
+            break;
         default:
             immediate = 0;
-            is_valid_instruction = false;
+            is_valid_inst = false;
             cout << "Warning: Invalid instruction type, skipping to next instruction" << endl << endl;
         }
 
@@ -222,13 +228,13 @@ SC_MODULE(risc_v_model) {
         rs2 = (cur_inst >> 20) & 0x1F;
         funct7 = (cur_inst >> 25) & 0x7F;
 
-        is_valid_instruction = true;
+        is_valid_inst = true;
 
         // Extract immediate
         imm = immediateGenerator();
 
         // Skip if invalid opcode
-        if (!is_valid_instruction) {
+        if (!is_valid_inst) {
             return;
         }
 
@@ -302,6 +308,14 @@ SC_MODULE(risc_v_model) {
             alu_res = pc + 4;
             
             cout << "@" << sc_time_stamp() << " Execute: JALR | Return Address: 0x" << hex << alu_res << " | PC: 0x" << pc_next << dec << endl << endl;
+        }
+        // Interrupt return handling
+        else if (opcode == 0x73) {
+            branch_taken = true;
+            pc_next = saved_pc;
+            in_interrupt = false;
+
+            cout << "@" << sc_time_stamp() << " Execute: MRET | Returning to main program at 0x" << hex << pc_next << dec << endl << endl;
         }
         // Move to next instruction by default
         else {
@@ -415,11 +429,20 @@ SC_MODULE(risc_v_model) {
             write_en_o.write(false);
             read_en_o.write(false);
 
+            if (irq_timer_i.read() == true && interrupt_enable && !in_interrupt) {
+                saved_pc = pc;
+                in_interrupt = true;
+                pc = interrupt_vector;
+
+                cout << "@" << sc_time_stamp() << " CPU: Timer interrupt received" << endl;
+                cout << "@" << sc_time_stamp() << " CPU: Jumping to interrupt handler\n" << endl;
+            }
+
             fetch();
             decode();
 
             // Skip instruction if invalid opcode
-            if (!is_valid_instruction) {
+            if (!is_valid_inst) {
                 pc += 4;
                 continue;
             }
@@ -433,5 +456,10 @@ SC_MODULE(risc_v_model) {
     SC_CTOR(risc_v_model) {
         SC_CTHREAD(mainThread, clk_i.pos());
         reset_signal_is(rst_i, true);
+
+        // Interrupt initialization
+        in_interrupt = false;
+        interrupt_enable = true;    // Allow interrupts
+        interrupt_vector = 0x80;    // Interrupt address
     }
 };

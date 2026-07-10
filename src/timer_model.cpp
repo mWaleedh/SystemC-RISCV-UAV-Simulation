@@ -60,13 +60,11 @@ SC_MODULE(timer_model) {
                     break;
                 // Status register address
                 case 0x1000001C: 
-                    status_reg = data_bus_i.read();
-                    
-                    // Clear interrupt if CPU sends 0
-                    if (status_reg == 0) {
+                    // Clear interrupt if CPU sends 1
+                    if (data_bus_i.read() == 1) {
+                        status_reg = 0;
                         irq_timer_o.write(false);
                     }
-                    break;
                 default:
                     cout << "@" << sc_time_stamp() << " Timer Error: Writing to invalid address 0x" << hex << addr << dec << endl << endl;
                     break;
@@ -110,9 +108,15 @@ SC_MODULE(timer_model) {
                 count_reg++;
 
                 // Raise interrupt if count has reached threshold
-                if (count_reg >= compare_reg) {
+                if (count_reg == compare_reg) {
                     status_reg = 1;
                     irq_timer_o.write(true);
+
+                    // Reset counter value
+                    // count_reg = 0;
+
+                    cout << "@" << sc_time_stamp() << " TIMER: Compare match" << endl;
+                    cout << "@" << sc_time_stamp() << " TIMER: Interrupt raised" << endl << endl;
                 }
             }
 

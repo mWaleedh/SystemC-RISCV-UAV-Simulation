@@ -1,8 +1,6 @@
 @0 s Applying Reset...
 @0 s System Bus: Address 0x0 routed to Main Memory
 
-
-Info: (I702) default timescale unit used for tracing: 1 ps (./waveforms/riscv_timer_waveform.vcd)
 @5 ns Releasing Reset...
 
 Memory: Loaded data from file ./hex/riscv_timer_program.hex
@@ -132,19 +130,13 @@ Memory: Loaded data from file ./hex/riscv_timer_program.hex
 
 @24 ns Write Back: New PC value is 0x00000000c
 
-@24 ns Timer: Wrote 0x000000005 to address 0x10000014
-
 @25 ns Fetch: PC -> 0x00000000c
-
-@25 ns Timer: Wrote 0x000000005 to address 0x10000014
 
 @25 ns System Bus: Address 0xc routed to Main Memory
 
 @26 ns Memory Read: 
 1. Address -> 0x3
 2. Data -> 0x000100113
-
-@26 ns Timer: Wrote 0x000000005 to address 0x10000014
 
 @26 ns System Bus: Address 0xc routed to Main Memory
 
@@ -161,19 +153,13 @@ Memory: Loaded data from file ./hex/riscv_timer_program.hex
 8. rs1_data: 0
 9. rs2_data: 268435472
 
-@27 ns Timer: Wrote 0x000000005 to address 0x10000014
-
 @27 ns System Bus: Address 0xc routed to Main Memory
 
 @28 ns Execute: Instruction 0x000100113 is being executed
 
 @28 ns ALU: 0 + 1 = 1
 
-@28 ns Timer: Wrote 0x000000005 to address 0x10000014
-
 @29 ns Memory Access: No memory/peripheral access needed
-
-@29 ns Timer: Wrote 0x000000005 to address 0x10000014
 
 @30 ns Write Back: Old PC value was 0x00000000c
 
@@ -181,19 +167,13 @@ Memory: Loaded data from file ./hex/riscv_timer_program.hex
 
 @30 ns Write Back: New PC value is 0x000000010
 
-@30 ns Timer: Wrote 0x000000005 to address 0x10000014
-
 @31 ns Fetch: PC -> 0x000000010
-
-@31 ns Timer: Wrote 0x000000005 to address 0x10000014
 
 @31 ns System Bus: Address 0x10 routed to Main Memory
 
 @32 ns Memory Read: 
 1. Address -> 0x4
 2. Data -> 0x00020a423
-
-@32 ns Timer: Wrote 0x000000005 to address 0x10000014
 
 @32 ns System Bus: Address 0x10 routed to Main Memory
 
@@ -210,17 +190,11 @@ Memory: Loaded data from file ./hex/riscv_timer_program.hex
 8. rs1_data: 268435472
 9. rs2_data: 1
 
-@33 ns Timer: Wrote 0x000000005 to address 0x10000014
-
 @33 ns System Bus: Address 0x10 routed to Main Memory
 
 @34 ns Execute: Instruction 0x00020a423 is being executed
 
 @34 ns ALU (SW): 268435472 + 8 = 0x010000018
-
-@34 ns Timer: Wrote 0x000000005 to address 0x10000014
-
-@35 ns Timer: Wrote 0x000000005 to address 0x10000014
 
 @35 ns System Bus: Address 0x10000018 routed to Timer
 
@@ -234,19 +208,13 @@ Memory: Loaded data from file ./hex/riscv_timer_program.hex
 
 @37 ns Write Back: New PC value is 0x000000014
 
-@37 ns Timer: Wrote 0x000000001 to address 0x10000018
-
 @38 ns Fetch: PC -> 0x000000014
-
-@38 ns Timer: Wrote 0x000000001 to address 0x10000018
 
 @38 ns System Bus: Address 0x14 routed to Main Memory
 
 @39 ns Memory Read: 
 1. Address -> 0x5
 2. Data -> 0x00000a183
-
-@39 ns Timer: Wrote 0x000000001 to address 0x10000018
 
 @39 ns System Bus: Address 0x14 routed to Main Memory
 
@@ -262,8 +230,6 @@ Memory: Loaded data from file ./hex/riscv_timer_program.hex
 7. imm: 0
 8. rs1_data: 268435472
 9. rs2_data: 0
-
-@40 ns Timer: Wrote 0x000000001 to address 0x10000018
 
 @40 ns System Bus: Address 0x14 routed to Main Memory
 

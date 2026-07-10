@@ -45,6 +45,8 @@ SC_MODULE(system_bus) {
         mem_write_en_o.write(0);
         gpio_read_en_o.write(0);
         gpio_write_en_o.write(0);
+        timer_read_en_o.write(0);
+        timer_write_en_o.write(0);
         
         // Route bus to memory
         if (addr >= 0 && addr <= 0xFFF) {
