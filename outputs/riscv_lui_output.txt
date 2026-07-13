@@ -1,0 +1,127 @@
+@0 s Applying Reset...
+@0 s System Bus: Address 0x000000000 routed to Main Memory
+
+@5 ns Releasing Reset...
+
+Memory: Loaded data from file ./hex/riscv_lui_program.hex
+
+@5 ns Fetch: PC -> 0x000000000
+
+@5 ns System Bus: Address 0x000000000 routed to Main Memory
+
+@6 ns Memory Read: 
+1. Address -> 0x000000000
+2. Data -> 0x0100000b7
+
+@6 ns System Bus: Address 0x000000000 routed to Main Memory
+
+@7 ns Decode: Instruction -> 0x0100000b7
+
+@7 ns Decode:
+1. opcode: 0x37
+2. rd: 1
+3. funct3: 0
+4. rs1: 0
+5. rs2: 0
+6. funct7: 8
+7. imm: 268435456
+8. rs1_data: 0
+9. rs2_data: 0
+
+@7 ns System Bus: Address 0x000000000 routed to Main Memory
+
+@8 ns Execute: Instruction 0x0100000b7 is being executed
+
+@8 ns ALU (LUI): Result = 0x010000000
+
+@9 ns Memory Access: No memory/peripheral access needed
+
+@10 ns Write Back: Old PC value was 0x000000000
+
+@10 ns Write Back: Register x1 updated to 268435456
+
+@10 ns Write Back: New PC value is 0x000000004
+
+@11 ns Fetch: PC -> 0x000000004
+
+@11 ns System Bus: Address 0x000000004 routed to Main Memory
+
+@12 ns Memory Read: 
+1. Address -> 0x000000004
+2. Data -> 0x006300113
+
+@12 ns System Bus: Address 0x000000004 routed to Main Memory
+
+@13 ns Decode: Instruction -> 0x006300113
+
+@13 ns Decode:
+1. opcode: 0x13
+2. rd: 2
+3. funct3: 0
+4. rs1: 0
+5. rs2: 3
+6. funct7: 3
+7. imm: 99
+8. rs1_data: 0
+9. rs2_data: 0
+
+@13 ns System Bus: Address 0x000000004 routed to Main Memory
+
+@14 ns Execute: Instruction 0x006300113 is being executed
+
+@14 ns ALU (I-Type): Result = 99
+
+@15 ns Memory Access: No memory/peripheral access needed
+
+@16 ns Write Back: Old PC value was 0x000000004
+
+@16 ns Write Back: Register x2 updated to 99
+
+@16 ns Write Back: New PC value is 0x000000008
+
+@17 ns Fetch: PC -> 0x000000008
+
+@17 ns System Bus: Address 0x000000008 routed to Main Memory
+
+@18 ns Memory Read: 
+1. Address -> 0x000000008
+2. Data -> 0x00020a023
+
+@18 ns System Bus: Address 0x000000008 routed to Main Memory
+
+@19 ns Decode: Instruction -> 0x00020a023
+
+@19 ns Decode:
+1. opcode: 0x23
+2. rd: 0
+3. funct3: 2
+4. rs1: 1
+5. rs2: 2
+6. funct7: 0
+7. imm: 0
+8. rs1_data: 268435456
+9. rs2_data: 99
+
+@19 ns System Bus: Address 0x000000008 routed to Main Memory
+
+@20 ns Execute: Instruction 0x00020a023 is being executed
+
+@20 ns ALU (Store): Target Address = 0x010000000
+
+@21 ns System Bus: Address 0x010000000 routed to GPIO
+
+@22 ns Memory Access: Stored 0x000000063 to address 0x010000000
+
+@22 ns GPIO Write: 0x000000063 written to output register
+
+@22 ns System Bus: Address 0x010000000 routed to GPIO
+
+@23 ns Write Back: Old PC value was 0x000000008
+
+@23 ns Write Back: New PC value is 0x00000000c
+
+x1 = 0x10000000: PASS
+GPIO[0x10000000] = 99: PASS
+x0 = 0: PASS
+
+@24 ns Simulation complete!

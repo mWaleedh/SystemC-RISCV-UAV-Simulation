@@ -66,7 +66,7 @@ SC_MODULE(system_bus) {
                 mem_addr_bus_o.write(addr);
             }
 
-            cout << "@" << sc_time_stamp() << " System Bus: Address 0x" << hex << addr << dec << " routed to Main Memory" << endl << endl;
+            cout << "@" << sc_time_stamp() << " System Bus: Address 0x" << hex << cpu_addr_bus_i.read() << dec << " routed to Main Memory" << endl << endl;
         }
         // Route bus to GPIO
         else if (addr == 0x10000000 || addr == 0x10000004) {
@@ -86,7 +86,7 @@ SC_MODULE(system_bus) {
                 gpio_addr_bus_o.write(addr);
             }
 
-            cout << "@" << sc_time_stamp() << " System Bus: Address 0x" << hex << addr << dec << " routed to GPIO" << endl << endl;
+            cout << "@" << sc_time_stamp() << " System Bus: Address 0x" << hex << cpu_addr_bus_i.read() << dec << " routed to GPIO" << endl << endl;
         }
         // Route bus to Timer
         else if (addr == 0x10000010 || addr == 0x10000014 || 0x10000018 || 0x1000001C) {
@@ -106,11 +106,11 @@ SC_MODULE(system_bus) {
                 timer_addr_bus_o.write(addr);
             }
 
-            cout << "@" << sc_time_stamp() << " System Bus: Address 0x" << hex << addr << dec << " routed to Timer" << endl << endl;
+            cout << "@" << sc_time_stamp() << " System Bus: Address 0x" << hex << cpu_addr_bus_i.read() << dec << " routed to Timer" << endl << endl;
         }
         // If system_bus was called but address is invalid print error
         else if (write_en || read_en) {
-            cout << "@" << sc_time_stamp() << " System Bus Error: Invalid address 0x" << hex << addr << dec << endl << endl;
+            cout << "@" << sc_time_stamp() << " System Bus Error: Invalid address 0x" << hex << cpu_addr_bus_i.read() << dec << endl << endl;
         }
 
         // Write data to CPU. Only the sending module has their data_bus greater than 0

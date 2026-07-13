@@ -1,7 +1,3 @@
-/*
-Timer compare register value is set to 5 cycles
-*/
-
 #include <systemc.h>
 #include "../src/system_top.cpp"
 using namespace std;
@@ -23,7 +19,7 @@ int sc_main(int argc, char* argv[]) {
     sys.irq_sw_i(irq_sw_s);
 
     // VCD waveform trace
-    sc_trace_file *wf = sc_create_vcd_trace_file("./waveforms/riscv_interrupt_waveform");
+    sc_trace_file *wf = sc_create_vcd_trace_file("./waveforms/csr_interrupt_waveform");
     sc_trace(wf, clk_s, "clock");
     sc_trace(wf, rst_s, "reset");
     sc_trace(wf, sys.cpu->pc, "pc");
@@ -31,11 +27,13 @@ int sc_main(int argc, char* argv[]) {
     sc_trace(wf, sys.timer->count_reg, "count_reg");
     sc_trace(wf, sys.timer->compare_reg, "compare_reg");
     sc_trace(wf, sys.timer->status_reg, "status_reg");
-    sc_trace(wf, sys.timer->irq_timer_o, "timer_interrupt");
-    sc_trace(wf, sys.cpu->irq_timer_i, "cpu_interrupt");
-    sc_trace(wf, sys.cpu->mepc, "saved_pc");
-    sc_trace(wf, sys.cpu->mtvec, "interrupt_vector");
-    sc_trace(wf, sys.cpu->mie, "in_interrupt");
+    sc_trace(wf, sys.timer->irq_timer_o, "irq_timer");
+    sc_trace(wf, sys.cpu->mstatus, "mstatus");
+    sc_trace(wf, sys.cpu->mie, "mie");
+    sc_trace(wf, sys.cpu->mip, "mip");
+    sc_trace(wf, sys.cpu->mepc, "mepc");
+    sc_trace(wf, sys.cpu->mcause, "mcause");
+    sc_trace(wf, sys.cpu->mtvec, "mtvec");
 
     // Clear input ports
     irq_ext_s.write(false);
@@ -51,24 +49,34 @@ int sc_main(int argc, char* argv[]) {
     rst_s.write(false);
 
     // Load Timer test instructions
-    sys.load_file("./hex/riscv_interrupt_program.hex");
+    sys.load_file("./hex/csr_interrupt_program.hex");
 
     // Load base address of Timer
     sys.load_data(0x20, 0x10000010);
 
-    // Load ISR instructions
-    sys.load_data(0x80, 0x00c0a623);    // Clear Timer Status
-    sys.load_data(0x84, 0x06300313);    // Update x6 to 99
-    sys.load_data(0x88, 0x00000073);    // Custom simple MRET
-
     // Run system
-    sc_start(70, SC_NS);
+    sc_start(100, SC_NS);
 
-    // Verify CPU jumped to interrupt instruction
+    // Verify results
+    cout << "x1 = 0x10000000: " << (sys.cpu->registers[1] == 0x10000000 ? "PASS" : "FAIL") << endl;
+    
+    cout << "mtvec = 0x40: " << (sys.cpu->mtvec == 0x40 ? "PASS" : "FAIL") << endl;
+    
+    cout << "mie (Timer Enabled): " << ((sys.cpu->mie & 0x80) != 0 ? "PASS" : "FAIL") << endl;
+    
+    cout << "mcause = 0x80000007: " << (sys.cpu->mcause == 0x80000007 ? "PASS" : "FAIL") << endl;
+    
+    cout << "mepc = 0x2C: " << (sys.cpu->mepc >= 0x2C ? "PASS" : "FAIL") << endl;
+    
+    cout << "mstatus (MIE restored): " << ((sys.cpu->mstatus & 0x8) != 0 ? "PASS" : "FAIL") << endl;
+    
+    cout << "mip (Interrupt Cleared): " << ((sys.cpu->mip & 0x80) == 0 ? "PASS" : "FAIL") << endl;
+    
     cout << "x6 = 99: " << (sys.cpu->registers[6] == 99 ? "PASS" : "FAIL") << endl;
+    
+    cout << "x7 = 99: " << (sys.cpu->registers[7] == 99 ? "PASS" : "FAIL") << endl;
 
-    // Verify CPU returned successfully from interrupt
-    cout << "x7 = 99: " << (sys.cpu->registers[7] == 99 ? "PASS" : "FAIL") << endl << endl;
+    cout << "x0 = 0: " << (sys.cpu->registers[0] == 0 ? "PASS" : "FAIL") << endl << endl;
 
     cout << "@" << sc_time_stamp() << " Simulation complete!" << endl;
 

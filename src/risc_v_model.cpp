@@ -38,10 +38,13 @@ SC_MODULE(risc_v_model) {
     sc_uint<WIDTH> pc_next;
     bool branch_taken;
     bool is_valid_inst;
-    bool interrupt_enable;
-    bool in_interrupt;
-    sc_uint<WIDTH> saved_pc;
-    sc_uint<WIDTH> interrupt_vector;
+    // CSRs
+    sc_uint<WIDTH> mstatus;
+    sc_uint<WIDTH> mie;
+    sc_uint<WIDTH> mip;
+    sc_uint<WIDTH> mtvec;
+    sc_uint<WIDTH> mepc;
+    sc_uint<WIDTH> mcause;
 
     // ------------------------------------------------------------
     // Helper Functions
@@ -126,7 +129,7 @@ SC_MODULE(risc_v_model) {
             }
             break;
 
-        // Interrupts
+        // CSR/MRET
         case 0x73:
             break;
         default:
@@ -156,6 +159,42 @@ SC_MODULE(risc_v_model) {
                     cout << "@" << sc_time_stamp() << " ALU: " << rs1_data << " - " << rs2_data << " = " << alu_result << endl << endl;
                 }
             }
+            // SLL
+            else if (funct3 == 0x1) {
+                alu_result = rs1_data << (rs2_data & 0x1F);
+            }
+            // SLT
+            else if (funct3 == 0x2) {
+                
+            }
+            // SLTU
+            else if (funct3 == 0x3) {
+                
+            }
+            // XOR
+            else if (funct3 == 0x4) {
+                alu_result = rs1_data ^ rs2_data;
+            }
+            else if (funct3 == 0x5) {
+                // SRL
+                if (funct7 == 0x00) {
+                    alu_result = rs1_data >> (rs2_data & 0x1F);
+                }
+                // SRA
+                else if (funct7 == 0x20) {
+
+                }
+            }
+            // OR
+            else if (funct3 == 0x6) {
+                alu_result = rs1_data | rs2_data;
+            }
+            // AND
+            else if (funct3 == 0x7) {
+                alu_result = rs1_data & rs2_data;
+            }
+            
+            cout << "@" << sc_time_stamp() << " ALU (R-type): Result = " << alu_result << endl << endl;
             break;
 
         // I-type (ALU)
@@ -163,31 +202,71 @@ SC_MODULE(risc_v_model) {
             // ADDI
             if (funct3 == 0x0) {
                 alu_result = rs1_data + imm;
-                cout << "@" << sc_time_stamp() << " ALU: " << rs1_data << " + " << imm << " = " << alu_result << endl << endl;
             }
+            // SLLI
+            else if (funct3 == 0x1) {
+                alu_result = rs1_data << (imm & 0x1F);
+            }
+            // SLTI
+            else if (funct3 == 0x2) {
+                
+            }
+            // SLTIU
+            else if (funct3 == 0x3) {
+                
+            }
+            // XORI
+            else if (funct3 == 0x4) {
+                alu_result = rs1_data ^ imm;
+            }
+            else if (funct3 == 0x5) {   
+                // SRLI
+                if (funct7 == 0x00) {
+                    alu_result = rs1_data >> (imm & 0x1F);
+                }
+                // SRAI
+                else if (funct7 == 0x20)  {
+
+                }
+            }
+            // ORI
+            else if (funct3 == 0x6) {
+                alu_result = rs1_data | imm;
+            }
+            // ANDI
+            else if (funct3 == 0x7) {
+                alu_result = rs1_data & imm;
+            }
+
+            cout << "@" << sc_time_stamp() << " ALU (I-Type): Result = " << alu_result << endl << endl;
             break;
             
         // I-type (Load)
         case 0x3:
-            // LW
-            if (funct3 == 0x2) {
-                alu_result = rs1_data + imm;
-                cout << "@" << sc_time_stamp() << " ALU (LW): " << rs1_data << " + " << imm << " = 0x" << hex << alu_result << dec << endl << endl;
-            }
+            alu_result = rs1_data + imm;
+            cout << "@" << sc_time_stamp() << " ALU (Load): Target Address = 0x" << hex << alu_result << dec << endl << endl;
             break;
         
         // S-type
         case 0x23:
-            // SW
-            if (funct3 == 0x2) {
-                alu_result = rs1_data + imm;
-                cout << "@" << sc_time_stamp() << " ALU (SW): " << rs1_data << " + " << imm << " = 0x" << hex << alu_result << dec << endl << endl;
-            }
+            alu_result = rs1_data + imm;
+            cout << "@" << sc_time_stamp() << " ALU (Store): Target Address = 0x" << hex << alu_result << dec << endl << endl;
+            break;
+        
+        // U-type (LUI)
+        case 0x37:
+            alu_result = imm;
+            cout << "@" << sc_time_stamp() << " ALU (LUI): Result = 0x" << hex << alu_result << dec << endl << endl;
+            break;
+
+        // U-type (AUIPC)
+            alu_result = pc + imm;
+            cout << "@" << sc_time_stamp() << " ALU (AUIPC): Result = 0x" << hex << alu_result << dec << endl << endl;
             break;
             
         default:
             alu_result = 0;            
-       }
+        }
 
        return alu_result;
     }
@@ -260,7 +339,7 @@ SC_MODULE(risc_v_model) {
     // ------------------------------
     void execute() {
         cout << "@" << sc_time_stamp() << " Execute: Instruction 0x" << hex << cur_inst << dec << " is being executed" << endl << endl;
-
+            // SRLI            // SRLI
         // Perform ALU operation
         alu_res = alu();
 
@@ -301,7 +380,7 @@ SC_MODULE(risc_v_model) {
             
             cout << "@" << sc_time_stamp() << " Execute: JAL | Return Address: 0x" << hex << alu_res << " | PC: 0x" << pc_next << dec << endl << endl;
         }
-        // For JAL calculate the return address and the PC value
+        // For JALR calculate the return address and the PC value
         else if (opcode == 0x67) {
             branch_taken = true;
             pc_next = (rs1_data + imm) & ~1; 
@@ -309,13 +388,82 @@ SC_MODULE(risc_v_model) {
             
             cout << "@" << sc_time_stamp() << " Execute: JALR | Return Address: 0x" << hex << alu_res << " | PC: 0x" << pc_next << dec << endl << endl;
         }
-        // Interrupt return handling
+        // For CSR/MRET
         else if (opcode == 0x73) {
-            branch_taken = true;
-            pc_next = saved_pc;
-            in_interrupt = false;
+            uint32_t csr_addr = cur_inst >> 20;
+            uint32_t csr_old = 0;
 
-            cout << "@" << sc_time_stamp() << " Execute: MRET | Returning to main program at 0x" << hex << pc_next << dec << endl << endl;
+            // MRET
+            if (funct3 == 0x0) {
+                uint32_t funct12 = cur_inst >> 20;
+        
+                if (funct12 == 0x302) {                
+                    // Restore PC
+                    pc_next = mepc;
+                    
+                    // Enable interrupts again
+                    mstatus = mstatus | 0x8;
+                    
+                    cout << "@" << sc_time_stamp() << " Execute: MRET | Return Address: 0x" << hex << pc << dec << endl << endl;
+                }
+            }
+            // Read CSR
+            else if (funct3 == 0x1 || funct3 == 0x2) {
+                switch(csr_addr) {
+                    case 0x300: 
+                        csr_old = mstatus; 
+                        break;
+                    case 0x304: 
+                        csr_old = mie; 
+                        break;
+                    case 0x305: 
+                        csr_old = mtvec; 
+                        break;
+                    case 0x341: 
+                        csr_old = mepc; 
+                        break;
+                    case 0x342: 
+                        csr_old = mcause; 
+                        break;
+                    default: 
+                        cout << "@" << sc_time_stamp() << " Execute Error: Invalid CSR read at 0x" << hex << csr_addr << dec << endl << endl; 
+                        break;
+                }
+            }
+            
+            uint32_t csr_new = csr_old;
+
+            // CSRRW
+            if (funct3 == 0x1) {
+                csr_new = rs1_data;
+            } 
+            // CSRRS
+            else if (funct3 == 0x2) {
+                if (rs1 != 0) {
+                    csr_new |= rs1_data;
+                }
+            }
+
+            // Write CSR
+            if (funct3 == 0x1 || (funct3 == 0x2 && rs1 != 0)) {
+                switch(csr_addr) {
+                    case 0x300: 
+                        mstatus = csr_new; 
+                        break;
+                    case 0x304: 
+                        mie = csr_new;
+                        break;
+                    case 0x305: 
+                        mtvec = csr_new;
+                        break;
+                    default: 
+                        break; 
+                }
+
+                cout << "@" << sc_time_stamp() << " Execute: CSR | Address: 0x" << hex << csr_addr << " | Old: 0x" << csr_old << " | New: 0x" << csr_new << dec << endl << endl;
+            }
+
+            alu_res = csr_old;
         }
         // Move to next instruction by default
         else {
@@ -370,7 +518,7 @@ SC_MODULE(risc_v_model) {
         cout << "@" << sc_time_stamp() << " Write Back: Old PC value was 0x" << hex << pc << dec << endl << endl;
 
         // Write back alu_result to register file
-        if (opcode == 0x33 || opcode == 0x13) {
+        if (opcode == 0x33 || opcode == 0x13 || 0x37 || 0x17 || 0x73) {
             // x0 register stays 0
             if (rd != 0) {
                 registers[rd] = alu_res;
@@ -420,6 +568,13 @@ SC_MODULE(risc_v_model) {
         addr_bus_o.write(0);
         data_bus_o.write(0);
 
+        mstatus = 0x0;
+        mie     = 0x0;
+        mip     = 0x0;   
+        mtvec   = 0x0;
+        mepc    = 0x0;
+        mcause  = 0x0;
+
         // Wait marking end of reset
         wait();
 
@@ -429,13 +584,28 @@ SC_MODULE(risc_v_model) {
             write_en_o.write(false);
             read_en_o.write(false);
 
-            if (irq_timer_i.read() == true && interrupt_enable && !in_interrupt) {
-                saved_pc = pc;
-                in_interrupt = true;
-                pc = interrupt_vector;
+            if (irq_timer_i.read() == true) {
+                mip = mip | 0x80; // Set Bit 7
+            } 
+            else {
+                mip = mip & ~0x80; // Clear Bit 7
+            }
+
+            if ((mip & 0x80) && (mie & 0x80) && (mstatus & 0x8)) {
+                // Save PC value
+                mepc = pc;
+
+                // Set cause as timer interrupt
+                mcause = 0x80000007;
+
+                // Disable interrupts
+                mstatus = mstatus & ~0x8;
+                
+                // Move to interrupt handling address
+                pc_next = mtvec;
 
                 cout << "@" << sc_time_stamp() << " CPU: Timer interrupt received" << endl;
-                cout << "@" << sc_time_stamp() << " CPU: Jumping to interrupt handler\n" << endl;
+                cout << "@" << sc_time_stamp() << " CPU: Jumping to interrupt handler\n" << endl << endl;
             }
 
             fetch();
@@ -456,10 +626,5 @@ SC_MODULE(risc_v_model) {
     SC_CTOR(risc_v_model) {
         SC_CTHREAD(mainThread, clk_i.pos());
         reset_signal_is(rst_i, true);
-
-        // Interrupt initialization
-        in_interrupt = false;
-        interrupt_enable = true;    // Allow interrupts
-        interrupt_vector = 0x80;    // Interrupt address
     }
 };
