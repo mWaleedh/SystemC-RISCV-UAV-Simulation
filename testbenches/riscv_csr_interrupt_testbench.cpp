@@ -51,30 +51,27 @@ int sc_main(int argc, char* argv[]) {
     // Load Timer test instructions
     sys.load_file("./hex/csr_interrupt_program.hex");
 
-    // Load base address of Timer
-    sys.load_data(0x20, 0x10000010);
-
     // Run system
-    sc_start(100, SC_NS);
+    sc_start(99, SC_NS);
 
     // Verify results
     cout << "x1 = 0x10000000: " << (sys.cpu->registers[1] == 0x10000000 ? "PASS" : "FAIL") << endl;
     
+    cout << "x7 = 0x11: " << (sys.cpu->registers[7] == 0x11 ? "PASS" : "FAIL") << endl;
+
     cout << "mtvec = 0x40: " << (sys.cpu->mtvec == 0x40 ? "PASS" : "FAIL") << endl;
     
-    cout << "mie (Timer Enabled): " << ((sys.cpu->mie & 0x80) != 0 ? "PASS" : "FAIL") << endl;
+    cout << "mie = Interrupt enabled: " << ((sys.cpu->mie & 0x80) != 0 ? "PASS" : "FAIL") << endl;
     
     cout << "mcause = 0x80000007: " << (sys.cpu->mcause == 0x80000007 ? "PASS" : "FAIL") << endl;
     
-    cout << "mepc = 0x2C: " << (sys.cpu->mepc >= 0x2C ? "PASS" : "FAIL") << endl;
+    cout << "mepc = 0x30: " << (sys.cpu->mepc == 0x30 ? "PASS" : "FAIL") << endl;
     
-    cout << "mstatus (MIE restored): " << ((sys.cpu->mstatus & 0x8) != 0 ? "PASS" : "FAIL") << endl;
+    cout << "mstatus = MIE bit (8th) restored: " << ((sys.cpu->mstatus & 0x8) != 0 ? "PASS" : "FAIL") << endl;
     
-    cout << "mip (Interrupt Cleared): " << ((sys.cpu->mip & 0x80) == 0 ? "PASS" : "FAIL") << endl;
+    cout << "mip = Interrupt cleared: " << ((sys.cpu->mip & 0x80) == 0 ? "PASS" : "FAIL") << endl;
     
-    cout << "x6 = 99: " << (sys.cpu->registers[6] == 99 ? "PASS" : "FAIL") << endl;
-    
-    cout << "x7 = 99: " << (sys.cpu->registers[7] == 99 ? "PASS" : "FAIL") << endl;
+    cout << "x8 = 0x99: " << (sys.cpu->registers[8] == 0x99 ? "PASS" : "FAIL") << endl;
 
     cout << "x0 = 0: " << (sys.cpu->registers[0] == 0 ? "PASS" : "FAIL") << endl << endl;
 
