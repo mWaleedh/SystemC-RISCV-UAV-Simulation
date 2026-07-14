@@ -1,0 +1,119 @@
+@0 s Applying Reset...
+@0 s System Bus: Address 0x000000000 routed to Main Memory
+
+@5 ns Releasing Reset...
+
+Memory: Loaded data from file ./hex/riscv_csrrw_program.hex
+
+@5 ns Fetch: PC -> 0x000000000
+
+@5 ns System Bus: Address 0x000000000 routed to Main Memory
+
+@6 ns Memory Read: 
+1. Address -> 0x000000000
+2. Data -> 0x005500093
+
+@6 ns System Bus: Address 0x000000000 routed to Main Memory
+
+@7 ns Decode: Instruction -> 0x005500093
+
+@7 ns Decode:
+1. opcode: 0x13
+2. rd: 1
+3. funct3: 0
+4. rs1: 0
+5. rs2: 21
+6. funct7: 2
+7. imm: 85
+8. rs1_data: 0
+9. rs2_data: 0
+
+@7 ns System Bus: Address 0x000000000 routed to Main Memory
+
+@8 ns Execute: Instruction 0x005500093 is being executed
+
+@8 ns ALU (I-Type): Result = 85
+
+@9 ns Memory Access: No memory/peripheral access needed
+
+@10 ns Write Back: Old PC value was 0x000000000
+
+@10 ns Write Back: Register x1 updated to 85
+
+@10 ns Write Back: New PC value is 0x000000004
+
+@11 ns Fetch: PC -> 0x000000004
+
+@11 ns System Bus: Address 0x000000004 routed to Main Memory
+
+@12 ns Memory Read: 
+1. Address -> 0x000000004
+2. Data -> 0x030509173
+
+@12 ns System Bus: Address 0x000000004 routed to Main Memory
+
+@13 ns Decode: Instruction -> 0x030509173
+
+@13 ns Decode:
+1. opcode: 0x73
+2. rd: 2
+3. funct3: 1
+4. rs1: 1
+5. rs2: 5
+6. funct7: 24
+7. imm: 773
+8. rs1_data: 85
+9. rs2_data: 0
+
+@13 ns System Bus: Address 0x000000004 routed to Main Memory
+
+@14 ns Execute: Instruction 0x030509173 is being executed
+
+@15 ns Memory Access: No memory/peripheral access needed
+
+@16 ns Write Back: Old PC value was 0x000000004
+
+@16 ns Write Back: Register x2 updated to 0
+
+@16 ns Write Back: New PC value is 0x000000008
+
+@17 ns Fetch: PC -> 0x000000008
+
+@17 ns System Bus: Address 0x000000008 routed to Main Memory
+
+@18 ns Memory Read: 
+1. Address -> 0x000000008
+2. Data -> 0x0305011f3
+
+@18 ns System Bus: Address 0x000000008 routed to Main Memory
+
+@19 ns Decode: Instruction -> 0x0305011f3
+
+@19 ns Decode:
+1. opcode: 0x73
+2. rd: 3
+3. funct3: 1
+4. rs1: 0
+5. rs2: 5
+6. funct7: 24
+7. imm: 773
+8. rs1_data: 0
+9. rs2_data: 0
+
+@19 ns System Bus: Address 0x000000008 routed to Main Memory
+
+@20 ns Execute: Instruction 0x0305011f3 is being executed
+
+@21 ns Memory Access: No memory/peripheral access needed
+
+@22 ns Write Back: Old PC value was 0x000000008
+
+@22 ns Write Back: Register x3 updated to 85
+
+@22 ns Write Back: New PC value is 0x00000000c
+
+x2 = 0: PASS
+x3 = 0x55: PASS
+x0 = 0: PASS
+
+@23 ns Simulation complete!

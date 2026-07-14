@@ -45,6 +45,16 @@ SC_MODULE(risc_v_model) {
     sc_uint<WIDTH> mtvec;
     sc_uint<WIDTH> mepc;
     sc_uint<WIDTH> mcause;
+    // CSR/MRET signals
+    bool is_mret_instruction;
+    bool is_csr_instruction;
+    bool csr_read_enable;
+    bool csr_write_enable;
+    sc_uint<WIDTH> csr_address;
+    sc_uint<WIDTH> csr_old_value;
+    sc_uint<WIDTH> csr_new_value;
+    sc_uint<WIDTH> csr_operation;
+    bool csr_register_write_enable;
 
     // ------------------------------------------------------------
     // Helper Functions
@@ -131,7 +141,10 @@ SC_MODULE(risc_v_model) {
 
         // CSR/MRET
         case 0x73:
+            // [31:20]
+            immediate = (cur_inst >> 20) & 0xFFF;
             break;
+            
         default:
             immediate = 0;
             is_valid_inst = false;
@@ -271,6 +284,45 @@ SC_MODULE(risc_v_model) {
        return alu_result;
     }
 
+    sc_uint<WIDTH> read_csr(uint32_t csr_addr) {
+        switch(csr_addr) {
+            case 0x300: 
+                return mstatus; 
+            case 0x304: 
+                return mie; 
+            case 0x305: 
+                return mtvec; 
+            case 0x341: 
+                return mepc; 
+            case 0x342: 
+                return mcause; 
+            case 0x344:
+                return mip;
+            default: 
+                cout << "@" << sc_time_stamp() << " Execute Error: Invalid CSR read at 0x" << hex << csr_addr << dec << endl << endl; 
+        }
+
+        return 0;
+    }
+
+    void write_csr(uint32_t csr_addr, uint32_t csr_old, uint32_t csr_new) {
+        switch(csr_addr) {
+            case 0x300: 
+                mstatus = csr_new; 
+                break;
+            case 0x304: 
+                mie = csr_new;
+                break;
+            case 0x305: 
+                mtvec = csr_new;
+                break;
+            default: 
+                break; 
+        }
+
+        cout << "@" << sc_time_stamp() << " Execute: CSR | Address: 0x" << hex << csr_addr << " | Old: 0x" << csr_old << " | New: 0x" << csr_new << dec << endl << endl;
+    }
+
     // ------------------------------------------------------------
     // Pipeline
     // ------------------------------------------------------------
@@ -317,6 +369,43 @@ SC_MODULE(risc_v_model) {
             return;
         }
 
+        // Default CSR/MRET signals
+        is_csr_instruction = false;
+        is_mret_instruction = false;
+        csr_read_enable = false;
+        csr_write_enable = false;
+        csr_register_write_enable = false;
+        csr_operation = 0;
+        csr_address = imm;
+
+        // Enable signals if opcode is 0x73 (MRET/CSR)
+        if (opcode == 0x73) {
+            if (funct3 == 0x0) {
+                // MRET instruction
+                if (imm == 0x302) {
+                    is_mret_instruction = true;
+                }
+            } 
+            else if (funct3 == 0x1 || funct3 == 0x2) {
+                // CSR instructions (CSRRW/CSRRS)
+                is_csr_instruction = true;
+                csr_operation = funct3;
+                csr_read_enable = true;
+                
+                // Disable WriteBack to Register File if rd = x0
+                csr_register_write_enable = (rd != 0);
+
+                // CSRRW always writes
+                if (funct3 == 0x1) {
+                    csr_write_enable = true;
+                }
+                // CSRRS only writes if rs1 != x0
+                else if (funct3 == 0x2) {
+                    csr_write_enable = (rs1 != 0);
+                }
+            }
+        }
+
         // Read required registers
         rs1_data = registers[rs1];
         rs2_data = registers[rs2];
@@ -339,7 +428,7 @@ SC_MODULE(risc_v_model) {
     // ------------------------------
     void execute() {
         cout << "@" << sc_time_stamp() << " Execute: Instruction 0x" << hex << cur_inst << dec << " is being executed" << endl << endl;
-            // SRLI            // SRLI
+
         // Perform ALU operation
         alu_res = alu();
 
@@ -388,82 +477,46 @@ SC_MODULE(risc_v_model) {
             
             cout << "@" << sc_time_stamp() << " Execute: JALR | Return Address: 0x" << hex << alu_res << " | PC: 0x" << pc_next << dec << endl << endl;
         }
-        // For CSR/MRET
-        else if (opcode == 0x73) {
-            uint32_t csr_addr = cur_inst >> 20;
-            uint32_t csr_old = 0;
-
+        // For CSR/MRET Handling 
+        else if (is_mret_instruction || is_csr_instruction) {
             // MRET
-            if (funct3 == 0x0) {
-                uint32_t funct12 = cur_inst >> 20;
-        
-                if (funct12 == 0x302) {                
-                    // Restore PC
-                    pc_next = mepc;
-                    
-                    // Enable interrupts again
-                    mstatus = mstatus | 0x8;
-                    
-                    cout << "@" << sc_time_stamp() << " Execute: MRET | Return Address: 0x" << hex << pc << dec << endl << endl;
-                }
+            if (is_mret_instruction) {
+                // Restore PC
+                pc_next = mepc;
+                
+                // Enable interrupts again
+                mstatus = mstatus | 0x8;
+                
+                cout << "@" << sc_time_stamp() << " Execute: MRET | Return Address: 0x" << hex << pc_next << dec << endl << endl;
             }
-            // Read CSR
-            else if (funct3 == 0x1 || funct3 == 0x2) {
-                switch(csr_addr) {
-                    case 0x300: 
-                        csr_old = mstatus; 
-                        break;
-                    case 0x304: 
-                        csr_old = mie; 
-                        break;
-                    case 0x305: 
-                        csr_old = mtvec; 
-                        break;
-                    case 0x341: 
-                        csr_old = mepc; 
-                        break;
-                    case 0x342: 
-                        csr_old = mcause; 
-                        break;
-                    default: 
-                        cout << "@" << sc_time_stamp() << " Execute Error: Invalid CSR read at 0x" << hex << csr_addr << dec << endl << endl; 
-                        break;
+            // CSR
+            else if (is_csr_instruction) {
+                // Read CSR
+                if (csr_read_enable) {
+                    csr_old_value = read_csr(csr_address);
+                } 
+                else {
+                    csr_old_value = 0;
                 }
-            }
-            
-            uint32_t csr_new = csr_old;
+                
+                csr_new_value = csr_old_value;
 
-            // CSRRW
-            if (funct3 == 0x1) {
-                csr_new = rs1_data;
-            } 
-            // CSRRS
-            else if (funct3 == 0x2) {
-                if (rs1 != 0) {
-                    csr_new |= rs1_data;
-                }
-            }
-
-            // Write CSR
-            if (funct3 == 0x1 || (funct3 == 0x2 && rs1 != 0)) {
-                switch(csr_addr) {
-                    case 0x300: 
-                        mstatus = csr_new; 
-                        break;
-                    case 0x304: 
-                        mie = csr_new;
-                        break;
-                    case 0x305: 
-                        mtvec = csr_new;
-                        break;
-                    default: 
-                        break; 
+                // Calculate New CSR Value
+                // CSRRW
+                if (csr_operation == 0x1) {
+                    csr_new_value = rs1_data;
+                } 
+                // CSRRS
+                else if (csr_operation == 0x2) {
+                    csr_new_value |= rs1_data; 
                 }
 
-                cout << "@" << sc_time_stamp() << " Execute: CSR | Address: 0x" << hex << csr_addr << " | Old: 0x" << csr_old << " | New: 0x" << csr_new << dec << endl << endl;
+                // Prepare to write old CSR value to destination register
+                alu_res = csr_old_value;
+                
+                // Move to next instruction
+                pc_next = pc + 4;
             }
-
-            alu_res = csr_old;
         }
         // Move to next instruction by default
         else {
@@ -517,8 +570,20 @@ SC_MODULE(risc_v_model) {
     void writeBack() {
         cout << "@" << sc_time_stamp() << " Write Back: Old PC value was 0x" << hex << pc << dec << endl << endl;
 
+        // Write back old CSR value
+        if (is_csr_instruction) {
+            // Write CSR
+            if (csr_write_enable) {
+                write_csr(csr_address, csr_old_value, csr_new_value);
+            }
+
+            if (csr_register_write_enable) {
+                registers[rd] = alu_res;
+                cout << "@" << sc_time_stamp() << " Write Back: Register x" << rd << " updated to " << alu_res << endl << endl;
+            }
+        }
         // Write back alu_result to register file
-        if (opcode == 0x33 || opcode == 0x13 || 0x37 || 0x17 || 0x73) {
+        else if (opcode == 0x33 || opcode == 0x13 || opcode == 0x37 || opcode == 0x17) {
             // x0 register stays 0
             if (rd != 0) {
                 registers[rd] = alu_res;
@@ -585,7 +650,7 @@ SC_MODULE(risc_v_model) {
             read_en_o.write(false);
 
             if (irq_timer_i.read() == true) {
-                mip = mip | 0x80; // Set Bit 7
+                mip = mip | 0x80; // Set Bit 7 (timer interrupt)
             } 
             else {
                 mip = mip & ~0x80; // Clear Bit 7
@@ -602,7 +667,7 @@ SC_MODULE(risc_v_model) {
                 mstatus = mstatus & ~0x8;
                 
                 // Move to interrupt handling address
-                pc_next = mtvec;
+                pc = mtvec;
 
                 cout << "@" << sc_time_stamp() << " CPU: Timer interrupt received" << endl;
                 cout << "@" << sc_time_stamp() << " CPU: Jumping to interrupt handler\n" << endl << endl;
