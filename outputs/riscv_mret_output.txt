@@ -1,0 +1,229 @@
+@0 s Applying Reset...
+@0 s System Bus: Address 0x000000000 routed to Main Memory
+
+@5 ns Releasing Reset...
+
+Memory: Loaded data from file ./hex/riscv_mret_program.hex
+
+@5 ns Fetch: PC -> 0x000000000
+
+@5 ns System Bus: Address 0x000000000 routed to Main Memory
+
+@6 ns Memory Read: 
+1. Address -> 0x000000000
+2. Data -> 0x008000093
+
+@6 ns System Bus: Address 0x000000000 routed to Main Memory
+
+@7 ns Decode: Instruction -> 0x008000093
+
+@7 ns Decode:
+1. opcode: 0x13
+2. rd: 1
+3. funct3: 0
+4. rs1: 0
+5. rs2: 0
+6. funct7: 4
+7. imm: 128
+8. rs1_data: 0
+9. rs2_data: 0
+
+@7 ns System Bus: Address 0x000000000 routed to Main Memory
+
+@8 ns Execute: Instruction 0x008000093 is being executed
+
+@8 ns ALU (I-Type): Result = 128
+
+@9 ns Memory Access: No memory/peripheral access needed
+
+@10 ns Write Back: Old PC value was 0x000000000
+
+@10 ns Write Back: Register x1 updated to 128
+
+@10 ns Write Back: New PC value is 0x000000004
+
+@11 ns Fetch: PC -> 0x000000004
+
+@11 ns System Bus: Address 0x000000004 routed to Main Memory
+
+@12 ns Memory Read: 
+1. Address -> 0x000000004
+2. Data -> 0x030009073
+
+@12 ns System Bus: Address 0x000000004 routed to Main Memory
+
+@13 ns Decode: Instruction -> 0x030009073
+
+@13 ns Decode:
+1. opcode: 0x73
+2. rd: 0
+3. funct3: 1
+4. rs1: 1
+5. rs2: 0
+6. funct7: 24
+7. imm: 768
+8. rs1_data: 128
+9. rs2_data: 0
+
+@13 ns System Bus: Address 0x000000004 routed to Main Memory
+
+@14 ns Execute: Instruction 0x030009073 is being executed
+
+@15 ns Memory Access: No memory/peripheral access needed
+
+@16 ns Write Back: Old PC value was 0x000000004
+
+@16 ns Execute: CSR | Address: 0x300 | Old: 0x0 | New: 0x80
+
+@16 ns Write Back: New PC value is 0x000000008
+
+@17 ns Fetch: PC -> 0x000000008
+
+@17 ns System Bus: Address 0x000000008 routed to Main Memory
+
+@18 ns Memory Read: 
+1. Address -> 0x000000008
+2. Data -> 0x002000113
+
+@18 ns System Bus: Address 0x000000008 routed to Main Memory
+
+@19 ns Decode: Instruction -> 0x002000113
+
+@19 ns Decode:
+1. opcode: 0x13
+2. rd: 2
+3. funct3: 0
+4. rs1: 0
+5. rs2: 0
+6. funct7: 1
+7. imm: 32
+8. rs1_data: 0
+9. rs2_data: 0
+
+@19 ns System Bus: Address 0x000000008 routed to Main Memory
+
+@20 ns Execute: Instruction 0x002000113 is being executed
+
+@20 ns ALU (I-Type): Result = 32
+
+@21 ns Memory Access: No memory/peripheral access needed
+
+@22 ns Write Back: Old PC value was 0x000000008
+
+@22 ns Write Back: Register x2 updated to 32
+
+@22 ns Write Back: New PC value is 0x00000000c
+
+@23 ns Fetch: PC -> 0x00000000c
+
+@23 ns System Bus: Address 0x00000000c routed to Main Memory
+
+@24 ns Memory Read: 
+1. Address -> 0x00000000c
+2. Data -> 0x034111073
+
+@24 ns System Bus: Address 0x00000000c routed to Main Memory
+
+@25 ns Decode: Instruction -> 0x034111073
+
+@25 ns Decode:
+1. opcode: 0x73
+2. rd: 0
+3. funct3: 1
+4. rs1: 2
+5. rs2: 1
+6. funct7: 26
+7. imm: 833
+8. rs1_data: 32
+9. rs2_data: 128
+
+@25 ns System Bus: Address 0x00000000c routed to Main Memory
+
+@26 ns Execute: Instruction 0x034111073 is being executed
+
+@27 ns Memory Access: No memory/peripheral access needed
+
+@28 ns Write Back: Old PC value was 0x00000000c
+
+@28 ns Execute: CSR | Address: 0x341 | Old: 0x0 | New: 0x20
+
+@28 ns Write Back: New PC value is 0x000000010
+
+@29 ns Fetch: PC -> 0x000000010
+
+@29 ns System Bus: Address 0x000000010 routed to Main Memory
+
+@30 ns Memory Read: 
+1. Address -> 0x000000010
+2. Data -> 0x030200073
+
+@30 ns System Bus: Address 0x000000010 routed to Main Memory
+
+@31 ns Decode: Instruction -> 0x030200073
+
+@31 ns Decode:
+1. opcode: 0x73
+2. rd: 0
+3. funct3: 0
+4. rs1: 0
+5. rs2: 2
+6. funct7: 24
+7. imm: 770
+8. rs1_data: 0
+9. rs2_data: 32
+
+@31 ns System Bus: Address 0x000000010 routed to Main Memory
+
+@32 ns Execute: Instruction 0x030200073 is being executed
+
+@32 ns Execute: MRET | Return Address: 0x000000020
+
+@33 ns Memory Access: No memory/peripheral access needed
+
+@34 ns Write Back: Old PC value was 0x000000010
+
+@34 ns Write Back: New PC value is 0x000000020
+
+@35 ns Fetch: PC -> 0x000000020
+
+@35 ns System Bus: Address 0x000000020 routed to Main Memory
+
+@36 ns Memory Read: 
+1. Address -> 0x000000020
+2. Data -> 0x000100213
+
+@36 ns System Bus: Address 0x000000020 routed to Main Memory
+
+@37 ns Decode: Instruction -> 0x000100213
+
+@37 ns Decode:
+1. opcode: 0x13
+2. rd: 4
+3. funct3: 0
+4. rs1: 0
+5. rs2: 1
+6. funct7: 0
+7. imm: 1
+8. rs1_data: 0
+9. rs2_data: 128
+
+@37 ns System Bus: Address 0x000000020 routed to Main Memory
+
+@38 ns Execute: Instruction 0x000100213 is being executed
+
+@38 ns ALU (I-Type): Result = 1
+
+@39 ns Memory Access: No memory/peripheral access needed
+
+@40 ns Write Back: Old PC value was 0x000000020
+
+@40 ns Write Back: Register x4 updated to 1
+
+@40 ns Write Back: New PC value is 0x000000024
+
+x3 = 0: PASS
+x4 = 1: PASS
+mstatus & 0x8 = 1: PASS
+in_interrupt = 0: PASS
+
+@41 ns Simulation complete!

@@ -1,7 +1,7 @@
 CXX = g++
 CXXFLAGS = -I. -lsystemc
 
-all: memory_test decode_test load_store_test branch_test jump_test mini_program_test gpio_test timer_test interrupt_test lui_test csr_interrupt_test csrrw_test csrrs_test csr_x0_test interrupt_enable_test mepc_return
+all: memory_test decode_test load_store_test branch_test jump_test mini_program_test gpio_test timer_test interrupt_test lui_test csr_interrupt_test csrrw_test csrrs_test csr_x0_test interrupt_enable_test mepc_return mret_test
 
 memory_test: ./testbenches/riscv_memory_testbench.cpp
 	$(CXX) -o memory_test ./testbenches/riscv_memory_testbench.cpp $(CXXFLAGS)
@@ -51,6 +51,9 @@ interrupt_enable_test: ./testbenches/riscv_interrupt_enable_testbench.cpp
 mepc_return_test: ./testbenches/riscv_mepc_return_testbench.cpp
 	$(CXX) -o mepc_return_test ./testbenches/riscv_mepc_return_testbench.cpp $(CXXFLAGS)
 
+mret_test: ./testbenches/riscv_mret_testbench.cpp
+	$(CXX) -o mret_test ./testbenches/riscv_mret_testbench.cpp $(CXXFLAGS)
+
 all_tests: all
 	./memory_test
 	./decode_test
@@ -68,6 +71,7 @@ all_tests: all
 	./csr_x0_test
 	./interrupt_enable_test
 	./mepc_return
+	./mret_test
 
 clean:
-	rm -f memory_test decode_test load_store_test branch_test jump_test mini_program_test gpio_test timer_test interrupt_test lui_test csr_interrupt_test csrrw_test csrrs_test csr_x0_test interrupt_enable_test mepc_return
+	rm -f memory_test decode_test load_store_test branch_test jump_test mini_program_test gpio_test timer_test interrupt_test lui_test csr_interrupt_test csrrw_test csrrs_test csr_x0_test interrupt_enable_test mepc_return mret_test
