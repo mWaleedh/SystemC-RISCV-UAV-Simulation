@@ -24,6 +24,58 @@ SC_MODULE(timer_model) {
     sc_uint<WIDTH> control_reg;
     sc_uint<WIDTH> status_reg;
 
+    void write_reg(uint32_t addr) {
+        switch(addr) {
+            // Count register address
+            case 0x10000010: 
+                count_reg = data_bus_i.read();
+                break;
+            // Compare register address
+            case 0x10000014: 
+                compare_reg = data_bus_i.read();
+                break;
+            // Control register address
+            case 0x10000018: 
+                control_reg = data_bus_i.read();
+                break;
+            // Status register address
+            case 0x1000001C: 
+                // Clear interrupt if CPU sends 1
+                if (data_bus_i.read() == 1) {
+                    status_reg = 0;
+                    irq_timer_o.write(false);
+                }
+                break;
+            default:
+                cout << "@" << sc_time_stamp() << " Timer Error: Writing to invalid address 0x" << hex << addr << dec << endl << endl;
+                break;
+            }
+
+        cout << "@" << sc_time_stamp() << " Timer: Wrote 0x" << hex << data_bus_i.read() << " to address 0x" << addr << dec << endl << endl;
+
+    }
+
+    uint32_t read_reg(uint32_t addr) {
+        switch(addr) {
+            // Count register address
+            case 0x10000010: 
+                return count_reg;
+            // Compare register address
+            case 0x10000014: 
+                return compare_reg;
+            // Control register address
+            case 0x10000018: 
+                return control_reg;
+            // Status register address
+            case 0x1000001C: 
+                return status_reg;
+                break;
+            default:
+                cout << "@" << sc_time_stamp() << " Timer Error: Reading from invalid address 0x" << hex << addr << dec << endl << endl;
+                return 0;
+            }
+    }
+
     // Main thread
     void mainThread() {
         // Reset/initial stage logic
@@ -45,67 +97,18 @@ SC_MODULE(timer_model) {
             bool read_en = read_en_i.read();
 
             if (write_en) {
-                switch(addr) {
-                // Count register address
-                case 0x10000010: 
-                    count_reg = data_bus_i.read();
-                    break;
-                // Compare register address
-                case 0x10000014: 
-                    compare_reg = data_bus_i.read();
-                    break;
-                // Control register address
-                case 0x10000018: 
-                    control_reg = data_bus_i.read();
-                    break;
-                // Status register address
-                case 0x1000001C: 
-                    status_reg = data_bus_i.read();
-
-                    // Clear interrupt if CPU sends 0
-                    if (status_reg == 0) {
-                        irq_timer_o.write(false);
-                    }
-                    break;
-                default:
-                    cout << "@" << sc_time_stamp() << " Timer Error: Writing to invalid address 0x" << hex << addr << dec << endl << endl;
-                    break;
-                }
-
-                cout << "@" << sc_time_stamp() << " Timer: Wrote 0x" << hex << data_bus_i.read() << " to address 0x" << addr << dec << endl << endl;
+                write_reg(addr);
             }
             else if (read_en) {
-                switch(addr) {
-                // Count register address
-                case 0x10000010: 
-                    data_bus_o.write(count_reg);
-                    break;
-                // Compare register address
-                case 0x10000014: 
-                    data_bus_o.write(compare_reg);
-                    break;
-                // Control register address
-                case 0x10000018: 
-                    data_bus_o.write(control_reg);
-                    break;
-                // Status register address
-                case 0x1000001C: 
-                    data_bus_o.write(status_reg);
-                    break;
-                default:
-                    data_bus_o.write(0);
-                    cout << "@" << sc_time_stamp() << " Timer Error: Reading from invalid address 0x" << hex << addr << dec << endl << endl;
-                    break;
-                }
-
+                data_bus_o.write(read_reg(addr));
                 cout << "@" << sc_time_stamp() << " Timer: Read from address 0x" << hex << addr << dec << endl << endl;
             }
             else {
                 data_bus_o.write(0);
             }
 
-            // If last bit of control_reg is 1 the timer is activated
-            if ((control_reg & 0x1) == 1) {
+            // Only increment if timer is activated and not already in an interrupt
+            if ((control_reg & 0x1) == 1 && status_reg == 0) {
                 // Increment counter
                 count_reg++;
 
@@ -115,7 +118,7 @@ SC_MODULE(timer_model) {
                     irq_timer_o.write(true);
                     
                     // Reset counter value
-                    // count_reg = 0;
+                    count_reg = 0;
 
                     cout << "@" << sc_time_stamp() << " TIMER: Compare match" << endl;
                     cout << "@" << sc_time_stamp() << " TIMER: Interrupt raised" << endl << endl;
