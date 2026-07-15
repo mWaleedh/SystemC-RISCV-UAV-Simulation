@@ -55,6 +55,7 @@ SC_MODULE(risc_v_model) {
     sc_uint<WIDTH> csr_new_value;
     sc_uint<WIDTH> csr_operation;
     bool csr_register_write_enable;
+    bool in_interrupt;
 
     // ------------------------------------------------------------
     // Helper Functions
@@ -495,6 +496,8 @@ SC_MODULE(risc_v_model) {
                 
                 // Enable interrupts again
                 mstatus = mstatus | 0x8;
+
+                in_interrupt = false;
                 
                 cout << "@" << sc_time_stamp() << " Execute: MRET | Return Address: 0x" << hex << pc_next << dec << endl << endl;
             }
@@ -648,6 +651,7 @@ SC_MODULE(risc_v_model) {
         mtvec   = 0x0;
         mepc    = 0x0;
         mcause  = 0x0;
+        in_interrupt = false;
 
         // Wait marking end of reset
         wait();
@@ -665,7 +669,7 @@ SC_MODULE(risc_v_model) {
                 mip = mip & ~0x80; // Clear Bit 7
             }
 
-            if ((mip & 0x80) && (mie & 0x80) && (mstatus & 0x8)) {
+            if ((mip & 0x80) && (mie & 0x80) && (mstatus & 0x8) && in_interrupt == false) {
                 // Save PC value
                 mepc = pc;
 
@@ -674,6 +678,8 @@ SC_MODULE(risc_v_model) {
 
                 // Disable interrupts
                 mstatus = mstatus & ~0x8;
+
+                in_interrupt = true;
                 
                 // Move to interrupt handling address
                 pc = mtvec;
