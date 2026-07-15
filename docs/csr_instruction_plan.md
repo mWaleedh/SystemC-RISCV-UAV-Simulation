@@ -14,7 +14,7 @@
 **Opcode:** 0x73 | **funct3:** 0x2
 
 **Behavior:**
-- Extract the 12-bit CSR address from the instruction (bits 31:20) and read the current value of the specified CSR.
+- Extract the 12-bit CSR address from the instruction (bits 31:20) and read the current value of the specified CSR. 
 - Route this old CSR value to the alu_res so it can be saved into the destination register (rd) during the WB stage.
 - Perform a bitwise OR operation using the old CSR value and the value inside rs1. Write this newly computed result back into the CSR.
 - If the source register (rs1) is x0, the instruction acts as a CSR read. The CPU ignores the write phase to avoid unintentionally modifying the CSR state.
