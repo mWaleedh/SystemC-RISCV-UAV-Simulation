@@ -52,7 +52,7 @@ int sc_main(int argc, char* argv[]) {
     sys.load_file("./hex/csr_interrupt_program.hex");
 
     // Run system
-    sc_start(99, SC_NS);
+    sc_start(111, SC_NS);
 
     // Verify results
     cout << "x1 = 0x10000000: " << (sys.cpu->registers[1] == 0x10000000 ? "PASS" : "FAIL") << endl;
@@ -67,7 +67,7 @@ int sc_main(int argc, char* argv[]) {
     
     cout << "mepc = 0x30: " << (sys.cpu->mepc == 0x30 ? "PASS" : "FAIL") << endl;
     
-    cout << "mstatus = MIE bit (8th) restored: " << ((sys.cpu->mstatus & 0x8) != 0 ? "PASS" : "FAIL") << endl;
+    cout << "mstatus = MIE bit (3rd) restored: " << ((sys.cpu->mstatus & 0x8) != 0 ? "PASS" : "FAIL") << endl;
     
     cout << "mip = Interrupt cleared: " << ((sys.cpu->mip & 0x80) == 0 ? "PASS" : "FAIL") << endl;
     
