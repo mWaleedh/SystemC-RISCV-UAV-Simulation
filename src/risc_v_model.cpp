@@ -316,6 +316,9 @@ SC_MODULE(risc_v_model) {
             case 0x305: 
                 mtvec = csr_new;
                 break;
+            case 0x344:
+                // Protect 7th bit of MIP from write
+                mip = (csr_new & ~0x80) | (mip & 0x80);
             default: 
                 break; 
         }
