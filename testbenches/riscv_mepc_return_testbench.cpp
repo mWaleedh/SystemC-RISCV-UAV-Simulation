@@ -1,23 +1,21 @@
 /*
-lui x1, 0x10000         (Base timer address)
+lui x1, 0x10000       
 addi x2, x0, 1        
-sw x2, 20(x1)           (compare_reg = 1)
-sw x2, 24(x1)           (control_reg = 1) 
-addi x5, x0, 64         (mtvec = 0x40)
+sw x2, 20(x1)         (compare = 1)
+sw x2, 24(x1)         (control = 1)
+addi x5, x0, 48       (mtvec = 0x30)
 csrrw x0, mtvec, x5   
 addi x4, x0, 128      
-csrrw x0, mie, x4       (Test 1: mie = 1, mstatus = 0)
-csrrw x0, mie, x0       (Clear mie)
+csrrw x0, mie, x4     (Enable MTIE)
+
+addi x6, x0, 1        (BEFORE: x6 = 1)
 addi x4, x0, 8        
-csrrw x0, mstatus, x4   (Test 2: mie = 0, mstatus = 1)
-addi x3, x0, 1          (x3 = 1 -> interrupt disabled)
-addi x4, x0, 128      
-csrrw x0, mie, x4       (Test 3: mie = 1, mstatus = 1)
-addi x3, x0, 2          (Doesn't execute)
-j 0x3C                  
-addi x9, x0, 99         (x9 = 99)
-sw x0, 28(x1)           (status_reg = 0 -> clear interrupt)
-j 0x48                  
+csrrw x0, mstatus, x4 (Trigger interrupt)
+addi x7, x0, 1        (x7 = 1 -> mepc)
+
+addi x8, x0, 1        (x8 = 1 -> ISR)
+sw x0, 28(x1)         (Clear timer)
+mret                  (Return to mepc instruction)             
 */
 
 #include <systemc.h>
@@ -54,16 +52,19 @@ int sc_main(int argc, char* argv[]) {
     rst_s.write(false);
 
     // Load test instructions
-    sys.load_file("./hex/interrupt_enable_program.hex");
+    sys.load_file("./hex/mepc_return_program.hex");
 
     // Run system
-    sc_start(92, SC_NS);
+    sc_start(93, SC_NS);
 
-    // If x3 = 1, the CPU successfully ignored the interrupt during all disabled combinations
-    cout << "x3 = 1: " << (sys.cpu->registers[3] == 1 ? "PASS" : "FAIL") << endl;
+    // Before interrupt
+    cout << "x6 = 1: " << (sys.cpu->registers[6] == 1 ? "PASS" : "FAIL") << endl;
 
-    // If x9 = 99, the CPU successfully jumped to ISR when BOTH were enabled
-    cout << "x9 = 99: "<< (sys.cpu->registers[9] == 99 ? "PASS" : "FAIL") << endl << endl;
+    // ISR instruction
+    cout << "x8 = 1: "<< (sys.cpu->registers[8] == 1 ? "PASS" : "FAIL") << endl;
+
+    // After interrupt
+    cout << "x7 = 1: " << (sys.cpu->registers[7] == 1 ? "PASS" : "FAIL") << endl << endl;
 
     cout << "@" << sc_time_stamp() << " Simulation complete!" << endl;
 
