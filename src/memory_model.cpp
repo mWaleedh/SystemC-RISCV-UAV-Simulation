@@ -22,6 +22,7 @@ SC_MODULE(memory_model) {
 
     // local variables
     sc_uint<WIDTH> memory[SIZE];
+    sc_uint<WIDTH> max_addr;
 
     // Function to load testbench data
     void load_data(uint32_t addr, uint32_t data) {
@@ -30,7 +31,13 @@ SC_MODULE(memory_model) {
 
         // Write data to memory if within range
         if (addr < SIZE) {
-            memory[addr] = data;
+            // Make sure it isn't overwriting a previous instruction
+            if (addr >= max_addr) {
+                memory[addr] = data;
+            }
+            else {
+                cout << "Memory Error: Trying to access already occupied memory 0x" << hex << addr << dec << endl << endl;    
+            }
         } 
         else {
             cout << "Memory Error: Trying to access invalid memory 0x" << hex << addr << dec << endl << endl;
@@ -46,7 +53,6 @@ SC_MODULE(memory_model) {
         }
 
         string temp;
-        uint32_t addr = 0;
         while (getline(file, temp)) {
             // Ignore empty lines
             if (temp.empty()) {
@@ -56,10 +62,10 @@ SC_MODULE(memory_model) {
             // Convert hex string to integer
             uint32_t data = stoul(temp, nullptr, 16);
             
-            if ( addr < SIZE) {
-                memory[addr] = data;
+            if ( max_addr < SIZE) {
+                memory[max_addr] = data;
                 // Move to next address
-                addr++;
+                max_addr++;
             }
         }
         file.close();
@@ -74,6 +80,9 @@ SC_MODULE(memory_model) {
             memory[i] = 0;
         }
         data_bus_o.write(0);
+
+        // Address of last instruction of .hex program
+        max_addr = 0;
 
         // Wait marking end of reset
         wait();
