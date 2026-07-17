@@ -20,24 +20,95 @@ SC_MODULE(risc_v_model) {
     sc_out<sc_uint<WIDTH>> addr_bus_o;
     sc_out<sc_uint<WIDTH>> data_bus_o;
 
-    // local variables
+    // IF/ID Register
+    struct IF_ID {
+        sc_uint<WIDTH> pc;
+        sc_uint<WIDTH> inst;
+        bool valid;
+    } if_id;
+
+    // ID/EX Register
+    struct ID_EX {
+        sc_uint<WIDTH> pc;
+        sc_uint<WIDTH> inst;
+        bool valid;
+        
+        sc_uint<7> opcode;
+        sc_uint<5> rd;
+        sc_uint<5> rs1;
+        sc_uint<5> rs2;
+        sc_uint<3> funct3;
+        sc_uint<7> funct7;
+        
+        sc_uint<WIDTH> rs1_data;
+        sc_uint<WIDTH> rs2_data;
+        sc_int<WIDTH> imm;
+
+        // CSR / Interrupt Signals
+        bool is_mret_instruction;
+        bool is_csr_instruction;
+        bool csr_read_enable;
+        bool csr_write_enable;
+        bool csr_register_write_enable;
+        sc_uint<WIDTH> csr_address;
+        sc_uint<WIDTH> csr_operation;
+    } id_ex;
+
+    // EX/MEM Register
+    struct EX_MEM {
+        sc_uint<WIDTH> pc;
+        sc_uint<WIDTH> inst;
+        bool valid;
+        
+        sc_uint<7> opcode;
+        sc_uint<3> funct3;
+        sc_uint<5> rd;
+        
+        sc_uint<WIDTH> alu_res;
+        sc_uint<WIDTH> rs2_data;
+
+        // CSR Signals for Write Back
+        bool is_csr_instruction;
+        bool csr_write_enable;
+        bool csr_register_write_enable;
+        sc_uint<WIDTH> csr_address;
+        sc_uint<WIDTH> csr_old_value;
+        sc_uint<WIDTH> csr_new_value;
+    } ex_mem;
+
+    // MEM/WB Register
+    struct MEM_WB {
+        sc_uint<WIDTH> pc;
+        sc_uint<WIDTH> inst;
+        bool valid;
+        
+        sc_uint<7> opcode;
+        sc_uint<5> rd;
+        
+        sc_uint<WIDTH> alu_res;
+        sc_uint<WIDTH> mem_data;
+
+        // CSR Signals for Write Back
+        bool is_csr_instruction;
+        bool csr_write_enable;
+        bool csr_register_write_enable;
+        sc_uint<WIDTH> csr_address;
+        sc_uint<WIDTH> csr_old_value;
+        sc_uint<WIDTH> csr_new_value;
+    } mem_wb;
+
+    // Pipeline Control Signals
+    bool stall;
+    bool flush;
+    bool branch_redirect;
+    bool interrupt_redirect;
+
     sc_uint<WIDTH> pc;
-    sc_uint<WIDTH> cur_inst;
+    bool in_interrupt;
+
+    // Register File
     sc_uint<WIDTH> registers[WIDTH];
-    sc_uint<7> opcode;
-    sc_uint<5> rd;
-    sc_uint<3> funct3;
-    sc_uint<5> rs1;
-    sc_uint<5> rs2;    
-    sc_uint<7> funct7;
-    sc_uint<WIDTH> rs1_data;
-    sc_uint<WIDTH> rs2_data;
-    sc_int<WIDTH> imm;
-    sc_uint<WIDTH> alu_res;
-    sc_uint<WIDTH> mem_data;
-    sc_uint<WIDTH> pc_next;
-    bool branch_taken;
-    bool is_valid_inst;
+
     // CSRs
     sc_uint<WIDTH> mstatus;
     sc_uint<WIDTH> mie;
@@ -45,23 +116,12 @@ SC_MODULE(risc_v_model) {
     sc_uint<WIDTH> mtvec;
     sc_uint<WIDTH> mepc;
     sc_uint<WIDTH> mcause;
-    // CSR/MRET signals
-    bool is_mret_instruction;
-    bool is_csr_instruction;
-    bool csr_read_enable;
-    bool csr_write_enable;
-    sc_uint<WIDTH> csr_address;
-    sc_uint<WIDTH> csr_old_value;
-    sc_uint<WIDTH> csr_new_value;
-    sc_uint<WIDTH> csr_operation;
-    bool csr_register_write_enable;
-    bool in_interrupt;
 
     // ------------------------------------------------------------
     // Helper Functions
     // ------------------------------------------------------------
 
-    sc_int<WIDTH> immediateGenerator() {
+    sc_int<WIDTH> immediateGenerator(sc_uint<7> opcode, sc_uint<WIDTH> inst) {
         int immediate = 0;
         switch (opcode) {
         // R-type
@@ -74,7 +134,7 @@ SC_MODULE(risc_v_model) {
         case 0x3:
         case 0x67:
             // [11:0]
-            immediate = (cur_inst >> 20 ) & 0xFFF;
+            immediate = (inst >> 20 ) & 0xFFF;
 
             // Sign extension
             if (immediate & 0x800) { 
@@ -86,9 +146,9 @@ SC_MODULE(risc_v_model) {
         // S-type
         case 0x23:
             // [11:5]
-            immediate = ((cur_inst >> 25 ) & 0x7F) << 5;
+            immediate = ((inst >> 25 ) & 0x7F) << 5;
             // [4:0]
-            immediate |= (cur_inst >> 7) & 0x1F;
+            immediate |= (inst >> 7) & 0x1F;
 
             // Sign extension
             if (immediate & 0x800) { 
@@ -100,13 +160,13 @@ SC_MODULE(risc_v_model) {
         // B-type
         case 0x63:
             // [12]
-            immediate = ((cur_inst >> 31) & 0x1) << 12;
+            immediate = ((inst >> 31) & 0x1) << 12;
             // [11]
-            immediate |= ((cur_inst >> 7) & 0x1) << 11;
+            immediate |= ((inst >> 7) & 0x1) << 11;
             // [10:5]
-            immediate |= ((cur_inst >> 25) & 0x3F) << 5;
+            immediate |= ((inst >> 25) & 0x3F) << 5;
             // [4:1]
-            immediate |= ((cur_inst >> 8) & 0xF) << 1;
+            immediate |= ((inst >> 8) & 0xF) << 1;
 
             // Sign extension
             if (immediate & 0x1000) {
@@ -119,19 +179,19 @@ SC_MODULE(risc_v_model) {
         case 0x37:
         case 0x17:
             // [31:12]
-            immediate = ((cur_inst >> 12) & 0xFFFFF) << 12;
+            immediate = ((inst >> 12) & 0xFFFFF) << 12;
             break;
 
         // J-type
         case 0x6F:        
             // [20]
-            immediate = ((cur_inst >> 31) & 0x1) << 20;
+            immediate = ((inst >> 31) & 0x1) << 20;
             // [19:12]
-            immediate |= ((cur_inst >> 12) & 0xFF) << 12;
+            immediate |= ((inst >> 12) & 0xFF) << 12;
             // [11]
-            immediate |= ((cur_inst >> 20) &0x1) << 11;
+            immediate |= ((inst >> 20) &0x1) << 11;
             // [10:1]
-            immediate |= ((cur_inst >> 21) & 0x3FF) << 1;
+            immediate |= ((inst >> 21) & 0x3FF) << 1;
 
             // Sign extension
             if (immediate & 0x100000) {
@@ -143,19 +203,43 @@ SC_MODULE(risc_v_model) {
         // CSR/MRET
         case 0x73:
             // [31:20]
-            immediate = (cur_inst >> 20) & 0xFFF;
+            immediate = (inst >> 20) & 0xFFF;
             break;
             
         default:
             immediate = 0;
-            is_valid_inst = false;
-            cout << "Warning: Invalid instruction type, skipping to next instruction" << endl << endl;
         }
 
         return immediate;
     }
 
-    sc_uint<WIDTH> alu() {
+    bool validInstruction(sc_uint<7> opcode) {
+        switch (opcode) {
+        // R-type
+        case 0x33:
+        // I-type
+        case 0x13:
+        case 0x3:
+        case 0x67:
+        // S-type
+        case 0x23:
+        // B-type
+        case 0x63: 
+        // U-type
+        case 0x37:
+        case 0x17:
+        // J-type
+        case 0x6F:         
+        // CSR/MRET
+        case 0x73:
+            return true;
+        default:
+            cout << "Decode Warning: Invalid Instruction. Bubble inserted into ID/EX" << endl << endl;
+            return false;
+        }
+    }
+
+    sc_uint<WIDTH> alu(sc_uint<7> opcode, sc_uint<3> funct3, sc_uint<7> funct7, sc_uint<WIDTH> rs1_data, sc_uint<WIDTH> rs2_data, sc_int<WIDTH> imm) {
         sc_uint<WIDTH> alu_result;
 
         switch (opcode) {
@@ -340,202 +424,263 @@ SC_MODULE(risc_v_model) {
     // IF: Instruction Fetch
     // ------------------------------
     void fetch() {
-        // Send program counter value to memory
+        // Read instruction sent by memory
+        sc_uint<WIDTH> inst = data_bus_i.read();
+
+        // Check for stall
+        if (stall) {
+            // Request the same instruction for the next cycle
+            addr_bus_o.write(pc - 4); 
+            read_en_o.write(true);
+
+            cout << "@" << sc_time_stamp() << " Fetch: Stalled at PC -> 0x" << hex << pc << dec << endl << endl;
+            return;
+        }
+
+        cout << "@" << sc_time_stamp() << " Fetch: Received Inst -> 0x" << hex << inst << dec << endl << endl;
+
+        // Check for flush
+        if (flush) {
+            // Insert bubble into IF/ID register
+            if_id.pc = 0;
+            if_id.inst = 0;
+            if_id.valid = false;
+
+            cout << "@" << sc_time_stamp() << " Fetch: Flushed. Bubble inserted into IF/ID." << endl << endl;
+        }
+        else {
+            // Pass data to IF/ID register
+            if_id.pc = pc - 4;
+            if_id.inst = inst;
+            if_id.valid = true;
+        }
+
+        // Request the instruction needed in the next cycle
         addr_bus_o.write(pc);
         read_en_o.write(true);
+        
+        cout << "@" << sc_time_stamp() << " Fetch: Requested next PC -> 0x" << hex << pc << dec << endl << endl;
 
-        cout << "@" << sc_time_stamp() << " Fetch: PC -> 0x" << hex << pc << dec << endl << endl;
-
-        wait();
-
-        read_en_o.write(false);
-
-        wait();
-
-        // Read instruction sent by memory
-        cur_inst = data_bus_i.read();
+        // Move to next instruction
+        pc = pc + 4;
     }
 
     // ID: Instruction Decode
     // ------------------------------
     void decode() {
-        cout << "@" << sc_time_stamp() << " Decode: Instruction -> 0x" << hex << cur_inst << dec << endl << endl;
+        // Check for flush or bubble
+        if (flush || !if_id.valid) {
+            id_ex.valid = false;
+            return;
+        }
 
-        // Divide instruction into required parts
-        opcode = cur_inst & 0x7F;
-        rd = (cur_inst >> 7) & 0x1F;
-        funct3 = (cur_inst >> 12) & 0x7;
-        rs1 = (cur_inst >> 15) & 0x1F;
-        rs2 = (cur_inst >> 20) & 0x1F;
-        funct7 = (cur_inst >> 25) & 0x7F;
+        // Get instruction from previous stage
+        sc_uint<WIDTH> inst = if_id.inst;
 
-        is_valid_inst = true;
+        cout << "@" << sc_time_stamp() << " Decode: Instruction -> 0x" << hex << inst << dec << endl << endl;
+
+        // Pass PC and instruction to next stage
+        id_ex.pc = if_id.pc;
+        id_ex.inst = inst;
+
+        // Divide and instruction to ID/EX Register
+        id_ex.opcode = inst & 0x7F;
+        id_ex.rd = (inst >> 7) & 0x1F;
+        id_ex.funct3 = (inst >> 12) & 0x7;
+        id_ex.rs1 = (inst >> 15) & 0x1F;
+        id_ex.rs2 = (inst >> 20) & 0x1F;
+        id_ex.funct7 = (inst >> 25) & 0x7F;
 
         // Extract immediate
-        imm = immediateGenerator();
+        id_ex.imm = immediateGenerator(id_ex.opcode, inst);
 
         // Skip if invalid opcode
-        if (!is_valid_inst) {
+        if (!validInstruction(id_ex.opcode)) {
+            // Insert bubble into ID/EX Register
+            id_ex.pc = 0;
+            id_ex.inst = 0;
+            id_ex.valid = false;
             return;
         }
 
         // Default CSR/MRET signals
-        is_csr_instruction = false;
-        is_mret_instruction = false;
-        csr_read_enable = false;
-        csr_write_enable = false;
-        csr_register_write_enable = false;
-        csr_operation = 0;
-        csr_address = imm;
+        id_ex.is_csr_instruction = false;
+        id_ex.is_mret_instruction = false;
+        id_ex.csr_read_enable = false;
+        id_ex.csr_write_enable = false;
+        id_ex.csr_register_write_enable = false;
+        id_ex.csr_operation = 0;
+        id_ex.csr_address = id_ex.imm;
 
         // Enable signals if opcode is 0x73 (MRET/CSR)
-        if (opcode == 0x73) {
-            if (funct3 == 0x0) {
+        if (id_ex.opcode == 0x73) {
+            if (id_ex.funct3 == 0x0) {
                 // MRET instruction
-                if (imm == 0x302) {
-                    is_mret_instruction = true;
+                if (id_ex.imm == 0x302) {
+                    id_ex.is_mret_instruction = true;
                 }
             } 
-            else if (funct3 == 0x1 || funct3 == 0x2) {
+            else if (id_ex.funct3 == 0x1 || id_ex.funct3 == 0x2) {
                 // CSR instructions (CSRRW/CSRRS)
-                is_csr_instruction = true;
-                csr_operation = funct3;
-                csr_read_enable = true;
+                id_ex.is_csr_instruction = true;
+                id_ex.csr_operation = id_ex.funct3;
+                id_ex.csr_read_enable = true;
                 
                 // Disable WriteBack to Register File if rd = x0
-                csr_register_write_enable = (rd != 0);
+                id_ex.csr_register_write_enable = (id_ex.rd != 0);
 
                 // CSRRW always writes
-                if (funct3 == 0x1) {
-                    csr_write_enable = true;
+                if (id_ex.funct3 == 0x1) {
+                    id_ex.csr_write_enable = true;
                 }
                 // CSRRS only writes if rs1 != x0
-                else if (funct3 == 0x2) {
-                    csr_write_enable = (rs1 != 0);
+                else if (id_ex.funct3 == 0x2) {
+                    id_ex.csr_write_enable = (id_ex.rs1 != 0);
                 }
             }
         }
 
-        // Read required registers
-        rs1_data = registers[rs1];
-        rs2_data = registers[rs2];
+        // Read Register File
+        id_ex.rs1_data = registers[id_ex.rs1];
+        id_ex.rs2_data = registers[id_ex.rs2];
+
+        // Mark this stage as valid
+        id_ex.valid = true;
 
         cout << "@" << sc_time_stamp() << " Decode:" << endl;
-        cout << "1. opcode: 0x" << hex << opcode << dec << endl;
-        cout << "2. rd: " << rd << endl;
-        cout << "3. funct3: " << funct3 << endl;
-        cout << "4. rs1: " << rs1 << endl;
-        cout << "5. rs2: " << rs2 << endl;
-        cout << "6. funct7: " << funct7 << endl;
-        cout << "7. imm: " << imm << endl;
-        cout << "8. rs1_data: " << rs1_data << endl;
-        cout << "9. rs2_data: " << rs2_data << endl << endl;
-
-        wait();
+        cout << "1. opcode: 0x" << hex << id_ex.opcode << dec << endl;
+        cout << "2. rd: " << id_ex.rd << endl;
+        cout << "3. funct3: " << id_ex.funct3 << endl;
+        cout << "4. rs1: " << id_ex.rs1 << endl;
+        cout << "5. rs2: " << id_ex.rs2 << endl;
+        cout << "6. funct7: " << id_ex.funct7 << endl;
+        cout << "7. imm: " << id_ex.imm << endl;
+        cout << "8. rs1_data: " << id_ex.rs1_data << endl;
+        cout << "9. rs2_data: " << id_ex.rs2_data << endl << endl;
     }
 
     // EX: Instruction Execute
     // ------------------------------
     void execute() {
-        cout << "@" << sc_time_stamp() << " Execute: Instruction 0x" << hex << cur_inst << dec << " is being executed" << endl << endl;
+        if (!id_ex.valid) {
+            ex_mem.pc = 0;
+            ex_mem.inst = 0;
+            ex_mem.valid = false;
+            return;
+        }
+
+        cout << "@" << sc_time_stamp() << " Execute: Instruction 0x" << hex << id_ex.inst << dec << " is being executed" << endl << endl;
 
         // Perform ALU operation
-        alu_res = alu();
+        sc_uint<WIDTH> alu_res = alu(id_ex.opcode, id_ex.funct3, id_ex.funct7, id_ex.rs1_data, id_ex.rs2_data, id_ex.imm);
 
-        branch_taken = false;
+        bool branch_taken = false;
+        sc_uint<WIDTH> target_pc;
 
         // Check if branch is taken or not
-        if (opcode == 0x63) {
+        if (id_ex.opcode == 0x63) {
             // BEQ
-            if (funct3 == 0x0) {
-                branch_taken = (rs1_data == rs2_data);
+            if (id_ex.funct3 == 0x0) {
+                branch_taken = (id_ex.rs1_data == id_ex.rs2_data);
                 
-                cout << "@" << sc_time_stamp() << " Execute: BEQ x" << rs1 << "(" << rs1_data << "), x" << rs2 << "(" << rs2_data << ")";
+                cout << "@" << sc_time_stamp() << " Execute: BEQ x" << id_ex.rs1 << "(" << id_ex.rs1_data << "), x" << id_ex.rs2 << "(" << id_ex.rs2_data << ")";
                 cout << " | Branch Taken: " << (branch_taken ? "YES" : "NO");
             }
             // BNE
-            else if (funct3 == 0x1) {
-                branch_taken = (rs1_data != rs2_data);
+            else if (id_ex.funct3 == 0x1) {
+                branch_taken = (id_ex.rs1_data != id_ex.rs2_data);
                 
-                cout << "@" << sc_time_stamp() << " Execute: BNE x" << rs1 << "(" << rs1_data << "), x" << rs2 << "(" << rs2_data << ")";
+                cout << "@" << sc_time_stamp() << " Execute: BNE x" << id_ex.rs1 << "(" << id_ex.rs1_data << "), x" << id_ex.rs2 << "(" << id_ex.rs2_data << ")";
                 cout << " | Branch Taken: " << (branch_taken ? "YES" : "NO");
             }
 
             // Find next instruction address
             if (branch_taken) {
-                pc_next = pc + imm;
+                target_pc = pc + id_ex.imm;
+                cout << " | Target: 0x" << hex << target_pc << dec << endl << endl;
             }
-            else {
-                pc_next = pc + 4;
-            }
-
-            cout << " | Target: 0x" << hex << pc_next << dec << endl << endl;
         }
         // For JAL calculate the return address and the PC value
-        else if (opcode == 0x6F) {
+        else if (id_ex.opcode == 0x6F) {
             branch_taken = true;
-            pc_next = pc + imm;
+            target_pc = pc + id_ex.imm;
             alu_res = pc + 4;
             
-            cout << "@" << sc_time_stamp() << " Execute: JAL | Return Address: 0x" << hex << alu_res << " | PC: 0x" << pc_next << dec << endl << endl;
+            cout << "@" << sc_time_stamp() << " Execute: JAL | Return Address: 0x" << hex << alu_res << " | PC: 0x" << target_pc << dec << endl << endl;
         }
         // For JALR calculate the return address and the PC value
-        else if (opcode == 0x67) {
+        else if (id_ex.opcode == 0x67) {
             branch_taken = true;
-            pc_next = (rs1_data + imm) & ~1; 
+            target_pc = (id_ex.rs1_data + id_ex.imm) & ~1; 
             alu_res = pc + 4;
             
-            cout << "@" << sc_time_stamp() << " Execute: JALR | Return Address: 0x" << hex << alu_res << " | PC: 0x" << pc_next << dec << endl << endl;
+            cout << "@" << sc_time_stamp() << " Execute: JALR | Return Address: 0x" << hex << alu_res << " | PC: 0x" << id_ex.pc_next << dec << endl << endl;
         }
+
+        sc_uint<WIDTH> csr_new = 0;
+
         // For CSR/MRET Handling 
-        else if (is_mret_instruction || is_csr_instruction) {
+        if (id_ex.is_mret_instruction || id_ex.is_csr_instruction) {
             // MRET
-            if (is_mret_instruction) {
+            if (id_ex.is_mret_instruction) {
                 // Restore PC
-                pc_next = mepc;
+                target_pc = mepc;
                 
                 // Enable interrupts again
                 mstatus = mstatus | 0x8;
-
                 in_interrupt = false;
                 
                 cout << "@" << sc_time_stamp() << " Execute: MRET | Return Address: 0x" << hex << pc_next << dec << endl << endl;
             }
             // CSR
-            else if (is_csr_instruction) {
+            else if (id_ex.is_csr_instruction) {
+                sc_uint<WIDTH> csr_old = 0;
+
                 // Read CSR
-                if (csr_read_enable) {
-                    csr_old_value = read_csr(csr_address);
-                } 
-                else {
-                    csr_old_value = 0;
+                if (id_ex.csr_read_enable) {
+                    csr_old = read_csr(id_ex.csr_address);
                 }
                 
-                csr_new_value = csr_old_value;
+                csr_new = csr_old;
 
                 // Calculate New CSR Value
                 // CSRRW
-                if (csr_operation == 0x1) {
-                    csr_new_value = rs1_data;
+                if (id_ex.csr_operation == 0x1) {
+                    csr_new = id_ex.rs1_data;
                 } 
                 // CSRRS
-                else if (csr_operation == 0x2) {
-                    csr_new_value |= rs1_data; 
+                else if (id_ex.csr_operation == 0x2) {
+                    csr_new |= id_ex.rs1_data; 
                 }
 
                 // Prepare to write old CSR value to destination register
-                alu_res = csr_old_value;
-                
-                // Move to next instruction
-                pc_next = pc + 4;
+                alu_res = csr_old;
             }
         }
-        // Move to next instruction by default
-        else {
-            pc_next = pc + 4;
+
+        // Check if branch is taken or not
+        if (branch_taken) {
+            // Move to correct instruction and flush pipeline
+            pc = target_pc;
+            flush = true;
         }
 
-        wait();
+        // Pass signals to EX/MEM Register
+        ex_mem.alu_res = alu_res;
+        ex_mem.rs2_data = id_ex.rs2_data;
+        ex_mem.rd = id_ex.rd;
+        ex_mem.opcode = id_ex.opcode;
+        ex_mem.funct3 = id_ex.funct3;
+        
+        // Pass CSR control signals to EX/MEM Registers
+        ex_mem.is_csr_instruction = id_ex.is_csr_instruction;
+        ex_mem.csr_write_enable = id_ex.csr_write_enable;
+        ex_mem.csr_address = id_ex.csr_address;
+        ex_mem.csr_new_value = csr_new;
+        ex_mem.csr_register_write_enable = id_ex.csr_register_write_enable;
+
+        // Mark as valid for MEM stage
+        ex_mem.valid = true;
     }
 
     // MEM: Memory/Peripheral Access
@@ -634,17 +779,21 @@ SC_MODULE(risc_v_model) {
     // ------------------------------------------------------------
     void mainThread() {
         // Reset/initial state logic
+        // Reset PC
         pc = 0;
-        cur_inst = 0;
+
+        // Reset Register File
         for (int i = 0; i < WIDTH; i++) {
             registers[i] = 0;
         }
 
+        // Reset output ports
         write_en_o.write(false);
         read_en_o.write(false);
         addr_bus_o.write(0);
         data_bus_o.write(0);
 
+        // Reset CSRs
         mstatus = 0x0;
         mie     = 0x0;
         mip     = 0x0;   
@@ -653,53 +802,50 @@ SC_MODULE(risc_v_model) {
         mcause  = 0x0;
         in_interrupt = false;
 
+        // Reset pipeline valid bits
+        if_id.valid = false;
+        id_ex.valid = false;
+        ex_mem.valid = false;
+        mem_wb.valid = false;
+
         // Wait marking end of reset
         wait();
 
         // Main loop
         while (true) {
-            // Reset flags to default before executing each instruction
+            // Reset memory flags to default
             write_en_o.write(false);
             read_en_o.write(false);
 
+            // Check for interrupts
             if (irq_timer_i.read() == true) {
-                mip = mip | 0x80; // Set Bit 7 (timer interrupt)
+                mip = mip | 0x80;   // Set Bit 7 (timer interrupt)
             } 
             else {
-                mip = mip & ~0x80; // Clear Bit 7
+                mip = mip & ~0x80;  // Clear Bit 7
             }
 
+            // Handle interrupt if triggered
             if ((mip & 0x80) && (mie & 0x80) && (mstatus & 0x8) && in_interrupt == false) {
-                // Save PC value
-                mepc = pc;
-
-                // Set cause as timer interrupt
-                mcause = 0x80000007;
-
-                // Disable interrupts
-                mstatus = mstatus & ~0x8;
-
+                mepc = pc;                  // Save PC value
+                mcause = 0x80000007;        // Set cause as timer interrupt
+                mstatus = mstatus & ~0x8;   // Disable global interrupts
                 in_interrupt = true;
                 
-                // Move to interrupt handling address
-                pc = mtvec;
+                pc = mtvec;     // Move to interrupt handling address
+                flush = true;   // Flush entire pipeline
 
                 cout << "@" << sc_time_stamp() << " CPU: Timer interrupt received" << endl;
                 cout << "@" << sc_time_stamp() << " CPU: Jumping to interrupt handler\n" << endl << endl;
             }
 
-            fetch();
-            decode();
-
-            // Skip instruction if invalid opcode
-            if (!is_valid_inst) {
-                pc += 4;
-                continue;
-            }
-
-            execute();
-            memoryAccess();
             writeBack();
+            memoryAccess();
+            execute();
+            decode();
+            fetch();
+
+            wait();
         }
     }
 
