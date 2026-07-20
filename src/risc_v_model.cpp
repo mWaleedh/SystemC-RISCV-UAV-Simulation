@@ -428,6 +428,12 @@ SC_MODULE(risc_v_model) {
     // IF: Instruction Fetch
     // ------------------------------
     void fetch() {
+        // If MEM stage is using data_bus stall.
+        if (ex_mem.valid && (ex_mem.opcode == 0x03 || ex_mem.opcode == 0x23)) {
+            cout << "@" << sc_time_stamp() << " Fetch: Stalled for MEM at PC -> 0x" << hex << pc << dec << endl << endl;
+            return; 
+        }
+
         // Read instruction sent by memory
         sc_uint<WIDTH> inst = data_bus_i.read();
 
@@ -481,6 +487,33 @@ SC_MODULE(risc_v_model) {
         // Get instruction from previous stage
         sc_uint<WIDTH> inst = if_id.inst;
 
+        // Extract source registers and opcode
+        uint32_t rs1 = (inst >> 15) & 0x1F;
+        uint32_t rs2 = (inst >> 20) & 0x1F;
+        uint32_t opcode = inst & 0x7F;
+
+        // Check if the current operation uses rs1 or rs2
+        bool uses_rs1 = (opcode != 0x37 && opcode != 0x17 && opcode != 0x6F); 
+        bool uses_rs2 = (opcode == 0x33 || opcode == 0x23 || opcode == 0x63);
+
+        // Check for load-use hazard
+        if (id_ex.valid && id_ex.opcode == 0x03 && id_ex.rd != 0) {
+            if ((uses_rs1 && id_ex.rd == rs1) || (uses_rs2 && id_ex.rd == rs2)) {
+                // Stall pipeline by one cycle
+                stall = true;
+                
+                // Insert bubble in ID/EX Register
+                id_ex.pc = 0;
+                id_ex.inst = 0;
+                id_ex.valid = false;
+                id_ex.reg_write = false;
+                
+                return;
+            }
+        }
+
+        stall = false;
+
         cout << "@" << sc_time_stamp() << " Decode: Instruction -> 0x" << hex << inst << dec << endl << endl;
 
         // Pass PC and instruction to next stage
@@ -488,11 +521,11 @@ SC_MODULE(risc_v_model) {
         id_ex.inst = inst;
 
         // Divide and instruction to ID/EX Register
-        id_ex.opcode = inst & 0x7F;
+        id_ex.opcode = opcode;
         id_ex.rd = (inst >> 7) & 0x1F;
         id_ex.funct3 = (inst >> 12) & 0x7;
-        id_ex.rs1 = (inst >> 15) & 0x1F;
-        id_ex.rs2 = (inst >> 20) & 0x1F;
+        id_ex.rs1 = rs1;
+        id_ex.rs2 = rs2;
         id_ex.funct7 = (inst >> 25) & 0x7F;
 
         // Extract immediate
@@ -504,6 +537,7 @@ SC_MODULE(risc_v_model) {
             id_ex.pc = 0;
             id_ex.inst = 0;
             id_ex.valid = false;
+            id_ex.reg_write = false;
             return;
         }
 
@@ -514,7 +548,6 @@ SC_MODULE(risc_v_model) {
         else {
             id_ex.reg_write = false;
         }
-
 
         // Default CSR/MRET signals
         id_ex.is_csr_instruction = false;
