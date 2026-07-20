@@ -584,6 +584,22 @@ SC_MODULE(risc_v_model) {
         uint32_t alu_in_1 = id_ex.rs1_data;
         uint32_t alu_in_2 = id_ex.rs2_data;
 
+        // MEM-to_EX Forwarding
+        if (mem_wb.valid && mem_wb.reg_write && (mem_wb.rd != 0)) {
+            // Read data_bus if Load operation
+            uint32_t mem_data = (mem_wb.opcode == 0x03) ? data_bus_i.read() : mem_wb.alu_res;
+
+            // Forward to rs1
+            if (mem_wb.rd == id_ex.rs1) {
+                alu_in_1 = mem_data;
+            }
+
+            // Forward to rs2
+            if (mem_wb.rd == id_ex.rs2) {
+                alu_in_2 = mem_data;
+            }
+        }
+
         // EX-to-EX Forwarding
         if (ex_mem.valid && ex_mem.reg_write && (ex_mem.rd != 0)) {
             // Forward to rs1
