@@ -1,60 +1,65 @@
 ### Current IF stage
-- Fetches the next 32-bit instruction from instruction memory using the current value of the Program Counter.
-- In the current multi-cycle design, this stage completes its operation and passes the instruction forward before any other stage activates.
+- Fetches the next 32-bit instruction from instruction memory.
+- Increments the Program Counter by 4 every cycle, predicting that branches are not taken.
+- Checks the global flush signal. If High, it ignores the fetched instruction and passes a bubble to the next stage.
+- Sends values to next stage through the IF_ID pipeline register and marks the instruction as valid.
 
 ### Current ID stage
-- Decodes the fetched 32-bit instruction into opcode, funct3, funct7, etc to determine the exact operation.
-- Accesses the register file to read the values of up to two source registers simultaneously.
-- Routes the instruction through the immediate generation unit to sign-extend immediate values based on the specific instruction type.
-- Generates all necessary control signals needed for MRET and CSRs.
+- Decodes the fetched instruction from the IF_ID register into opcode, funct3, funct7, and control signals.
+- Reads the values of the two source registers simultaneously from the register file.
+- Uses the Immediate Generator to sign-extend or zero-extend immediate values based on instruction type.
+- Checks the global flush signal. If High, it clears its output to prevent a wrong instruction from executing.
+- Sends values to EX through ID_EX pipeline register with decoded data, register values, and the valid bit.
 
 ### Current EX stage
-- Uses the Arithmetic Logic Unit to perform mathematical computations and bitwise logical operations.
-- Calculates the actual target address for branch and jump instructions using the Program Counter and the generated immediate offset.
-- Evaluates branch conditions by comparing the two source register values to determine if a branch should be taken.
-- Handles the initial read phase for Control and Status Register instructions to extract values from machine registers like mtvec or mstatus.
+- Reads from the ID_EX register and uses the ALU to perform mathematical and logical operations.
+- Calculates the exact branch conditions (using signed/unsigned comparisons) and calculates the actual branch/jump target address.
+- If a branch is taken, a jump occurs, or an MRET is executed, it forcefully overwrites the PC with the target address and sets the global flush signal High.
+- Sends values to MEM through EX_MEM pipeline register with the computed ALU result, store data (rs2), and CSR signals.
 
 ### Current MEM stage
-- Communicates with the main data memory and the memory-mapped peripheral space, including the timer base address at 0x10000000 through the System Bus.
-- Performs load operations to retrieve data from memory to store into Register File.
-- Performs store operations to write data from the register file out to memory or to trigger write-one-to-clear behaviors in the timer status register.
+- Reads from the EX_MEM register to handle memory-mapped peripheral and data memory requests.
+- For Load operations, it sets the read_en_o High and puts the address on addr_bus_o but does not wait for the data to return.
+- For Store operations, it sets the write_en_o High, puts the address on addr_bus_o, and places data on data_bus_o.
+- Sends values to WB through MEM_WB pipeline register, passing the ALU result and destination register (rd) information.
 
 ### Current WB stage
-- Writes the final computed results back into the destination register within the main register file.
-- Selects between data loaded from memory, results computed by the ALU, or upper immediate values depending on the instruction type.
-- Writes to the Control and Status Register instructions like mstatus or mie.
-- Ensures that register x0 remains zero, discarding any write attempts.
+- Reads from the MEM_WB register to write the final computed results back to the register file or CSRs.
+- For Load instructions, it reads the returning data directly from data_bus_i.
+- Ensures that register x0 remains zero by discarding any writes to it.
+- Doesn't update the Program Counter, as PC logic is now handled in the IF and EX stages.
 
 ### Pipeline registers between stages
-- IF to ID register will be addedfor the fetched instruction and the Program Counter for decoding.
-- ID to EX register will be added for decoded control signals, read register data, sign-extended immediate, and the Program Counter.
-- EX to MEM register will be added for the computed ALU result, the store data, the branch target, and memory control signals.
-- MEM to WB register will be added to hold loaded memory data, the ALU result, and the final writeback control signals.
+- IF_ID struct holds the fetched instruction and passes it to Decode.
+- ID_EX struct holds decoded control signals, read register data, the sign-extended immediate, and opcode.
+- EX_MEM struct connected the execution and memory, holding the ALU result, the store data (rs2), and CSR control signals.
+- MEM_WB struct carries the ALU result or memory operation into the final writeback stage.
 
 ### Current valid bits
-- No valid bits are currently implemented anywhere in the processor datapath.
-- Because the design is currently strictly multi-cycle, every instruction operates sequentially and completes its five stages.
-- Valid bits will need to be added to distinguish between valid instructions and bubbles.
+- Fully implemented across the datapath. Every pipeline struct (IF_ID, ID_EX, EX_MEM, MEM_WB) contains a valid boolean flag.
+- These bits are used by every stage to differentiate between real instructions and pipeline bubbles, ensuring that old data doesn't accidentally overwrite memory or registers.
 
 ### Current flushing logic
-- There is no flushing logic present in the current architecture.
-- Without overlapping pipeline stages, there are never any newer, mistakenly fetched instructions sitting in the datapath behind a branch or a trap.
+- Fully implemented for branches/jumps.
+- When the EX stage identifies a taken branch, it sets flush = true.
+- Because this CPU executes the stage functions in reverse order (WB -> MEM -> EX -> ID -> IF), the IF and ID stages detect this flush flag on the exact same clock cycle and immediately insert bubbles into the pipeline.
 
 ### Current stall logic
-- Stall logic is currently unneeded and completely unimplemented.
-- The multi-cycle waits for memory operations and execution steps to finish before allowing the Program Counter to move to the next instruction.
-- Moving to a 5-stage pipeline will force the implementation of a Hazard Detection Unit to stall the IF and ID stages.
+- Unimplemented. The processor currently can not freeze the IF or ID stages.
+- Because stalls are missing, the pipeline will currently fail if an instruction requires data from a memory load that hasn't arrived yet.
 
 ### Current forwarding logic
-- Since the writeback stage finishes updating the register file before the next instruction is even fetched, there is no need for forwarding logic.
-- The pipeline upgrade will require a Forwarding Unit to route data backward from the EX to EX stage and MEM to EX stage.
+- Unimplemented. The datapath currently suffers from Data Hazards.
+- If an instruction reads a register that a preceding instruction is currently computing in EX or MEM, it will read the old data from the register file.
+
+### Missing hazard handling
+- A Forwarding Unit is required to pass the updated data from the EX_MEM and MEM_WB registers into the ALU inputs in the EX stage.
+- A Hazard Detection Unit is required to detect Load hazards and physically stall the PC and IF_ID register.
 
 ### Planned branch-prediction point
-- Basic branch prediction logic will be implemented in the Decode stage.
-- Once the decode logic identifies the instruction as a branch, the processor can make an early assumption to either continue fetching sequentially or assume the branch is taken.
-- Implementing static prediction, such as assuming all backward branches are taken for loops and forward branches are not taken, will help minimize the performance penalty of control hazards.
+- Implemented statically in the IF stage.
+- The fetch logic uses a "Branch Not Taken" prediction by assuming linear execution (pc = pc + 4) for every instruction.
 
 ### Planned branch-resolution point
-- Actual branch resolution and verification will occur in the Execute stage.
-- The ALU will physically compute the target address and evaluate the exact comparison condition.
-- If the Execute stage determines that the early prediction was incorrect, it will flush the IF and ID stages of the pipeline.
+- Implemented dynamically in the EX stage.
+- The ALU evaluates the true branch condition. If the static prediction from the IF stage was incorrect, the EX stage triggers a pipeline flush, resulting in a 2-cycle performance penalty.
