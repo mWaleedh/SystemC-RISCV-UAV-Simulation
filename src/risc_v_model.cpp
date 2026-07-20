@@ -66,7 +66,7 @@ SC_MODULE(risc_v_model) {
         sc_uint<5> rd;
         
         sc_uint<WIDTH> alu_res;
-        sc_uint<WIDTH> rs2_data;
+        sc_uint<WIDTH> store_data;
 
         bool reg_write;
 
@@ -737,7 +737,7 @@ SC_MODULE(risc_v_model) {
 
         // Pass signals to EX/MEM Register
         ex_mem.alu_res = alu_res;
-        ex_mem.rs2_data = id_ex.rs2_data;
+        ex_mem.store_data = alu_in_2;
         ex_mem.rd = id_ex.rd;
         ex_mem.opcode = id_ex.opcode;
         ex_mem.funct3 = id_ex.funct3;
@@ -788,13 +788,13 @@ SC_MODULE(risc_v_model) {
         else if (ex_mem.opcode == 0x23) {
             write_en_o.write(true);
             addr_bus_o.write(ex_mem.alu_res);
-            data_bus_o.write(ex_mem.rs2_data);
+            data_bus_o.write(ex_mem.store_data);
 
             wait();
 
             write_en_o.write(false);
 
-            cout << "@" << sc_time_stamp() << " Memory Access: Storing 0x" << hex << ex_mem.rs2_data << " to address 0x" << ex_mem.alu_res << dec << endl << endl;
+            cout << "@" << sc_time_stamp() << " Memory Access: Storing 0x" << hex << ex_mem.store_data << " to address 0x" << ex_mem.alu_res << dec << endl << endl;
         }
         else {
             cout << "@" << sc_time_stamp() << " Memory Access: No Memory/Peripheral access needed" << endl << endl;
