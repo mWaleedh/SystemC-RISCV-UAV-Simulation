@@ -83,6 +83,7 @@ SC_MODULE(risc_v_model) {
         bool valid;
         
         sc_uint<7> opcode;
+        sc_uint<3> funct3;
         sc_uint<5> rd;
         
         sc_uint<WIDTH> alu_res;
@@ -263,11 +264,11 @@ SC_MODULE(risc_v_model) {
             }
             // SLT
             else if (funct3 == 0x2) {
-                
+                alu_result = ((sc_int<WIDTH>)rs1_data < (sc_int<WIDTH>)rs2_data) ? 1 : 0;
             }
             // SLTU
             else if (funct3 == 0x3) {
-                
+                alu_result = (rs1_data < rs2_data) ? 1 : 0;
             }
             // XOR
             else if (funct3 == 0x4) {
@@ -280,7 +281,7 @@ SC_MODULE(risc_v_model) {
                 }
                 // SRA
                 else if (funct7 == 0x20) {
-
+                    alu_result = (sc_int<WIDTH>)rs1_data >> (rs2_data & 0x1F);
                 }
             }
             // OR
@@ -307,11 +308,11 @@ SC_MODULE(risc_v_model) {
             }
             // SLTI
             else if (funct3 == 0x2) {
-                
+                alu_result = ((sc_int<WIDTH>)rs1_data < imm) ? 1 : 0;
             }
             // SLTIU
             else if (funct3 == 0x3) {
-                
+                alu_result = (rs1_data < (sc_uint<WIDTH>)imm) ? 1 : 0;
             }
             // XORI
             else if (funct3 == 0x4) {
@@ -324,7 +325,7 @@ SC_MODULE(risc_v_model) {
                 }
                 // SRAI
                 else if (funct7 == 0x20)  {
-
+                    alu_result = (sc_int<WIDTH>)rs1_data >> (imm & 0x1F);
                 }
             }
             // ORI
@@ -593,6 +594,34 @@ SC_MODULE(risc_v_model) {
                 cout << "@" << sc_time_stamp() << " Execute: BNE x" << id_ex.rs1 << "(" << id_ex.rs1_data << "), x" << id_ex.rs2 << "(" << id_ex.rs2_data << ")";
                 cout << " | Branch Taken: " << (branch_taken ? "YES" : "NO");
             }
+            // BLT
+            else if (id_ex.funct3 == 0x4) {
+                branch_taken = ((sc_int<WIDTH>)id_ex.rs1_data < (sc_int<WIDTH>)id_ex.rs2_data);
+                
+                cout << "@" << sc_time_stamp() << " Execute: BLT x" << id_ex.rs1 << "(" << id_ex.rs1_data << "), x" << id_ex.rs2 << "(" << id_ex.rs2_data << ")";
+                cout << " | Branch Taken: " << (branch_taken ? "YES" : "NO");
+            }
+            // BGE
+            else if (id_ex.funct3 == 0x5) {
+                branch_taken = ((sc_int<WIDTH>)id_ex.rs1_data >= (sc_int<WIDTH>)id_ex.rs2_data);
+                
+                cout << "@" << sc_time_stamp() << " Execute: BGE x" << id_ex.rs1 << "(" << id_ex.rs1_data << "), x" << id_ex.rs2 << "(" << id_ex.rs2_data << ")";
+                cout << " | Branch Taken: " << (branch_taken ? "YES" : "NO");
+            }
+            // BLTU
+            else if (id_ex.funct3 == 0x6) {
+                branch_taken = (id_ex.rs1_data < id_ex.rs2_data);
+                
+                cout << "@" << sc_time_stamp() << " Execute: BLTU x" << id_ex.rs1 << "(" << id_ex.rs1_data << "), x" << id_ex.rs2 << "(" << id_ex.rs2_data << ")";
+                cout << " | Branch Taken: " << (branch_taken ? "YES" : "NO");
+            }
+            // BGEU
+            else if (id_ex.funct3 == 0x7) {
+                branch_taken = (id_ex.rs1_data >= id_ex.rs2_data);
+                
+                cout << "@" << sc_time_stamp() << " Execute: BGEU x" << id_ex.rs1 << "(" << id_ex.rs1_data << "), x" << id_ex.rs2 << "(" << id_ex.rs2_data << ")";
+                cout << " | Branch Taken: " << (branch_taken ? "YES" : "NO");
+            }
 
             // Find next instruction address
             if (branch_taken) {
@@ -614,7 +643,7 @@ SC_MODULE(risc_v_model) {
             target_pc = (id_ex.rs1_data + id_ex.imm) & ~1; 
             alu_res = pc + 4;
             
-            cout << "@" << sc_time_stamp() << " Execute: JALR | Return Address: 0x" << hex << alu_res << " | PC: 0x" << id_ex.pc_next << dec << endl << endl;
+            cout << "@" << sc_time_stamp() << " Execute: JALR | Return Address: 0x" << hex << alu_res << " | PC: 0x" << target_pc << dec << endl << endl;
         }
 
         sc_uint<WIDTH> csr_new = 0;
@@ -630,7 +659,7 @@ SC_MODULE(risc_v_model) {
                 mstatus = mstatus | 0x8;
                 in_interrupt = false;
                 
-                cout << "@" << sc_time_stamp() << " Execute: MRET | Return Address: 0x" << hex << pc_next << dec << endl << endl;
+                cout << "@" << sc_time_stamp() << " Execute: MRET | Return Address: 0x" << hex << target_pc << dec << endl << endl;
             }
             // CSR
             else if (id_ex.is_csr_instruction) {
@@ -686,92 +715,108 @@ SC_MODULE(risc_v_model) {
     // MEM: Memory/Peripheral Access
     // ------------------------------
     void memoryAccess() {
-        // Load
-        if (opcode == 0x3) {
-            read_en_o.write(true);
-            addr_bus_o.write(alu_res);
-
-            wait();
-
-            read_en_o.write(false);
-
-            wait();
-
-            mem_data = data_bus_i.read();
-
-            cout << "@" << sc_time_stamp() << " Memory Access: Loaded 0x" << hex << mem_data << " from address 0x" << alu_res << dec << endl << endl;
-
+        // Check for bubble and pass it to next stage
+        if (!ex_mem.valid) {
+            mem_wb.pc = 0;
+            mem_wb.inst = 0;
+            mem_wb.valid = false;
             return;
         }
+
+        // Pass necessary data to next stage register
+        mem_wb.alu_res = ex_mem.alu_res;
+        mem_wb.rd = ex_mem.rd;
+        mem_wb.opcode = ex_mem.opcode;
+        mem_wb.funct3 = ex_mem.funct3;
+
+        // Pass 
+        mem_wb.is_csr_instruction = ex_mem.is_csr_instruction;
+        mem_wb.csr_write_enable = ex_mem.csr_write_enable;
+        mem_wb.csr_address = ex_mem.csr_address;
+        mem_wb.csr_new_value = ex_mem.csr_new_value;
+        mem_wb.csr_register_write_enable = ex_mem.csr_register_write_enable;
+        
+        // Load
+        if (ex_mem.opcode == 0x3) {
+            read_en_o.write(true);
+            addr_bus_o.write(ex_mem.alu_res);
+
+            cout << "@" << sc_time_stamp() << " Memory Access: Requesting Load from address 0x" << hex << ex_mem.alu_res << dec << endl << endl;
+        }
         // Store
-        else if (opcode == 0x23) {
+        else if (ex_mem.opcode == 0x23) {
             write_en_o.write(true);
-            addr_bus_o.write(alu_res);
-            data_bus_o.write(rs2_data);
+            addr_bus_o.write(ex_mem.alu_res);
+            data_bus_o.write(ex_mem.rs2_data);
 
             wait();
 
             write_en_o.write(false);
 
-            cout << "@" << sc_time_stamp() << " Memory Access: Stored 0x" << hex << rs2_data << " to address 0x" << alu_res << dec << endl << endl;
+            cout << "@" << sc_time_stamp() << " Memory Access: Storing 0x" << hex << ex_mem.rs2_data << " to address 0x" << ex_mem.alu_res << dec << endl << endl;
         }
         else {
-            cout << "@" << sc_time_stamp() << " Memory Access: No memory/peripheral access needed" << endl << endl;
+            cout << "@" << sc_time_stamp() << " Memory Access: No Memory/Peripheral access needed" << endl << endl;
         }
 
-        wait();
+        // Mark this stage as valid
+        mem_wb.valid = true;
     }
 
     // WB: Write Back
     // ------------------------------
     void writeBack() {
-        cout << "@" << sc_time_stamp() << " Write Back: Old PC value was 0x" << hex << pc << dec << endl << endl;
-
-        // Write back old CSR value
-        if (is_csr_instruction) {
-            // Write CSR
-            if (csr_write_enable) {
-                write_csr(csr_address, csr_old_value, csr_new_value);
-            }
-
-            if (csr_register_write_enable) {
-                registers[rd] = alu_res;
-                cout << "@" << sc_time_stamp() << " Write Back: Register x" << rd << " updated to " << alu_res << endl << endl;
-            }
-        }
-        // Write back alu_result to register file
-        else if (opcode == 0x33 || opcode == 0x13 || opcode == 0x37 || opcode == 0x17) {
-            // x0 register stays 0
-            if (rd != 0) {
-                registers[rd] = alu_res;
-                cout << "@" << sc_time_stamp() << " Write Back: Register x" << rd << " updated to " << alu_res << endl << endl;
-            }
-        }
-        // Write back mem_data to register file for Load
-        else if (opcode == 0x3) {
-            if (rd != 0) {
-                registers[rd] = mem_data;
-                cout << "@" << sc_time_stamp() << " Write Back: Register x" << rd << " updated to " << mem_data << endl << endl;
-            }
-        }
-        // No write back for Branch
-        else if (opcode == 0x63) {
-            cout << "@" << sc_time_stamp() << " Write Back: No register write back for branch instruction" << endl << endl;
-        }
-        // Write back return address to destination register for Jump
-        else if (opcode == 0x6F || opcode == 0x67) {
-            if (rd != 0) {
-                registers[rd] = alu_res;
-                cout << "@" << sc_time_stamp() << " Write Back: Register x" << rd << " updated to " << alu_res << endl << endl;
-            }
+        // Check for bubble
+        if (!mem_wb.valid) {
+            return;
         }
 
-        // Move to next instruction
-        pc = pc_next;
+        sc_uint<WIDTH> write_data = 0;
+        bool write_to_reg = false;
 
-        cout << "@" << sc_time_stamp() << " Write Back: New PC value is 0x" << hex << pc << dec << endl << endl;
+        // Load requested data from Memory
+        if (mem_wb.opcode == 0x3) {
+            sc_uint<WIDTH> mem_data = data_bus_i.read();
+            
+            write_data = mem_data;
+            write_to_reg = true;
+            
+            cout << "@" << sc_time_stamp() << " Write Back: Loaded 0x" << hex << mem_data << dec << " from memory" << endl << endl;
+        }
+        // Handle ALU operations and Jumps
+        else if (mem_wb.opcode == 0x33 || mem_wb.opcode == 0x13 || mem_wb.opcode == 0x37 || mem_wb.opcode == 0x17 || mem_wb.opcode == 0x6F || mem_wb.opcode == 0x67) {
+            write_data = mem_wb.alu_res;
+            write_to_reg = true;
+        }
 
-        wait();
+        // Handle CSRs
+        if (mem_wb.is_csr_instruction) {
+            // Write new CSR value to selected register
+            if (mem_wb.csr_write_enable) {
+                write_csr(mem_wb.csr_address, mem_wb.alu_res, mem_wb.csr_new_value);
+
+                cout << "@" << sc_time_stamp() << " Write Back: CSR updated to 0x" << hex << mem_wb.csr_new_value << dec << endl << endl;
+            }
+
+            // Prepare to write old value to Register File
+            if (mem_wb.csr_register_write_enable) {
+                write_data = mem_wb.alu_res;
+                write_to_reg = true;
+            } 
+            else {
+                write_to_reg = false;
+            }
+        }
+
+        // Write data to Register File
+        if (write_to_reg && mem_wb.rd != 0) {
+            registers[mem_wb.rd] = write_data;
+
+            cout << "@" << sc_time_stamp() << " Write Back: Register x" << mem_wb.rd << " updated to 0x" << hex << write_data << dec << endl << endl;
+        } 
+        else {
+            cout << "@" << sc_time_stamp() << " Write Back: No Register File write back" << endl << endl;
+        }
     }
 
     // ------------------------------------------------------------
