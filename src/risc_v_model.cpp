@@ -623,44 +623,44 @@ SC_MODULE(risc_v_model) {
         if (id_ex.opcode == 0x63) {
             // BEQ
             if (id_ex.funct3 == 0x0) {
-                branch_taken = (id_ex.rs1_data == id_ex.rs2_data);
+                branch_taken = (alu_in_1 == alu_in_2);
                 
-                cout << "@" << sc_time_stamp() << " Execute: BEQ x" << id_ex.rs1 << "(" << id_ex.rs1_data << "), x" << id_ex.rs2 << "(" << id_ex.rs2_data << ")";
+                cout << "@" << sc_time_stamp() << " Execute: BEQ x" << id_ex.rs1 << "(" << alu_in_1 << "), x" << id_ex.rs2 << "(" << alu_in_2 << ")";
                 cout << " | Branch Taken: " << (branch_taken ? "YES" : "NO");
             }
             // BNE
             else if (id_ex.funct3 == 0x1) {
-                branch_taken = (id_ex.rs1_data != id_ex.rs2_data);
+                branch_taken = (alu_in_1 != alu_in_2);
                 
-                cout << "@" << sc_time_stamp() << " Execute: BNE x" << id_ex.rs1 << "(" << id_ex.rs1_data << "), x" << id_ex.rs2 << "(" << id_ex.rs2_data << ")";
+                cout << "@" << sc_time_stamp() << " Execute: BNE x" << id_ex.rs1 << "(" << alu_in_1 << "), x" << id_ex.rs2 << "(" << alu_in_2 << ")";
                 cout << " | Branch Taken: " << (branch_taken ? "YES" : "NO");
             }
             // BLT
             else if (id_ex.funct3 == 0x4) {
-                branch_taken = ((sc_int<WIDTH>)id_ex.rs1_data < (sc_int<WIDTH>)id_ex.rs2_data);
+                branch_taken = ((sc_int<WIDTH>)alu_in_1 < (sc_int<WIDTH>)alu_in_2);
                 
-                cout << "@" << sc_time_stamp() << " Execute: BLT x" << id_ex.rs1 << "(" << id_ex.rs1_data << "), x" << id_ex.rs2 << "(" << id_ex.rs2_data << ")";
+                cout << "@" << sc_time_stamp() << " Execute: BLT x" << id_ex.rs1 << "(" << alu_in_1 << "), x" << id_ex.rs2 << "(" << alu_in_2 << ")";
                 cout << " | Branch Taken: " << (branch_taken ? "YES" : "NO");
             }
             // BGE
             else if (id_ex.funct3 == 0x5) {
-                branch_taken = ((sc_int<WIDTH>)id_ex.rs1_data >= (sc_int<WIDTH>)id_ex.rs2_data);
+                branch_taken = ((sc_int<WIDTH>)alu_in_1 >= (sc_int<WIDTH>)alu_in_2);
                 
-                cout << "@" << sc_time_stamp() << " Execute: BGE x" << id_ex.rs1 << "(" << id_ex.rs1_data << "), x" << id_ex.rs2 << "(" << id_ex.rs2_data << ")";
+                cout << "@" << sc_time_stamp() << " Execute: BGE x" << id_ex.rs1 << "(" << alu_in_1 << "), x" << id_ex.rs2 << "(" << alu_in_2 << ")";
                 cout << " | Branch Taken: " << (branch_taken ? "YES" : "NO");
             }
             // BLTU
             else if (id_ex.funct3 == 0x6) {
-                branch_taken = (id_ex.rs1_data < id_ex.rs2_data);
+                branch_taken = (alu_in_1 < alu_in_2);
                 
-                cout << "@" << sc_time_stamp() << " Execute: BLTU x" << id_ex.rs1 << "(" << id_ex.rs1_data << "), x" << id_ex.rs2 << "(" << id_ex.rs2_data << ")";
+                cout << "@" << sc_time_stamp() << " Execute: BLTU x" << id_ex.rs1 << "(" << alu_in_1 << "), x" << id_ex.rs2 << "(" << alu_in_2 << ")";
                 cout << " | Branch Taken: " << (branch_taken ? "YES" : "NO");
             }
             // BGEU
             else if (id_ex.funct3 == 0x7) {
-                branch_taken = (id_ex.rs1_data >= id_ex.rs2_data);
+                branch_taken = (alu_in_1 >= alu_in_2);
                 
-                cout << "@" << sc_time_stamp() << " Execute: BGEU x" << id_ex.rs1 << "(" << id_ex.rs1_data << "), x" << id_ex.rs2 << "(" << id_ex.rs2_data << ")";
+                cout << "@" << sc_time_stamp() << " Execute: BGEU x" << id_ex.rs1 << "(" << alu_in_1 << "), x" << id_ex.rs2 << "(" << alu_in_2 << ")";
                 cout << " | Branch Taken: " << (branch_taken ? "YES" : "NO");
             }
 
