@@ -44,12 +44,13 @@ SC_MODULE(risc_v_model) {
         sc_uint<WIDTH> rs2_data;
         sc_int<WIDTH> imm;
 
+        bool reg_write;
+
         // CSR / Interrupt Signals
         bool is_mret_instruction;
         bool is_csr_instruction;
         bool csr_read_enable;
         bool csr_write_enable;
-        bool csr_register_write_enable;
         sc_uint<WIDTH> csr_address;
         sc_uint<WIDTH> csr_operation;
     } id_ex;
@@ -67,10 +68,11 @@ SC_MODULE(risc_v_model) {
         sc_uint<WIDTH> alu_res;
         sc_uint<WIDTH> rs2_data;
 
+        bool reg_write;
+
         // CSR Signals for Write Back
         bool is_csr_instruction;
         bool csr_write_enable;
-        bool csr_register_write_enable;
         sc_uint<WIDTH> csr_address;
         sc_uint<WIDTH> csr_old_value;
         sc_uint<WIDTH> csr_new_value;
@@ -89,10 +91,11 @@ SC_MODULE(risc_v_model) {
         sc_uint<WIDTH> alu_res;
         sc_uint<WIDTH> mem_data;
 
+        bool reg_write;
+
         // CSR Signals for Write Back
         bool is_csr_instruction;
         bool csr_write_enable;
-        bool csr_register_write_enable;
         sc_uint<WIDTH> csr_address;
         sc_uint<WIDTH> csr_old_value;
         sc_uint<WIDTH> csr_new_value;
@@ -504,12 +507,20 @@ SC_MODULE(risc_v_model) {
             return;
         }
 
+        // Enable reg_write (used in forwarding)
+        if (id_ex.opcode == 0x33 || id_ex.opcode == 0x13 || id_ex.opcode == 0x03 || id_ex.opcode == 0x37 || id_ex.opcode == 0x17 || id_ex.opcode == 0x6F || id_ex.opcode == 0x67 || id_ex.opcode == 0x73) {
+            id_ex.reg_write = true;
+        }
+        else {
+            id_ex.reg_write = false;
+        }
+
+
         // Default CSR/MRET signals
         id_ex.is_csr_instruction = false;
         id_ex.is_mret_instruction = false;
         id_ex.csr_read_enable = false;
         id_ex.csr_write_enable = false;
-        id_ex.csr_register_write_enable = false;
         id_ex.csr_operation = 0;
         id_ex.csr_address = id_ex.imm;
 
@@ -526,9 +537,6 @@ SC_MODULE(risc_v_model) {
                 id_ex.is_csr_instruction = true;
                 id_ex.csr_operation = id_ex.funct3;
                 id_ex.csr_read_enable = true;
-                
-                // Disable WriteBack to Register File if rd = x0
-                id_ex.csr_register_write_enable = (id_ex.rd != 0);
 
                 // CSRRW always writes
                 if (id_ex.funct3 == 0x1) {
@@ -540,7 +548,7 @@ SC_MODULE(risc_v_model) {
                 }
             }
         }
-
+        
         // Read Register File
         id_ex.rs1_data = registers[id_ex.rs1];
         id_ex.rs2_data = registers[id_ex.rs2];
@@ -572,8 +580,25 @@ SC_MODULE(risc_v_model) {
 
         cout << "@" << sc_time_stamp() << " Execute: Instruction 0x" << hex << id_ex.inst << dec << " is being executed" << endl << endl;
 
+        // Default ALU inputs
+        uint32_t alu_in_1 = id_ex.rs1_data;
+        uint32_t alu_in_2 = id_ex.rs2_data;
+
+        // EX-to-EX Forwarding
+        if (ex_mem.valid && ex_mem.reg_write && (ex_mem.rd != 0)) {
+            // Forward to rs1
+            if (ex_mem.rd == id_ex.rs1) {
+                alu_in_1 = ex_mem.alu_res;
+            }
+
+            // Forward to rs2
+            if (ex_mem.rd == id_ex.rs2) {
+                alu_in_2 = ex_mem.alu_res;
+            }
+        }
+
         // Perform ALU operation
-        sc_uint<WIDTH> alu_res = alu(id_ex.opcode, id_ex.funct3, id_ex.funct7, id_ex.rs1_data, id_ex.rs2_data, id_ex.imm);
+        sc_uint<WIDTH> alu_res = alu(id_ex.opcode, id_ex.funct3, id_ex.funct7, alu_in_1, alu_in_2, id_ex.imm);
 
         bool branch_taken = false;
         sc_uint<WIDTH> target_pc;
@@ -700,13 +725,13 @@ SC_MODULE(risc_v_model) {
         ex_mem.rd = id_ex.rd;
         ex_mem.opcode = id_ex.opcode;
         ex_mem.funct3 = id_ex.funct3;
+        ex_mem.reg_write = id_ex.reg_write;
         
         // Pass CSR control signals to EX/MEM Registers
         ex_mem.is_csr_instruction = id_ex.is_csr_instruction;
         ex_mem.csr_write_enable = id_ex.csr_write_enable;
         ex_mem.csr_address = id_ex.csr_address;
         ex_mem.csr_new_value = csr_new;
-        ex_mem.csr_register_write_enable = id_ex.csr_register_write_enable;
 
         // Mark as valid for MEM stage
         ex_mem.valid = true;
@@ -728,13 +753,13 @@ SC_MODULE(risc_v_model) {
         mem_wb.rd = ex_mem.rd;
         mem_wb.opcode = ex_mem.opcode;
         mem_wb.funct3 = ex_mem.funct3;
+        mem_wb.reg_write = ex_mem.reg_write;
 
-        // Pass 
+        // Pass CSR
         mem_wb.is_csr_instruction = ex_mem.is_csr_instruction;
         mem_wb.csr_write_enable = ex_mem.csr_write_enable;
         mem_wb.csr_address = ex_mem.csr_address;
         mem_wb.csr_new_value = ex_mem.csr_new_value;
-        mem_wb.csr_register_write_enable = ex_mem.csr_register_write_enable;
         
         // Load
         if (ex_mem.opcode == 0x3) {
@@ -771,22 +796,12 @@ SC_MODULE(risc_v_model) {
             return;
         }
 
-        sc_uint<WIDTH> write_data = 0;
-        bool write_to_reg = false;
+        sc_uint<WIDTH> write_data = mem_wb.alu_res;
 
         // Load requested data from Memory
         if (mem_wb.opcode == 0x3) {
-            sc_uint<WIDTH> mem_data = data_bus_i.read();
-            
-            write_data = mem_data;
-            write_to_reg = true;
-            
-            cout << "@" << sc_time_stamp() << " Write Back: Loaded 0x" << hex << mem_data << dec << " from memory" << endl << endl;
-        }
-        // Handle ALU operations and Jumps
-        else if (mem_wb.opcode == 0x33 || mem_wb.opcode == 0x13 || mem_wb.opcode == 0x37 || mem_wb.opcode == 0x17 || mem_wb.opcode == 0x6F || mem_wb.opcode == 0x67) {
-            write_data = mem_wb.alu_res;
-            write_to_reg = true;
+            write_data = data_bus_i.read();
+            cout << "@" << sc_time_stamp() << " Write Back: Loaded 0x" << hex << write_data << dec << " from memory" << endl << endl;
         }
 
         // Handle CSRs
@@ -794,24 +809,13 @@ SC_MODULE(risc_v_model) {
             // Write new CSR value to selected register
             if (mem_wb.csr_write_enable) {
                 write_csr(mem_wb.csr_address, mem_wb.alu_res, mem_wb.csr_new_value);
-
                 cout << "@" << sc_time_stamp() << " Write Back: CSR updated to 0x" << hex << mem_wb.csr_new_value << dec << endl << endl;
-            }
-
-            // Prepare to write old value to Register File
-            if (mem_wb.csr_register_write_enable) {
-                write_data = mem_wb.alu_res;
-                write_to_reg = true;
-            } 
-            else {
-                write_to_reg = false;
             }
         }
 
         // Write data to Register File
-        if (write_to_reg && mem_wb.rd != 0) {
+        if (mem_wb.reg_write && mem_wb.rd != 0) {
             registers[mem_wb.rd] = write_data;
-
             cout << "@" << sc_time_stamp() << " Write Back: Register x" << mem_wb.rd << " updated to 0x" << hex << write_data << dec << endl << endl;
         } 
         else {
