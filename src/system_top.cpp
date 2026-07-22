@@ -17,21 +17,31 @@ SC_MODULE(system_top) {
     sc_in<bool> irq_ext_i;
     sc_in<bool> irq_sw_i;
 
-    // CPU signals
-    sc_signal<bool> cpu_write_en_s;
-    sc_signal<bool> cpu_read_en_s;
-    sc_signal<sc_uint<WIDTH>> cpu_addr_bus_s;
-    sc_signal<sc_uint<WIDTH>> cpu_data_in_s;
-    sc_signal<sc_uint<WIDTH>> cpu_data_out_s;
+    // CPU instruction signals
+    sc_signal<bool> cpu_inst_read_en_s;
+    sc_signal<sc_uint<WIDTH>> cpu_inst_addr_bus_s;
+    sc_signal<sc_uint<WIDTH>> cpu_inst_bus_in_s;
+
+    // CPU data signals
+    sc_signal<bool> cpu_data_write_en_s;
+    sc_signal<bool> cpu_data_read_en_s;
+    sc_signal<sc_uint<WIDTH>> cpu_data_addr_bus_s;
+    sc_signal<sc_uint<WIDTH>> cpu_data_bus_out_s;
+    sc_signal<sc_uint<WIDTH>> cpu_data_bus_in_s;  
 
     sc_signal<bool> irq_timer_s;
 
-    // Memory signals
-    sc_signal<bool> mem_write_en_s;
-    sc_signal<bool> mem_read_en_s;
-    sc_signal<sc_uint<WIDTH>> mem_addr_bus_s;
-    sc_signal<sc_uint<WIDTH>> mem_data_in_s;
-    sc_signal<sc_uint<WIDTH>> mem_data_out_s;
+    // Memory instruction signals
+    sc_signal<bool> mem_inst_read_en_s;
+    sc_signal<sc_uint<WIDTH>> mem_inst_addr_bus_s;
+    sc_signal<sc_uint<WIDTH>> mem_inst_bus_out_s;
+
+    // Memory data signals
+    sc_signal<bool> mem_data_write_en_s;
+    sc_signal<bool> mem_data_read_en_s;
+    sc_signal<sc_uint<WIDTH>> mem_data_addr_bus_s;
+    sc_signal<sc_uint<WIDTH>> mem_data_bus_in_s;
+    sc_signal<sc_uint<WIDTH>> mem_data_bus_out_s;
 
     // GPIO signals
     sc_signal<bool> gpio_write_en_s;
@@ -79,21 +89,33 @@ SC_MODULE(system_top) {
         cpu->irq_ext_i(irq_ext_i);
         cpu->irq_sw_i(irq_sw_i);
 
-        cpu->write_en_o(cpu_write_en_s);
-        cpu->read_en_o(cpu_read_en_s);
-        cpu->addr_bus_o(cpu_addr_bus_s);
-        cpu->data_bus_i(cpu_data_in_s);
-        cpu->data_bus_o(cpu_data_out_s);
+        // CPU instruction port
+        cpu->inst_read_en_o(cpu_inst_read_en_s);
+        cpu->inst_addr_bus_o(cpu_inst_addr_bus_s);
+        cpu->inst_bus_i(cpu_inst_bus_in_s);
+
+        // CPU data port
+        cpu->data_write_en_o(cpu_data_write_en_s);
+        cpu->data_read_en_o(cpu_data_read_en_s);
+        cpu->data_addr_bus_o(cpu_data_addr_bus_s);
+        cpu->data_bus_o(cpu_data_bus_out_s);
+        cpu->data_bus_i(cpu_data_bus_in_s);
 
         // Connect Memory input/output ports
         mem->clk_i(clk_i);
         mem->rst_i(rst_i);
 
-        mem->write_en_i(mem_write_en_s);
-        mem->read_en_i(mem_read_en_s);
-        mem->addr_bus_i(mem_addr_bus_s);
-        mem->data_bus_i(mem_data_in_s);
-        mem->data_bus_o(mem_data_out_s);
+        // Memory instruction port
+        mem->inst_read_en_i(mem_inst_read_en_s);
+        mem->inst_addr_bus_i(mem_inst_addr_bus_s);
+        mem->inst_bus_o(mem_inst_bus_out_s);
+
+        // Memory data port
+        mem->data_write_en_i(mem_data_write_en_s);
+        mem->data_read_en_i(mem_data_read_en_s);
+        mem->data_addr_bus_i(mem_data_addr_bus_s);
+        mem->data_bus_i(mem_data_bus_in_s);
+        mem->data_bus_o(mem_data_bus_out_s);
 
         // Connect GPIO input/output ports
         gpio->clk_i(clk_i);
@@ -118,19 +140,29 @@ SC_MODULE(system_top) {
         timer->irq_timer_o(irq_timer_s);
     
         // Connect System Bus input/output ports
-        // CPU
-        bus->cpu_write_en_i(cpu_write_en_s);
-        bus->cpu_read_en_i(cpu_read_en_s);
-        bus->cpu_addr_bus_i(cpu_addr_bus_s);
-        bus->cpu_data_bus_i(cpu_data_out_s);
-        bus->cpu_data_bus_o(cpu_data_in_s);
-        
-        // Memory
-        bus->mem_write_en_o(mem_write_en_s);
-        bus->mem_read_en_o(mem_read_en_s);
-        bus->mem_addr_bus_o(mem_addr_bus_s);
-        bus->mem_data_bus_o(mem_data_in_s);
-        bus->mem_data_bus_i(mem_data_out_s);
+        // CPU instruction ports
+        bus->cpu_inst_read_en_i(cpu_inst_read_en_s);
+        bus->cpu_inst_addr_bus_i(cpu_inst_addr_bus_s);
+        bus->cpu_inst_bus_o(cpu_inst_bus_in_s);
+
+        // CPU data ports
+        bus->cpu_data_write_en_i(cpu_data_write_en_s);
+        bus->cpu_data_read_en_i(cpu_data_read_en_s);
+        bus->cpu_data_addr_bus_i(cpu_data_addr_bus_s);
+        bus->cpu_data_bus_i(cpu_data_bus_out_s);
+        bus->cpu_data_bus_o(cpu_data_bus_in_s);
+
+        // Memory instruction ports
+        bus->mem_inst_read_en_o(mem_inst_read_en_s);
+        bus->mem_inst_addr_bus_o(mem_inst_addr_bus_s);
+        bus->mem_inst_bus_i(mem_inst_bus_out_s);
+
+        // Memory data ports
+        bus->mem_data_write_en_o(mem_data_write_en_s);
+        bus->mem_data_read_en_o(mem_data_read_en_s);
+        bus->mem_data_addr_bus_o(mem_data_addr_bus_s);
+        bus->mem_data_bus_o(mem_data_bus_in_s);
+        bus->mem_data_bus_i(mem_data_bus_out_s);
 
         // GPIO
         bus->gpio_write_en_o(gpio_write_en_s);

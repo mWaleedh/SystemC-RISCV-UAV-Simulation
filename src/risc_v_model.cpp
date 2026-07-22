@@ -12,13 +12,18 @@ SC_MODULE(risc_v_model) {
     sc_in<bool> irq_timer_i;
     sc_in<bool> irq_ext_i;
     sc_in<bool> irq_sw_i;
-    sc_in<sc_uint<WIDTH>> data_bus_i;
 
-    // output ports
-    sc_out<bool> write_en_o;
-    sc_out<bool> read_en_o;
-    sc_out<sc_uint<WIDTH>> addr_bus_o;
+    // Instruction ports
+    sc_in<sc_uint<WIDTH>> inst_bus_i;
+    sc_out<bool> inst_read_en_o;
+    sc_out<sc_uint<WIDTH>> inst_addr_bus_o;
+
+    // Data ports
+    sc_in<sc_uint<WIDTH>> data_bus_i;
+    sc_out<bool> data_write_en_o;
+    sc_out<bool> data_read_en_o;
     sc_out<sc_uint<WIDTH>> data_bus_o;
+    sc_out<sc_uint<WIDTH>> data_addr_bus_o;
 
     // IF/ID Register
     struct IF_ID {
@@ -101,6 +106,15 @@ SC_MODULE(risc_v_model) {
         sc_uint<WIDTH> csr_new_value;
     } mem_wb;
 
+    struct MEM_WB_Old {
+        bool valid;
+        bool reg_write;
+        sc_uint<5> rd;
+        sc_uint<7> opcode;
+        sc_uint<WIDTH> alu_res;
+        sc_uint<WIDTH> mem_data;
+    } mem_wb_old;
+
     // Pipeline Control Signals
     bool stall;
     bool flush;
@@ -109,6 +123,7 @@ SC_MODULE(risc_v_model) {
 
     sc_uint<WIDTH> pc;
     bool in_interrupt;
+    bool mem_stall;
 
     // Register File
     sc_uint<WIDTH> registers[WIDTH];
@@ -238,7 +253,6 @@ SC_MODULE(risc_v_model) {
         case 0x73:
             return true;
         default:
-            cout << "Decode Warning: Invalid Instruction. Bubble inserted into ID/EX" << endl << endl;
             return false;
         }
     }
@@ -428,20 +442,22 @@ SC_MODULE(risc_v_model) {
     // IF: Instruction Fetch
     // ------------------------------
     void fetch() {
-        // If MEM stage is using data_bus stall.
-        if (ex_mem.valid && (ex_mem.opcode == 0x03 || ex_mem.opcode == 0x23)) {
+        if (mem_stall) {
+            // Request the same instruction for the next cycle
+            inst_addr_bus_o.write(pc - 4); 
+            inst_read_en_o.write(true);
             cout << "@" << sc_time_stamp() << " Fetch: Stalled for MEM at PC -> 0x" << hex << pc << dec << endl << endl;
-            return; 
+            return;
         }
 
         // Read instruction sent by memory
-        sc_uint<WIDTH> inst = data_bus_i.read();
+        sc_uint<WIDTH> inst = inst_bus_i.read();
 
         // Check for stall
         if (stall) {
             // Request the same instruction for the next cycle
-            addr_bus_o.write(pc - 4); 
-            read_en_o.write(true);
+            inst_addr_bus_o.write(pc - 4); 
+            inst_read_en_o.write(true);
 
             cout << "@" << sc_time_stamp() << " Fetch: Stalled at PC -> 0x" << hex << pc << dec << endl << endl;
             return;
@@ -466,8 +482,8 @@ SC_MODULE(risc_v_model) {
         }
 
         // Request the instruction needed in the next cycle
-        addr_bus_o.write(pc);
-        read_en_o.write(true);
+        inst_addr_bus_o.write(pc);
+        inst_read_en_o.write(true);
         
         cout << "@" << sc_time_stamp() << " Fetch: Requested next PC -> 0x" << hex << pc << dec << endl << endl;
 
@@ -478,6 +494,10 @@ SC_MODULE(risc_v_model) {
     // ID: Instruction Decode
     // ------------------------------
     void decode() {
+        if (mem_stall) {
+            return;
+        }
+
         // Check for flush or bubble
         if (flush || !if_id.valid) {
             id_ex.valid = false;
@@ -538,6 +558,7 @@ SC_MODULE(risc_v_model) {
             id_ex.inst = 0;
             id_ex.valid = false;
             id_ex.reg_write = false;
+            cout << "@" << sc_time_stamp() << " Decode Warning: Invalid Instruction. Bubble inserted into ID/EX" << endl << endl;
             return;
         }
 
@@ -604,6 +625,10 @@ SC_MODULE(risc_v_model) {
     // EX: Instruction Execute
     // ------------------------------
     void execute() {
+        if (mem_stall) {
+            return;
+        }
+
         if (!id_ex.valid) {
             ex_mem.pc = 0;
             ex_mem.inst = 0;
@@ -618,18 +643,15 @@ SC_MODULE(risc_v_model) {
         uint32_t alu_in_2 = id_ex.rs2_data;
 
         // MEM-to_EX Forwarding
-        if (mem_wb.valid && mem_wb.reg_write && (mem_wb.rd != 0)) {
-            // Read data_bus if Load operation
-            uint32_t mem_data = (mem_wb.opcode == 0x03) ? data_bus_i.read() : mem_wb.alu_res;
-
+        if (mem_wb_old.valid && mem_wb_old.reg_write && (mem_wb_old.rd != 0)) {
             // Forward to rs1
-            if (mem_wb.rd == id_ex.rs1) {
-                alu_in_1 = mem_data;
+            if (mem_wb_old.rd == id_ex.rs1) {
+                alu_in_1 = mem_wb_old.mem_data;
             }
 
             // Forward to rs2
-            if (mem_wb.rd == id_ex.rs2) {
-                alu_in_2 = mem_data;
+            if (mem_wb_old.rd == id_ex.rs2) {
+                alu_in_2 = mem_wb_old.mem_data;
             }
         }
 
@@ -810,26 +832,34 @@ SC_MODULE(risc_v_model) {
         mem_wb.csr_address = ex_mem.csr_address;
         mem_wb.csr_new_value = ex_mem.csr_new_value;
         
-        // Load
-        if (ex_mem.opcode == 0x3) {
-            read_en_o.write(true);
-            addr_bus_o.write(ex_mem.alu_res);
+        if (ex_mem.opcode == 0x03 || ex_mem.opcode == 0x23) {
+            if (!mem_stall) {
+                // Stall by one cycle
+                mem_stall = true;
+                data_addr_bus_o.write(ex_mem.alu_res);
 
-            cout << "@" << sc_time_stamp() << " Memory Access: Requesting Load from address 0x" << hex << ex_mem.alu_res << dec << endl << endl;
-        }
-        // Store
-        else if (ex_mem.opcode == 0x23) {
-            write_en_o.write(true);
-            addr_bus_o.write(ex_mem.alu_res);
-            data_bus_o.write(ex_mem.store_data);
-
-            wait();
-
-            write_en_o.write(false);
-
-            cout << "@" << sc_time_stamp() << " Memory Access: Storing 0x" << hex << ex_mem.store_data << " to address 0x" << ex_mem.alu_res << dec << endl << endl;
+                if (ex_mem.opcode == 0x03) {
+                    data_read_en_o.write(true);
+                    cout << "@" << sc_time_stamp() << " Memory Access: Requesting Load from 0x" << hex << ex_mem.alu_res << dec << endl << endl;
+                } 
+                else if (ex_mem.opcode == 0x23) {
+                    data_write_en_o.write(true);
+                    data_bus_o.write(ex_mem.store_data);
+                    cout << "@" << sc_time_stamp() << " Memory Access: Storing to 0x" << hex << ex_mem.alu_res << dec << endl << endl;
+                }
+                
+                mem_wb.pc = 0;
+                mem_wb.inst = 0;
+                mem_wb.valid = false;
+                return; 
+            } 
+            else {
+                // Wait one more cycle to read
+                mem_stall = false;
+            }
         }
         else {
+            mem_stall = false;
             cout << "@" << sc_time_stamp() << " Memory Access: No Memory/Peripheral access needed" << endl << endl;
         }
 
@@ -886,9 +916,12 @@ SC_MODULE(risc_v_model) {
         }
 
         // Reset output ports
-        write_en_o.write(false);
-        read_en_o.write(false);
-        addr_bus_o.write(0);
+        inst_read_en_o.write(false);
+        inst_addr_bus_o.write(0);
+
+        data_write_en_o.write(false);
+        data_read_en_o.write(false);
+        data_addr_bus_o.write(0);
         data_bus_o.write(0);
 
         // Reset CSRs
@@ -912,8 +945,18 @@ SC_MODULE(risc_v_model) {
         // Main loop
         while (true) {
             // Reset memory flags to default
-            write_en_o.write(false);
-            read_en_o.write(false);
+            inst_read_en_o.write(false);
+            data_write_en_o.write(false);
+            data_read_en_o.write(false);
+
+            // Save old values before they get overwritten
+            // For MEM-to-EX forwarding
+            mem_wb_old.valid = mem_wb.valid;
+            mem_wb_old.reg_write = mem_wb.reg_write;
+            mem_wb_old.rd = mem_wb.rd;
+            mem_wb_old.opcode = mem_wb.opcode;
+            mem_wb_old.alu_res = mem_wb.alu_res;
+            mem_wb_old.mem_data = ((mem_wb.opcode == 0x03) ? data_bus_i.read() : mem_wb.alu_res);
 
             // Check for interrupts
             if (irq_timer_i.read() == true) {

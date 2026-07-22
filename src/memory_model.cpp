@@ -12,12 +12,17 @@ SC_MODULE(memory_model) {
     // input ports
     sc_in<bool> clk_i;
     sc_in<bool> rst_i;
-    sc_in<bool> write_en_i;
-    sc_in<bool> read_en_i;
-    sc_in<sc_uint<WIDTH>> addr_bus_i;
-    sc_in<sc_uint<WIDTH>> data_bus_i;
 
-    // output ports
+    // Instruction Busses
+    sc_in<bool> inst_read_en_i;
+    sc_in<sc_uint<WIDTH>> inst_addr_bus_i;
+    sc_out<sc_uint<WIDTH>> inst_bus_o;
+
+    // Data Busses
+    sc_in<bool> data_read_en_i;
+    sc_in<bool> data_write_en_i;
+    sc_in<sc_uint<WIDTH>> data_addr_bus_i;
+    sc_in<sc_uint<WIDTH>> data_bus_i;
     sc_out<sc_uint<WIDTH>> data_bus_o;
 
     // local variables
@@ -89,39 +94,61 @@ SC_MODULE(memory_model) {
 
         // Main loop
         while (true) {
-            // Align address
-            uint32_t addr = addr_bus_i.read() / 4;
+            // Instruction Fetch
+            uint32_t inst_addr = inst_addr_bus_i.read() / 4;
+
+            // Check if CPU requested Instruction
+            if (inst_read_en_i.read() == true) {
+                if (inst_addr > SIZE - 1) {
+                    inst_bus_o.write(0);
+                    cout << "@" << sc_time_stamp() << " Memory Error (Instruction Port): Trying to access invalid memory 0x" << hex << inst_addr_bus_i.read() << dec << endl << endl;
+                }
+                else {
+                    // Send Instruction to CPU
+                    inst_bus_o.write(memory[inst_addr]);
+
+                    cout << "@" << sc_time_stamp() << " Memory Read (IF): " << endl;
+                    cout << "1. Address -> 0x" << hex << inst_addr_bus_i.read() << endl;
+                    cout << "2. Data -> 0x" << memory[inst_addr] << dec << endl << endl;
+                }
+            }
+            else {
+                inst_bus_o.write(0);
+            }
+
+            // Data Fetch
+            uint32_t data_addr = data_addr_bus_i.read() / 4;
 
             // If address is out of bounds don't perform any action
-            if (addr > SIZE - 1 && (read_en_i.read() == true || write_en_i.read() == true)) {
+            if (data_addr > SIZE - 1 && (data_read_en_i.read() == true || data_write_en_i.read() == true)) {
                 // If it is a read operation, write 0 to data_bus
-                if (read_en_i.read() == true) {
+                if (data_read_en_i.read() == true) {
                     data_bus_o.write(0);
                 }
-                cout << "@" << sc_time_stamp() << " Memory Error: Trying to access invalid memory 0x" << hex << addr_bus_i.read() << dec << endl << endl;
+                cout << "@" << sc_time_stamp() << " Memory Error (Data Port): Trying to access invalid memory 0x" << hex << data_addr_bus_i.read() << dec << endl << endl;
             }
             else {
                 // Give warning if both read and write are enabled
-                if (write_en_i.read() == true && read_en_i.read() == true) {
+                if (data_write_en_i.read() == true && data_read_en_i.read() == true) {
                     cout << "@" << sc_time_stamp() << " Memory Warning: Both read_en and write_en are true\n" << endl;
                 }
 
-                // give preference to write
-                if (write_en_i.read() == true) {
+                // Give preference to write
+                if (data_write_en_i.read() == true) {
                     // write data to target address
-                    memory[addr] = data_bus_i.read();
+                    memory[data_addr] = data_bus_i.read();
 
-                    cout << "@" << sc_time_stamp() << " Memory Write: " << endl;
-                    cout << "1. Address -> 0x" << hex << addr_bus_i.read() << endl;
+                    cout << "@" << sc_time_stamp() << " Memory Write (MEM): " << endl;
+                    cout << "1. Address -> 0x" << hex << data_addr_bus_i.read() << endl;
                     cout << "2. Data -> 0x" << data_bus_i.read() << dec << endl << endl;
                 }
-                else if (read_en_i.read() == true) {
-                    // read data from target address
-                    data_bus_o.write(memory[addr]);
+                else if (data_read_en_i.read() == true) {
+                    // Read data from target address
+                    data_bus_o.write(memory[data_addr]);
 
-                    cout << "@" << sc_time_stamp() << " Memory Read: " << endl;
-                    cout << "1. Address -> 0x" << hex << addr_bus_i.read() << endl;
-                    cout << "2. Data -> 0x" << memory[addr] << dec << endl << endl;
+                    cout << "@" << sc_time_stamp() << " Memory Read (MEM): " << endl;
+                    cout << "1. Address -> 0x" << hex << data_addr_bus_i.read() << endl;
+                    cout << "2. Data -> 0x" << memory[data_addr] << dec << endl << endl;
                 }
                 else {
                     data_bus_o.write(0);
