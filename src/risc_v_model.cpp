@@ -118,6 +118,9 @@ SC_MODULE(risc_v_model) {
     // Pipeline Control Signals
     bool stall;
     bool flush;
+    bool interrupt_pending;
+    bool exec_redirect_valid;
+    sc_uint<WIDTH> exec_redirect_pc;
 
     sc_uint<WIDTH> pc;
     bool in_interrupt;
@@ -755,7 +758,8 @@ SC_MODULE(risc_v_model) {
 
             // Find next instruction address
             if (branch_taken) {
-                // Increment counter
+                // Increment counters
+                branch_taken++;
                 branch_mispredictions++;
 
                 target_pc = id_ex.pc + id_ex.imm;
@@ -826,7 +830,8 @@ SC_MODULE(risc_v_model) {
         // Check if branch is taken or not
         if (branch_taken) {
             // Move to correct instruction and flush pipeline
-            pc = target_pc;
+            exec_redirect_valid = true;
+            exec_redirect_pc = target_pc;
             flush = true;
             pipeline_flushes++; // Increment counter
         }
@@ -1018,6 +1023,7 @@ SC_MODULE(risc_v_model) {
 
             // Disable flush after one cycle (if enabled)
             flush = false;
+            exec_redirect_valid = false;
 
             // Check for interrupts
             if (irq_timer_i.read() == true) {
@@ -1029,6 +1035,15 @@ SC_MODULE(risc_v_model) {
 
             // Handle interrupt if triggered
             if ((mip & 0x80) && (mie & 0x80) && (mstatus & 0x8) && in_interrupt == false) {
+                interrupt_pending = true;
+            }
+
+            writeBack();
+            memoryAccess();
+            execute();
+
+            // Give priority to interrupts
+            if (interrupt_pending) {
                 // Increment counters
                 timer_interrupts++;
                 pipeline_flushes++;
@@ -1044,10 +1059,13 @@ SC_MODULE(risc_v_model) {
                 cout << "@" << sc_time_stamp() << " CPU: Timer interrupt received" << endl;
                 cout << "@" << sc_time_stamp() << " CPU: Jumping to interrupt handler\n" << endl << endl;
             }
+            // Then to branches/jumps
+            else if (exec_redirect_valid) {
+                pc = exec_redirect_pc;
+                flush = true;
+                pipeline_flushes++; // Increment counter
+            }
 
-            writeBack();
-            memoryAccess();
-            execute();
             decode();
             fetch();
 
