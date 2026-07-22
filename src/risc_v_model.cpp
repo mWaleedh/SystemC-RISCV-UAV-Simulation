@@ -134,6 +134,16 @@ SC_MODULE(risc_v_model) {
     sc_uint<WIDTH> mepc;
     sc_uint<WIDTH> mcause;
 
+    // Performance Counters
+    uint64_t total_cycles;
+    uint64_t committed_instructions;
+    uint64_t pipeline_stalls;
+    uint64_t pipeline_flushes;
+    uint64_t branches_executed;
+    uint64_t branches_taken;
+    uint64_t branch_mispredictions;
+    uint64_t timer_interrupts;
+
     // ------------------------------------------------------------
     // Helper Functions
     // ------------------------------------------------------------
@@ -433,6 +443,28 @@ SC_MODULE(risc_v_model) {
         cout << "@" << sc_time_stamp() << " Execute: CSR | Address: 0x" << hex << csr_addr << " | Old: 0x" << csr_old << " | New: 0x" << csr_new << dec << endl << endl;
     }
 
+    void performanceStats() {
+        double cpi = (double)total_cycles / committed_instructions;
+        double ipc = (double)committed_instructions / total_cycles;
+        double stall_rate = ((double)pipeline_stalls / total_cycles) * 100.0;
+        double mispredict_rate = branches_executed > 0 ? ((double)branch_mispredictions / branches_executed) * 100.0 : 0.0;
+
+        cout << "-----{ Pipeline Performance Stats }-----" << endl;
+        cout << "Total Cycles:           " << total_cycles << endl;
+        cout << "Committed Instructions: " << committed_instructions << endl;
+        cout << "CPI:                    " << cpi << endl;
+        cout << "IPC:                    " << ipc << endl;
+        cout << "----------------------------------------" << endl;
+        cout << "Pipeline Stalls:        " << pipeline_stalls << " (" << stall_rate << "% of cycles)" << endl;
+        cout << "Pipeline Flushes:       " << pipeline_flushes << endl;
+        cout << "----------------------------------------" << endl;
+        cout << "Branches Executed:      " << branches_executed << endl;
+        cout << "Branches Taken:         " << branches_taken << endl;
+        cout << "Mispredictions:         " << branch_mispredictions << " (" << mispredict_rate << "% miss rate)" << endl;
+        cout << "Timer Interrupts:       " << timer_interrupts << endl;
+        cout << "----------------------------------------\n" << endl;
+    }
+
     // ------------------------------------------------------------
     // Pipeline
     // ------------------------------------------------------------
@@ -519,6 +551,7 @@ SC_MODULE(risc_v_model) {
             if ((uses_rs1 && id_ex.rd == rs1) || (uses_rs2 && id_ex.rd == rs2)) {
                 // Stall pipeline by one cycle
                 stall = true;
+                pipeline_stalls++;  // Increment counter
                 
                 // Insert bubble in ID/EX Register
                 id_ex.pc = 0;
@@ -674,6 +707,9 @@ SC_MODULE(risc_v_model) {
 
         // Check if branch is taken or not
         if (id_ex.opcode == 0x63) {
+            // Increment counter
+            branches_executed++;
+
             // BEQ
             if (id_ex.funct3 == 0x0) {
                 branch_taken = (alu_in_1 == alu_in_2);
@@ -719,7 +755,10 @@ SC_MODULE(risc_v_model) {
 
             // Find next instruction address
             if (branch_taken) {
-                target_pc = id_ex.imm + id_ex.imm;
+                // Increment counter
+                branch_mispredictions++;
+
+                target_pc = id_ex.pc + id_ex.imm;
                 cout << " | Target: 0x" << hex << target_pc << dec << endl << endl;
             }
         }
@@ -772,11 +811,11 @@ SC_MODULE(risc_v_model) {
                 // Calculate New CSR Value
                 // CSRRW
                 if (id_ex.csr_operation == 0x1) {
-                    csr_new = id_ex.rs1_data;
+                    csr_new = alu_in_1;
                 } 
                 // CSRRS
                 else if (id_ex.csr_operation == 0x2) {
-                    csr_new |= id_ex.rs1_data; 
+                    csr_new |= alu_in_1;
                 }
 
                 // Prepare to write old CSR value to destination register
@@ -789,6 +828,7 @@ SC_MODULE(risc_v_model) {
             // Move to correct instruction and flush pipeline
             pc = target_pc;
             flush = true;
+            pipeline_flushes++; // Increment counter
         }
 
         // Pass signals to EX/MEM Register
@@ -837,6 +877,7 @@ SC_MODULE(risc_v_model) {
             if (!mem_stall) {
                 // Stall by one cycle
                 mem_stall = true;
+                pipeline_stalls++;  // Increment counter
                 data_addr_bus_o.write(ex_mem.alu_res);
 
                 if (ex_mem.opcode == 0x03) {
@@ -875,6 +916,9 @@ SC_MODULE(risc_v_model) {
         if (!mem_wb.valid) {
             return;
         }
+
+        // Increment counter
+        committed_instructions++;
 
         sc_uint<WIDTH> write_data = mem_wb.alu_res;
 
@@ -940,11 +984,24 @@ SC_MODULE(risc_v_model) {
         ex_mem.valid = false;
         mem_wb.valid = false;
 
+        // Reset Performance Counters
+        total_cycles = 0;
+        committed_instructions = 0;
+        pipeline_stalls = 0;
+        pipeline_flushes = 0;
+        branches_executed = 0;
+        branches_taken = 0;
+        branch_mispredictions = 0;
+        timer_interrupts = 0;
+
         // Wait marking end of reset
         wait();
 
         // Main loop
         while (true) {
+            // Increment counter
+            total_cycles++;
+
             // Reset memory flags to default
             inst_read_en_o.write(false);
             data_write_en_o.write(false);
@@ -972,6 +1029,10 @@ SC_MODULE(risc_v_model) {
 
             // Handle interrupt if triggered
             if ((mip & 0x80) && (mie & 0x80) && (mstatus & 0x8) && in_interrupt == false) {
+                // Increment counters
+                timer_interrupts++;
+                pipeline_flushes++;
+
                 mepc = pc;                  // Save PC value
                 mcause = 0x80000007;        // Set cause as timer interrupt
                 mstatus = mstatus & ~0x8;   // Disable global interrupts
