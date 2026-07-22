@@ -1,7 +1,29 @@
 CXX = g++
 CXXFLAGS = -I. -lsystemc
 
-all: memory_test decode_test load_store_test branch_test jump_test mini_program_test gpio_test timer_test interrupt_test lui_test csr_interrupt_test csrrw_test csrrs_test csr_x0_test interrupt_enable_test mepc_return mret_test periodic_interrupt_test interrupt_masking load_use_test
+all: memory_test \
+	 decode_test \
+	 load_store_test \
+	 branch_test \
+	 jump_test \
+	 mini_program_test \
+	 gpio_test \
+	 timer_test \
+	 interrupt_test \
+	 lui_test \
+	 csr_interrupt_test \
+	 csrrw_test \
+	 csrrs_test \
+	 csr_x0_test \
+	 interrupt_enable_test \
+	 mepc_return_test \
+	 mret_test \
+	 periodic_interrupt_test \
+	 interrupt_masking_test \
+	 load_use_test \
+	 forwarding_test \
+	 store_forwarding_test \
+	 branch_forwarding_test
 
 memory_test: ./testbenches/riscv_memory_testbench.cpp
 	$(CXX) -o memory_test ./testbenches/riscv_memory_testbench.cpp $(CXXFLAGS)
@@ -63,6 +85,15 @@ interrupt_masking_test: ./testbenches/interrupt_masking_testbench.cpp
 load_use_test: ./testbenches/load_use_hazard_testbench.cpp
 	$(CXX) -o load_use_test ./testbenches/load_use_hazard_testbench.cpp $(CXXFLAGS)
 
+forwarding_test: ./testbenches/riscv_forwarding_testbench.cpp
+	$(CXX) -o forwarding_test ./testbenches/riscv_forwarding_testbench.cpp $(CXXFLAGS)
+
+store_forwarding_test: ./testbenches/store_forwarding_testbench.cpp
+	$(CXX) -o store_forwarding_test ./testbenches/store_forwarding_testbench.cpp $(CXXFLAGS)
+
+branch_forwarding_test: ./testbenches/branch_forwarding_testbench.cpp
+	$(CXX) -o branch_forwarding_test ./testbenches/branch_forwarding_testbench.cpp $(CXXFLAGS)
+
 all_tests: all
 	./memory_test
 	./decode_test
@@ -79,11 +110,36 @@ all_tests: all
 	./csrrs_test
 	./csr_x0_test
 	./interrupt_enable_test
-	./mepc_return
+	./mepc_return_test
 	./mret_test
 	./periodic_interrupt_test
-	./interrupt_masking
+	./interrupt_masking_test
 	./load_use_test
+	./forwarding_test
+	./store_forwarding_test
+	./branch_forwarding_test
 
 clean:
-	rm -f memory_test decode_test load_store_test branch_test jump_test mini_program_test gpio_test timer_test interrupt_test lui_test csr_interrupt_test csrrw_test csrrs_test csr_x0_test interrupt_enable_test mepc_return mret_test periodic_interrupt_test interrupt_masking load_use_test
+	rm -f memory_test \
+		  decode_test \
+		  load_store_test \
+		  branch_test \
+		  jump_test \
+		  mini_program_test \
+		  gpio_test \
+		  timer_test \
+		  interrupt_test \
+		  lui_test \
+		  csr_interrupt_test \
+		  csrrw_test \
+		  csrrs_test \
+		  csr_x0_test \
+		  interrupt_enable_test \
+		  mepc_return_test \
+		  mret_test \
+		  periodic_interrupt_test \
+		  interrupt_masking_test\
+		  load_use_test \
+		  forwarding_test \
+		  store_forwarding_test \
+		  branch_forwarding_test

@@ -1,0 +1,177 @@
+@0 s Applying Reset...
+@5 ns Releasing Reset...
+
+Memory: Loaded data from file ./hex/store_forwarding_program.hex
+
+@5 ns Fetch: Received Inst -> 0x000000000
+
+@5 ns Fetch: Requested next PC -> 0x000000000
+
+@5 ns System Bus (IF): Address 0x0 routed to Main Memory
+
+@6 ns Decode: Instruction -> 0x000000000
+
+@6 ns Decode Warning: Invalid Instruction. Bubble inserted into ID/EX
+
+@6 ns Fetch: Received Inst -> 0x000000000
+
+@6 ns Fetch: Requested next PC -> 0x000000004
+
+@6 ns Memory Read (IF): 
+1. Address -> 0x000000000
+2. Data -> 0x003200093
+
+@6 ns System Bus (IF): Address 0x4 routed to Main Memory
+
+@7 ns Decode: Instruction -> 0x000000000
+
+@7 ns Decode Warning: Invalid Instruction. Bubble inserted into ID/EX
+
+@7 ns Fetch: Received Inst -> 0x003200093
+
+@7 ns Fetch: Requested next PC -> 0x000000008
+
+@7 ns Memory Read (IF): 
+1. Address -> 0x000000004
+2. Data -> 0x006400113
+
+@7 ns System Bus (IF): Address 0x8 routed to Main Memory
+
+@8 ns Decode: Instruction -> 0x003200093
+
+@8 ns Decode:
+1. opcode: 0x13
+2. rd: 1
+3. funct3: 0
+4. rs1: 0
+5. rs2: 18
+6. funct7: 1
+7. imm: 50
+8. rs1_data: 0
+9. rs2_data: 0
+
+@8 ns Fetch: Received Inst -> 0x006400113
+
+@8 ns Fetch: Requested next PC -> 0x00000000c
+
+@8 ns Memory Read (IF): 
+1. Address -> 0x000000008
+2. Data -> 0x000112023
+
+@8 ns System Bus (IF): Address 0xc routed to Main Memory
+
+@9 ns Execute: Instruction 0x003200093 is being executed
+
+@9 ns ALU (I-Type): Result = 50
+
+@9 ns Decode: Instruction -> 0x006400113
+
+@9 ns Decode:
+1. opcode: 0x13
+2. rd: 2
+3. funct3: 0
+4. rs1: 0
+5. rs2: 4
+6. funct7: 3
+7. imm: 100
+8. rs1_data: 0
+9. rs2_data: 0
+
+@9 ns Fetch: Received Inst -> 0x000112023
+
+@9 ns Fetch: Requested next PC -> 0x000000010
+
+@9 ns Memory Read (IF): 
+1. Address -> 0x00000000c
+2. Data -> 0x000000000
+
+@9 ns System Bus (IF): Address 0x10 routed to Main Memory
+
+@10 ns Memory Access: No Memory/Peripheral access needed
+
+@10 ns Execute: Instruction 0x006400113 is being executed
+
+@10 ns ALU (I-Type): Result = 100
+
+@10 ns Decode: Instruction -> 0x000112023
+
+@10 ns Decode:
+1. opcode: 0x23
+2. rd: 0
+3. funct3: 2
+4. rs1: 2
+5. rs2: 1
+6. funct7: 0
+7. imm: 0
+8. rs1_data: 0
+9. rs2_data: 0
+
+@10 ns Fetch: Received Inst -> 0x000000000
+
+@10 ns Fetch: Requested next PC -> 0x000000014
+
+@10 ns Memory Read (IF): 
+1. Address -> 0x000000010
+2. Data -> 0x000000000
+
+@10 ns System Bus (IF): Address 0x14 routed to Main Memory
+
+@11 ns Write Back: Register x1 updated to 0x000000032
+
+@11 ns Memory Access: No Memory/Peripheral access needed
+
+@11 ns Execute: Instruction 0x000112023 is being executed
+
+@11 ns ALU (Store): Target Address = 0x000000064
+
+@11 ns Decode: Instruction -> 0x000000000
+
+@11 ns Decode Warning: Invalid Instruction. Bubble inserted into ID/EX
+
+@11 ns Fetch: Received Inst -> 0x000000000
+
+@11 ns Fetch: Requested next PC -> 0x000000018
+
+@11 ns Memory Read (IF): 
+1. Address -> 0x000000014
+2. Data -> 0x000000000
+
+@11 ns System Bus (IF): Address 0x18 routed to Main Memory
+
+@12 ns Write Back: Register x2 updated to 0x000000064
+
+@12 ns Memory Access: Storing to 0x000000064
+
+@12 ns Fetch: Stalled for MEM at PC -> 0x00000001c
+
+@12 ns Memory Read (IF): 
+1. Address -> 0x000000018
+2. Data -> 0x000000000
+
+@12 ns System Bus (IF): Address 0x18 routed to Main Memory
+
+@12 ns System Bus: Address 0x000000064 routed to Main Memory
+
+@13 ns Decode: Instruction -> 0x000000000
+
+@13 ns Decode Warning: Invalid Instruction. Bubble inserted into ID/EX
+
+@13 ns Fetch: Received Inst -> 0x000000000
+
+@13 ns Fetch: Requested next PC -> 0x00000001c
+
+@13 ns Memory Read (IF): 
+1. Address -> 0x000000018
+2. Data -> 0x000000000
+
+@13 ns Memory Write (MEM): 
+1. Address -> 0x000000064
+2. Data -> 0x000000032
+
+@13 ns System Bus (IF): Address 0x1c routed to Main Memory
+
+x1 = 50: PASS
+x2 = 100: PASS
+mem[100] = 50: PASS
+
+@14 ns Simulation complete!

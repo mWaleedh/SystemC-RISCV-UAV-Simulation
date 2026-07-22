@@ -721,15 +721,15 @@ SC_MODULE(risc_v_model) {
 
             // Find next instruction address
             if (branch_taken) {
-                target_pc = pc + id_ex.imm;
+                target_pc = id_ex.imm + id_ex.imm;
                 cout << " | Target: 0x" << hex << target_pc << dec << endl << endl;
             }
         }
         // For JAL calculate the return address and the PC value
         else if (id_ex.opcode == 0x6F) {
             branch_taken = true;
-            target_pc = pc + id_ex.imm;
-            alu_res = pc + 4;
+            target_pc = id_ex.pc + id_ex.imm;
+            alu_res = id_ex.pc + 4;
             
             cout << "@" << sc_time_stamp() << " Execute: JAL | Return Address: 0x" << hex << alu_res << " | PC: 0x" << target_pc << dec << endl << endl;
         }
@@ -737,7 +737,7 @@ SC_MODULE(risc_v_model) {
         else if (id_ex.opcode == 0x67) {
             branch_taken = true;
             target_pc = (id_ex.rs1_data + id_ex.imm) & ~1; 
-            alu_res = pc + 4;
+            alu_res = id_ex.pc + 4;
             
             cout << "@" << sc_time_stamp() << " Execute: JALR | Return Address: 0x" << hex << alu_res << " | PC: 0x" << target_pc << dec << endl << endl;
         }
@@ -957,6 +957,9 @@ SC_MODULE(risc_v_model) {
             mem_wb_old.opcode = mem_wb.opcode;
             mem_wb_old.alu_res = mem_wb.alu_res;
             mem_wb_old.mem_data = ((mem_wb.opcode == 0x03) ? data_bus_i.read() : mem_wb.alu_res);
+
+            // Disable flush after one cycle (if enabled)
+            flush = false;
 
             // Check for interrupts
             if (irq_timer_i.read() == true) {

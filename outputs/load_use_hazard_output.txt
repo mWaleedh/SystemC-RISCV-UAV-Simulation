@@ -56,7 +56,7 @@ Memory: Loaded data from file ./hex/load_use_hazard_program.hex
 
 @8 ns Memory Read (IF): 
 1. Address -> 0x000000008
-2. Data -> 0x000000013
+2. Data -> 0x000000000
 
 @8 ns System Bus (IF): Address 0xc routed to Main Memory
 
@@ -68,7 +68,7 @@ Memory: Loaded data from file ./hex/load_use_hazard_program.hex
 
 @9 ns Memory Read (IF): 
 1. Address -> 0x00000000c
-2. Data -> 0x000000013
+2. Data -> 0x000000000
 
 @10 ns Memory Access: Requesting Load from 0x000000020
 
@@ -76,7 +76,7 @@ Memory: Loaded data from file ./hex/load_use_hazard_program.hex
 
 @10 ns Memory Read (IF): 
 1. Address -> 0x00000000c
-2. Data -> 0x000000013
+2. Data -> 0x000000000
 
 @10 ns System Bus (IF): Address 0xc routed to Main Memory
 
@@ -95,13 +95,13 @@ Memory: Loaded data from file ./hex/load_use_hazard_program.hex
 8. rs1_data: 0
 9. rs2_data: 0
 
-@11 ns Fetch: Received Inst -> 0x000000013
+@11 ns Fetch: Received Inst -> 0x000000000
 
 @11 ns Fetch: Requested next PC -> 0x000000010
 
 @11 ns Memory Read (IF): 
 1. Address -> 0x00000000c
-2. Data -> 0x000000013
+2. Data -> 0x000000000
 
 @11 ns Memory Read (MEM): 
 1. Address -> 0x000000020
@@ -119,49 +119,27 @@ Memory: Loaded data from file ./hex/load_use_hazard_program.hex
 
 @12 ns ALU (R-type): Result = 200
 
-@12 ns Decode: Instruction -> 0x000000013
+@12 ns Decode: Instruction -> 0x000000000
 
-@12 ns Decode:
-1. opcode: 0x13
-2. rd: 0
-3. funct3: 0
-4. rs1: 0
-5. rs2: 0
-6. funct7: 0
-7. imm: 0
-8. rs1_data: 0
-9. rs2_data: 0
+@12 ns Decode Warning: Invalid Instruction. Bubble inserted into ID/EX
 
-@12 ns Fetch: Received Inst -> 0x000000013
+@12 ns Fetch: Received Inst -> 0x000000000
 
 @12 ns Fetch: Requested next PC -> 0x000000014
 
 @12 ns Memory Read (IF): 
 1. Address -> 0x000000010
-2. Data -> 0x000000013
+2. Data -> 0x000000000
 
 @12 ns System Bus (IF): Address 0x14 routed to Main Memory
 
 @13 ns Memory Access: No Memory/Peripheral access needed
 
-@13 ns Execute: Instruction 0x000000013 is being executed
+@13 ns Decode: Instruction -> 0x000000000
 
-@13 ns ALU (I-Type): Result = 0
+@13 ns Decode Warning: Invalid Instruction. Bubble inserted into ID/EX
 
-@13 ns Decode: Instruction -> 0x000000013
-
-@13 ns Decode:
-1. opcode: 0x13
-2. rd: 0
-3. funct3: 0
-4. rs1: 0
-5. rs2: 0
-6. funct7: 0
-7. imm: 0
-8. rs1_data: 0
-9. rs2_data: 0
-
-@13 ns Fetch: Received Inst -> 0x000000013
+@13 ns Fetch: Received Inst -> 0x000000000
 
 @13 ns Fetch: Requested next PC -> 0x000000018
 
@@ -173,24 +151,9 @@ Memory: Loaded data from file ./hex/load_use_hazard_program.hex
 
 @14 ns Write Back: Register x4 updated to 0x0000000c8
 
-@14 ns Memory Access: No Memory/Peripheral access needed
+@14 ns Decode: Instruction -> 0x000000000
 
-@14 ns Execute: Instruction 0x000000013 is being executed
-
-@14 ns ALU (I-Type): Result = 0
-
-@14 ns Decode: Instruction -> 0x000000013
-
-@14 ns Decode:
-1. opcode: 0x13
-2. rd: 0
-3. funct3: 0
-4. rs1: 0
-5. rs2: 0
-6. funct7: 0
-7. imm: 0
-8. rs1_data: 0
-9. rs2_data: 0
+@14 ns Decode Warning: Invalid Instruction. Bubble inserted into ID/EX
 
 @14 ns Fetch: Received Inst -> 0x000000000
 

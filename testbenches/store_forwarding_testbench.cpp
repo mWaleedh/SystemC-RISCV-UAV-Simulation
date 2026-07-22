@@ -1,6 +1,7 @@
-/*
-LW  x3, 0(x0)  
-ADD x4, x3, x3 
+/* 
+addi x1, x0, 50
+addi x2, x0, 100
+sw x1, 0(x2)
 */
 
 #include <systemc.h>
@@ -37,19 +38,17 @@ int sc_main(int argc, char* argv[]) {
     rst_s.write(false);
 
     // Load Timer test instructions
-    sys.load_file("./hex/load_use_hazard_program.hex");
-
-    sys.load_data(32, 100);
+    sys.load_file("./hex/store_forwarding_program.hex");
 
     // Run system
-    sc_start(10, SC_NS);
+    sc_start(9, SC_NS);
 
     // Verify results
-    cout << "x3 = 100: " << (sys.cpu->registers[3] == 100 ? "PASS" : "FAIL") << endl;
+    cout << "x1 = 50: " << (sys.cpu->registers[1] == 50 ? "PASS" : "FAIL") << endl;
 
-    cout << "x4 = 200: " << (sys.cpu->registers[4] == 200 ? "PASS" : "FAIL") << endl;
+    cout << "x2 = 100: " << (sys.cpu->registers[2] == 100 ? "PASS" : "FAIL") << endl;
 
-    cout << "x0 = 0: " << (sys.cpu->registers[0] == 0 ? "PASS" : "FAIL") << endl << endl;
+    cout << "mem[100] = 50: " << (sys.mem->memory[100 / 4] == 50 ? "PASS" : "FAIL") << endl << endl;
 
     cout << "@" << sc_time_stamp() << " Simulation complete!" << endl;
 
