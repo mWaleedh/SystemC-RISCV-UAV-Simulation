@@ -989,6 +989,9 @@ SC_MODULE(risc_v_model) {
         ex_mem.valid = false;
         mem_wb.valid = false;
 
+        interrupt_pending = false;
+        exec_redirect_valid = false;
+
         // Reset Performance Counters
         total_cycles = 0;
         committed_instructions = 0;
