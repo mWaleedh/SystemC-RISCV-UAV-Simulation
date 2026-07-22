@@ -118,8 +118,6 @@ SC_MODULE(risc_v_model) {
     // Pipeline Control Signals
     bool stall;
     bool flush;
-    bool branch_redirect;
-    bool interrupt_redirect;
 
     sc_uint<WIDTH> pc;
     bool in_interrupt;
@@ -750,10 +748,13 @@ SC_MODULE(risc_v_model) {
             if (id_ex.is_mret_instruction) {
                 // Restore PC
                 target_pc = mepc;
-                
+
                 // Enable interrupts again
                 mstatus = mstatus | 0x8;
                 in_interrupt = false;
+
+                // Flush pipeline
+                branch_taken = true;
                 
                 cout << "@" << sc_time_stamp() << " Execute: MRET | Return Address: 0x" << hex << target_pc << dec << endl << endl;
             }
