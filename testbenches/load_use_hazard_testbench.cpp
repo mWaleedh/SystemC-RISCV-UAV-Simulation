@@ -45,12 +45,12 @@ int sc_main(int argc, char* argv[]) {
     sys.load_data(32, 100);
 
     // Run system
-    sc_start(30, SC_NS);
+    sc_start(10, SC_NS);
 
     // Verify results
-    cout << "x3 = 100: " << (sys.cpu->registers[1] == 100 ? "PASS" : "FAIL") << endl;
+    cout << "x3 = 100: " << (sys.cpu->registers[3] == 100 ? "PASS" : "FAIL") << endl;
 
-    cout << "x4 = 200: " << (sys.cpu->registers[1] == 200 ? "PASS" : "FAIL") << endl;
+    cout << "x4 = 200: " << (sys.cpu->registers[4] == 200 ? "PASS" : "FAIL") << endl;
 
     cout << "x0 = 0: " << (sys.cpu->registers[0] == 0 ? "PASS" : "FAIL") << endl << endl;
 

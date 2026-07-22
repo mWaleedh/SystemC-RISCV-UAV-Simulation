@@ -1,0 +1,209 @@
+@0 s Applying Reset...
+@5 ns Releasing Reset...
+
+Memory: Loaded data from file ./hex/load_use_hazard_program.hex
+
+@5 ns Fetch: Received Inst -> 0x000000000
+
+@5 ns Fetch: Requested next PC -> 0x000000000
+
+@5 ns System Bus (IF): Address 0x0 routed to Main Memory
+
+@6 ns Decode: Instruction -> 0x000000000
+
+@6 ns Decode Warning: Invalid Instruction. Bubble inserted into ID/EX
+
+@6 ns Fetch: Received Inst -> 0x000000000
+
+@6 ns Fetch: Requested next PC -> 0x000000004
+
+@6 ns Memory Read (IF): 
+1. Address -> 0x000000000
+2. Data -> 0x002002183
+
+@6 ns System Bus (IF): Address 0x4 routed to Main Memory
+
+@7 ns Decode: Instruction -> 0x000000000
+
+@7 ns Decode Warning: Invalid Instruction. Bubble inserted into ID/EX
+
+@7 ns Fetch: Received Inst -> 0x002002183
+
+@7 ns Fetch: Requested next PC -> 0x000000008
+
+@7 ns Memory Read (IF): 
+1. Address -> 0x000000004
+2. Data -> 0x000318233
+
+@7 ns System Bus (IF): Address 0x8 routed to Main Memory
+
+@8 ns Decode: Instruction -> 0x002002183
+
+@8 ns Decode:
+1. opcode: 0x03
+2. rd: 3
+3. funct3: 2
+4. rs1: 0
+5. rs2: 0
+6. funct7: 1
+7. imm: 32
+8. rs1_data: 0
+9. rs2_data: 0
+
+@8 ns Fetch: Received Inst -> 0x000318233
+
+@8 ns Fetch: Requested next PC -> 0x00000000c
+
+@8 ns Memory Read (IF): 
+1. Address -> 0x000000008
+2. Data -> 0x000000013
+
+@8 ns System Bus (IF): Address 0xc routed to Main Memory
+
+@9 ns Execute: Instruction 0x002002183 is being executed
+
+@9 ns ALU (Load): Target Address = 0x000000020
+
+@9 ns Fetch: Stalled at PC -> 0x000000010
+
+@9 ns Memory Read (IF): 
+1. Address -> 0x00000000c
+2. Data -> 0x000000013
+
+@10 ns Memory Access: Requesting Load from 0x000000020
+
+@10 ns Fetch: Stalled for MEM at PC -> 0x000000010
+
+@10 ns Memory Read (IF): 
+1. Address -> 0x00000000c
+2. Data -> 0x000000013
+
+@10 ns System Bus (IF): Address 0xc routed to Main Memory
+
+@10 ns System Bus: Address 0x000000020 routed to Main Memory
+
+@11 ns Decode: Instruction -> 0x000318233
+
+@11 ns Decode:
+1. opcode: 0x33
+2. rd: 4
+3. funct3: 0
+4. rs1: 3
+5. rs2: 3
+6. funct7: 0
+7. imm: 0
+8. rs1_data: 0
+9. rs2_data: 0
+
+@11 ns Fetch: Received Inst -> 0x000000013
+
+@11 ns Fetch: Requested next PC -> 0x000000010
+
+@11 ns Memory Read (IF): 
+1. Address -> 0x00000000c
+2. Data -> 0x000000013
+
+@11 ns Memory Read (MEM): 
+1. Address -> 0x000000020
+2. Data -> 0x000000064
+
+@11 ns System Bus (IF): Address 0x10 routed to Main Memory
+
+@12 ns Write Back: Loaded 0x000000064 from memory
+
+@12 ns Write Back: Register x3 updated to 0x000000064
+
+@12 ns Execute: Instruction 0x000318233 is being executed
+
+@12 ns ALU: 100 + 100 = 200
+
+@12 ns ALU (R-type): Result = 200
+
+@12 ns Decode: Instruction -> 0x000000013
+
+@12 ns Decode:
+1. opcode: 0x13
+2. rd: 0
+3. funct3: 0
+4. rs1: 0
+5. rs2: 0
+6. funct7: 0
+7. imm: 0
+8. rs1_data: 0
+9. rs2_data: 0
+
+@12 ns Fetch: Received Inst -> 0x000000013
+
+@12 ns Fetch: Requested next PC -> 0x000000014
+
+@12 ns Memory Read (IF): 
+1. Address -> 0x000000010
+2. Data -> 0x000000013
+
+@12 ns System Bus (IF): Address 0x14 routed to Main Memory
+
+@13 ns Memory Access: No Memory/Peripheral access needed
+
+@13 ns Execute: Instruction 0x000000013 is being executed
+
+@13 ns ALU (I-Type): Result = 0
+
+@13 ns Decode: Instruction -> 0x000000013
+
+@13 ns Decode:
+1. opcode: 0x13
+2. rd: 0
+3. funct3: 0
+4. rs1: 0
+5. rs2: 0
+6. funct7: 0
+7. imm: 0
+8. rs1_data: 0
+9. rs2_data: 0
+
+@13 ns Fetch: Received Inst -> 0x000000013
+
+@13 ns Fetch: Requested next PC -> 0x000000018
+
+@13 ns Memory Read (IF): 
+1. Address -> 0x000000014
+2. Data -> 0x000000000
+
+@13 ns System Bus (IF): Address 0x18 routed to Main Memory
+
+@14 ns Write Back: Register x4 updated to 0x0000000c8
+
+@14 ns Memory Access: No Memory/Peripheral access needed
+
+@14 ns Execute: Instruction 0x000000013 is being executed
+
+@14 ns ALU (I-Type): Result = 0
+
+@14 ns Decode: Instruction -> 0x000000013
+
+@14 ns Decode:
+1. opcode: 0x13
+2. rd: 0
+3. funct3: 0
+4. rs1: 0
+5. rs2: 0
+6. funct7: 0
+7. imm: 0
+8. rs1_data: 0
+9. rs2_data: 0
+
+@14 ns Fetch: Received Inst -> 0x000000000
+
+@14 ns Fetch: Requested next PC -> 0x00000001c
+
+@14 ns Memory Read (IF): 
+1. Address -> 0x000000018
+2. Data -> 0x000000000
+
+@14 ns System Bus (IF): Address 0x1c routed to Main Memory
+
+x3 = 100: PASS
+x4 = 200: PASS
+x0 = 0: PASS
+
+@15 ns Simulation complete!
