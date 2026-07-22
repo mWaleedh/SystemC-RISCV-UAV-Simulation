@@ -1,0 +1,493 @@
+@0 s Applying Reset...
+@5 ns Releasing Reset...
+
+Memory: Loaded data from file ./hex/always_not_taken_program.hex
+
+@5 ns Fetch: Received Inst -> 0x000000000
+
+@5 ns Fetch: Requested next PC -> 0x000000000
+
+@5 ns System Bus (IF): Address 0x0 routed to Main Memory
+
+@6 ns Decode: Instruction -> 0x000000000
+
+@6 ns Decode Warning: Invalid Instruction. Bubble inserted into ID/EX
+
+@6 ns Fetch: Received Inst -> 0x000000000
+
+@6 ns Fetch: Requested next PC -> 0x000000004
+
+@6 ns Memory Read (IF): 
+1. Address -> 0x000000000
+2. Data -> 0x000000093
+
+@6 ns System Bus (IF): Address 0x4 routed to Main Memory
+
+@7 ns Decode: Instruction -> 0x000000000
+
+@7 ns Decode Warning: Invalid Instruction. Bubble inserted into ID/EX
+
+@7 ns Fetch: Received Inst -> 0x000000093
+
+@7 ns Fetch: Requested next PC -> 0x000000008
+
+@7 ns Memory Read (IF): 
+1. Address -> 0x000000004
+2. Data -> 0x000100113
+
+@7 ns System Bus (IF): Address 0x8 routed to Main Memory
+
+@8 ns Decode: Instruction -> 0x000000093
+
+@8 ns Decode:
+1. opcode: 0x13
+2. rd: 1
+3. funct3: 0
+4. rs1: 0
+5. rs2: 0
+6. funct7: 0
+7. imm: 0
+8. rs1_data: 0
+9. rs2_data: 0
+
+@8 ns Fetch: Received Inst -> 0x000100113
+
+@8 ns Fetch: Requested next PC -> 0x00000000c
+
+@8 ns Memory Read (IF): 
+1. Address -> 0x000000008
+2. Data -> 0x000200193
+
+@8 ns System Bus (IF): Address 0xc routed to Main Memory
+
+@9 ns Execute: Instruction 0x000000093 is being executed
+
+@9 ns ALU (I-Type): Result = 0
+
+@9 ns Decode: Instruction -> 0x000100113
+
+@9 ns Decode:
+1. opcode: 0x13
+2. rd: 2
+3. funct3: 0
+4. rs1: 0
+5. rs2: 1
+6. funct7: 0
+7. imm: 1
+8. rs1_data: 0
+9. rs2_data: 0
+
+@9 ns Fetch: Received Inst -> 0x000200193
+
+@9 ns Fetch: Requested next PC -> 0x000000010
+
+@9 ns Memory Read (IF): 
+1. Address -> 0x00000000c
+2. Data -> 0x0fff18193
+
+@9 ns System Bus (IF): Address 0x10 routed to Main Memory
+
+@10 ns Memory Access: No Memory/Peripheral access needed
+
+@10 ns Execute: Instruction 0x000100113 is being executed
+
+@10 ns ALU (I-Type): Result = 1
+
+@10 ns Decode: Instruction -> 0x000200193
+
+@10 ns Decode:
+1. opcode: 0x13
+2. rd: 3
+3. funct3: 0
+4. rs1: 0
+5. rs2: 2
+6. funct7: 0
+7. imm: 2
+8. rs1_data: 0
+9. rs2_data: 0
+
+@10 ns Fetch: Received Inst -> 0x0fff18193
+
+@10 ns Fetch: Requested next PC -> 0x000000014
+
+@10 ns Memory Read (IF): 
+1. Address -> 0x000000010
+2. Data -> 0x0fe019ee3
+
+@10 ns System Bus (IF): Address 0x14 routed to Main Memory
+
+@11 ns Write Back: Register x1 updated to 0x000000000
+
+@11 ns Memory Access: No Memory/Peripheral access needed
+
+@11 ns Execute: Instruction 0x000200193 is being executed
+
+@11 ns ALU (I-Type): Result = 2
+
+@11 ns Decode: Instruction -> 0x0fff18193
+
+@11 ns Decode:
+1. opcode: 0x13
+2. rd: 3
+3. funct3: 0
+4. rs1: 3
+5. rs2: 31
+6. funct7: 127
+7. imm: -1
+8. rs1_data: 0
+9. rs2_data: 0
+
+@11 ns Fetch: Received Inst -> 0x0fe019ee3
+
+@11 ns Fetch: Requested next PC -> 0x000000018
+
+@11 ns Memory Read (IF): 
+1. Address -> 0x000000014
+2. Data -> 0x000208663
+
+@11 ns System Bus (IF): Address 0x18 routed to Main Memory
+
+@12 ns Write Back: Register x2 updated to 0x000000001
+
+@12 ns Memory Access: No Memory/Peripheral access needed
+
+@12 ns Execute: Instruction 0x0fff18193 is being executed
+
+@12 ns ALU (I-Type): Result = 1
+
+@12 ns Decode: Instruction -> 0x0fe019ee3
+
+@12 ns Decode:
+1. opcode: 0x63
+2. rd: 29
+3. funct3: 1
+4. rs1: 3
+5. rs2: 0
+6. funct7: 127
+7. imm: -4
+8. rs1_data: 0
+9. rs2_data: 0
+
+@12 ns Fetch: Received Inst -> 0x000208663
+
+@12 ns Fetch: Requested next PC -> 0x00000001c
+
+@12 ns Memory Read (IF): 
+1. Address -> 0x000000018
+2. Data -> 0x000114463
+
+@12 ns System Bus (IF): Address 0x1c routed to Main Memory
+
+@13 ns Write Back: Register x3 updated to 0x000000002
+
+@13 ns Memory Access: No Memory/Peripheral access needed
+
+@13 ns Execute: Instruction 0x0fe019ee3 is being executed
+
+@13 ns Execute: BNE x3(1), x0(0) | Branch Taken: YES | Target: 0x00000000c
+
+@13 ns Fetch: Received Inst -> 0x000114463
+
+@13 ns Fetch: Flushed. Bubble inserted into IF/ID.
+
+@13 ns Fetch: Requested next PC -> 0x00000000c
+
+@13 ns Memory Read (IF): 
+1. Address -> 0x00000001c
+2. Data -> 0x000209463
+
+@13 ns System Bus (IF): Address 0xc routed to Main Memory
+
+@14 ns Write Back: Register x3 updated to 0x000000001
+
+@14 ns Memory Access: No Memory/Peripheral access needed
+
+@14 ns Fetch: Received Inst -> 0x000209463
+
+@14 ns Fetch: Flushed. Bubble inserted into IF/ID.
+
+@14 ns Fetch: Requested next PC -> 0x000000010
+
+@14 ns Memory Read (IF): 
+1. Address -> 0x00000000c
+2. Data -> 0x0fff18193
+
+@14 ns System Bus (IF): Address 0x10 routed to Main Memory
+
+@15 ns Write Back: No Register File write back
+
+@15 ns Fetch: Received Inst -> 0x0fff18193
+
+@15 ns Fetch: Requested next PC -> 0x000000014
+
+@15 ns Memory Read (IF): 
+1. Address -> 0x000000010
+2. Data -> 0x0fe019ee3
+
+@15 ns System Bus (IF): Address 0x14 routed to Main Memory
+
+@16 ns Decode: Instruction -> 0x0fff18193
+
+@16 ns Decode:
+1. opcode: 0x13
+2. rd: 3
+3. funct3: 0
+4. rs1: 3
+5. rs2: 31
+6. funct7: 127
+7. imm: -1
+8. rs1_data: 1
+9. rs2_data: 0
+
+@16 ns Fetch: Received Inst -> 0x0fe019ee3
+
+@16 ns Fetch: Requested next PC -> 0x000000018
+
+@16 ns Memory Read (IF): 
+1. Address -> 0x000000014
+2. Data -> 0x000208663
+
+@16 ns System Bus (IF): Address 0x18 routed to Main Memory
+
+@17 ns Execute: Instruction 0x0fff18193 is being executed
+
+@17 ns ALU (I-Type): Result = 0
+
+@17 ns Decode: Instruction -> 0x0fe019ee3
+
+@17 ns Decode:
+1. opcode: 0x63
+2. rd: 29
+3. funct3: 1
+4. rs1: 3
+5. rs2: 0
+6. funct7: 127
+7. imm: -4
+8. rs1_data: 1
+9. rs2_data: 0
+
+@17 ns Fetch: Received Inst -> 0x000208663
+
+@17 ns Fetch: Requested next PC -> 0x00000001c
+
+@17 ns Memory Read (IF): 
+1. Address -> 0x000000018
+2. Data -> 0x000114463
+
+@17 ns System Bus (IF): Address 0x1c routed to Main Memory
+
+@18 ns Memory Access: No Memory/Peripheral access needed
+
+@18 ns Execute: Instruction 0x0fe019ee3 is being executed
+
+@18 ns Execute: BNE x3(0), x0(0) | Branch Taken: NO@18 ns Decode: Instruction -> 0x000208663
+
+@18 ns Decode:
+1. opcode: 0x63
+2. rd: 12
+3. funct3: 0
+4. rs1: 1
+5. rs2: 2
+6. funct7: 0
+7. imm: 12
+8. rs1_data: 0
+9. rs2_data: 1
+
+@18 ns Fetch: Received Inst -> 0x000114463
+
+@18 ns Fetch: Requested next PC -> 0x000000020
+
+@18 ns Memory Read (IF): 
+1. Address -> 0x00000001c
+2. Data -> 0x000209463
+
+@18 ns System Bus (IF): Address 0x20 routed to Main Memory
+
+@19 ns Write Back: Register x3 updated to 0x000000000
+
+@19 ns Memory Access: No Memory/Peripheral access needed
+
+@19 ns Execute: Instruction 0x000208663 is being executed
+
+@19 ns Execute: BEQ x1(0), x2(1) | Branch Taken: NO@19 ns Decode: Instruction -> 0x000114463
+
+@19 ns Decode:
+1. opcode: 0x63
+2. rd: 8
+3. funct3: 4
+4. rs1: 2
+5. rs2: 1
+6. funct7: 0
+7. imm: 8
+8. rs1_data: 1
+9. rs2_data: 0
+
+@19 ns Fetch: Received Inst -> 0x000209463
+
+@19 ns Fetch: Requested next PC -> 0x000000024
+
+@19 ns Memory Read (IF): 
+1. Address -> 0x000000020
+2. Data -> 0x006300293
+
+@19 ns System Bus (IF): Address 0x24 routed to Main Memory
+
+@20 ns Write Back: No Register File write back
+
+@20 ns Memory Access: No Memory/Peripheral access needed
+
+@20 ns Execute: Instruction 0x000114463 is being executed
+
+@20 ns Execute: BLT x2(1), x1(0) | Branch Taken: NO@20 ns Decode: Instruction -> 0x000209463
+
+@20 ns Decode:
+1. opcode: 0x63
+2. rd: 8
+3. funct3: 1
+4. rs1: 1
+5. rs2: 2
+6. funct7: 0
+7. imm: 8
+8. rs1_data: 0
+9. rs2_data: 1
+
+@20 ns Fetch: Received Inst -> 0x006300293
+
+@20 ns Fetch: Requested next PC -> 0x000000028
+
+@20 ns Memory Read (IF): 
+1. Address -> 0x000000024
+2. Data -> 0x000a00213
+
+@20 ns System Bus (IF): Address 0x28 routed to Main Memory
+
+@21 ns Write Back: No Register File write back
+
+@21 ns Memory Access: No Memory/Peripheral access needed
+
+@21 ns Execute: Instruction 0x000209463 is being executed
+
+@21 ns Execute: BNE x1(0), x2(1) | Branch Taken: YES | Target: 0x000000024
+
+@21 ns Fetch: Received Inst -> 0x000a00213
+
+@21 ns Fetch: Flushed. Bubble inserted into IF/ID.
+
+@21 ns Fetch: Requested next PC -> 0x000000024
+
+@21 ns Memory Read (IF): 
+1. Address -> 0x000000028
+2. Data -> 0x000000000
+
+@21 ns System Bus (IF): Address 0x24 routed to Main Memory
+
+@22 ns Write Back: No Register File write back
+
+@22 ns Memory Access: No Memory/Peripheral access needed
+
+@22 ns Fetch: Received Inst -> 0x000000000
+
+@22 ns Fetch: Flushed. Bubble inserted into IF/ID.
+
+@22 ns Fetch: Requested next PC -> 0x000000028
+
+@22 ns Memory Read (IF): 
+1. Address -> 0x000000024
+2. Data -> 0x000a00213
+
+@22 ns System Bus (IF): Address 0x28 routed to Main Memory
+
+@23 ns Write Back: No Register File write back
+
+@23 ns Fetch: Received Inst -> 0x000a00213
+
+@23 ns Fetch: Requested next PC -> 0x00000002c
+
+@23 ns Memory Read (IF): 
+1. Address -> 0x000000028
+2. Data -> 0x000000000
+
+@23 ns System Bus (IF): Address 0x2c routed to Main Memory
+
+@24 ns Decode: Instruction -> 0x000a00213
+
+@24 ns Decode:
+1. opcode: 0x13
+2. rd: 4
+3. funct3: 0
+4. rs1: 0
+5. rs2: 10
+6. funct7: 0
+7. imm: 10
+8. rs1_data: 0
+9. rs2_data: 0
+
+@24 ns Fetch: Received Inst -> 0x000000000
+
+@24 ns Fetch: Requested next PC -> 0x000000030
+
+@24 ns Memory Read (IF): 
+1. Address -> 0x00000002c
+2. Data -> 0x000000000
+
+@24 ns System Bus (IF): Address 0x30 routed to Main Memory
+
+@25 ns Execute: Instruction 0x000a00213 is being executed
+
+@25 ns ALU (I-Type): Result = 10
+
+@25 ns Decode: Instruction -> 0x000000000
+
+@25 ns Decode Warning: Invalid Instruction. Bubble inserted into ID/EX
+
+@25 ns Fetch: Received Inst -> 0x000000000
+
+@25 ns Fetch: Requested next PC -> 0x000000034
+
+@25 ns Memory Read (IF): 
+1. Address -> 0x000000030
+2. Data -> 0x000000000
+
+@25 ns System Bus (IF): Address 0x34 routed to Main Memory
+
+@26 ns Memory Access: No Memory/Peripheral access needed
+
+@26 ns Decode: Instruction -> 0x000000000
+
+@26 ns Decode Warning: Invalid Instruction. Bubble inserted into ID/EX
+
+@26 ns Fetch: Received Inst -> 0x000000000
+
+@26 ns Fetch: Requested next PC -> 0x000000038
+
+@26 ns Memory Read (IF): 
+1. Address -> 0x000000034
+2. Data -> 0x000000000
+
+@26 ns System Bus (IF): Address 0x38 routed to Main Memory
+
+@27 ns Write Back: Register x4 updated to 0x00000000a
+
+@27 ns Decode: Instruction -> 0x000000000
+
+@27 ns Decode Warning: Invalid Instruction. Bubble inserted into ID/EX
+
+@27 ns Fetch: Received Inst -> 0x000000000
+
+@27 ns Fetch: Requested next PC -> 0x00000003c
+
+@27 ns Memory Read (IF): 
+1. Address -> 0x000000038
+2. Data -> 0x000000000
+
+@27 ns System Bus (IF): Address 0x3c routed to Main Memory
+
+x3 = 0: PASS
+x4 = 10: PASS
+x5 = 0: PASS
+branches_executed = 5: PASS
+branches_taken = 2: PASS
+branch_mispredictions = 2: PASS
+pipeline_flushes = 2: PASS
+
+@28 ns Simulation complete!

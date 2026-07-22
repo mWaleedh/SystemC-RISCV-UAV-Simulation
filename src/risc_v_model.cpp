@@ -121,8 +121,11 @@ SC_MODULE(risc_v_model) {
     bool interrupt_pending;
     bool exec_redirect_valid;
     sc_uint<WIDTH> exec_redirect_pc;
+    int flush_pending_cycles;
 
     sc_uint<WIDTH> pc;
+    sc_uint<WIDTH> fetch_pc_stage1;
+    sc_uint<WIDTH> fetch_pc_stage2; 
     bool in_interrupt;
     bool mem_stall;
 
@@ -477,8 +480,11 @@ SC_MODULE(risc_v_model) {
     void fetch() {
         if (mem_stall) {
             // Request the same instruction for the next cycle
-            inst_addr_bus_o.write(pc - 4); 
+            inst_addr_bus_o.write(fetch_pc_stage2); 
             inst_read_en_o.write(true);
+
+            fetch_pc_stage1 = fetch_pc_stage2;
+
             cout << "@" << sc_time_stamp() << " Fetch: Stalled for MEM at PC -> 0x" << hex << pc << dec << endl << endl;
             return;
         }
@@ -489,8 +495,10 @@ SC_MODULE(risc_v_model) {
         // Check for stall
         if (stall) {
             // Request the same instruction for the next cycle
-            inst_addr_bus_o.write(pc - 4); 
+            inst_addr_bus_o.write(fetch_pc_stage2); 
             inst_read_en_o.write(true);
+
+            fetch_pc_stage1 = fetch_pc_stage2;
 
             cout << "@" << sc_time_stamp() << " Fetch: Stalled at PC -> 0x" << hex << pc << dec << endl << endl;
             return;
@@ -509,10 +517,13 @@ SC_MODULE(risc_v_model) {
         }
         else {
             // Pass data to IF/ID register
-            if_id.pc = pc - 4;
+            if_id.pc = fetch_pc_stage1;
             if_id.inst = inst;
             if_id.valid = true;
         }
+
+        fetch_pc_stage1 = fetch_pc_stage2;
+        fetch_pc_stage2 = pc;
 
         // Request the instruction needed in the next cycle
         inst_addr_bus_o.write(pc);
@@ -759,7 +770,7 @@ SC_MODULE(risc_v_model) {
             // Find next instruction address
             if (branch_taken) {
                 // Increment counters
-                branch_taken++;
+                branches_taken++;
                 branch_mispredictions++;
 
                 target_pc = id_ex.pc + id_ex.imm;
@@ -829,11 +840,8 @@ SC_MODULE(risc_v_model) {
 
         // Check if branch is taken or not
         if (branch_taken) {
-            // Move to correct instruction and flush pipeline
             exec_redirect_valid = true;
             exec_redirect_pc = target_pc;
-            flush = true;
-            pipeline_flushes++; // Increment counter
         }
 
         // Pass signals to EX/MEM Register
@@ -991,6 +999,7 @@ SC_MODULE(risc_v_model) {
 
         interrupt_pending = false;
         exec_redirect_valid = false;
+        flush_pending_cycles = 0;
 
         // Reset Performance Counters
         total_cycles = 0;
@@ -1024,8 +1033,15 @@ SC_MODULE(risc_v_model) {
             mem_wb_old.alu_res = mem_wb.alu_res;
             mem_wb_old.mem_data = ((mem_wb.opcode == 0x03) ? data_bus_i.read() : mem_wb.alu_res);
 
-            // Disable flush after one cycle (if enabled)
-            flush = false;
+            // Hold flush for as many cycles as the fetch requires
+            if (flush_pending_cycles > 0) {
+                flush = true;
+                flush_pending_cycles--;
+            } 
+            else {
+                flush = false;
+            }
+
             exec_redirect_valid = false;
 
             // Check for interrupts
@@ -1058,6 +1074,7 @@ SC_MODULE(risc_v_model) {
                 
                 pc = mtvec;     // Move to interrupt handling address
                 flush = true;   // Flush entire pipeline
+                flush_pending_cycles = 1; 
 
                 cout << "@" << sc_time_stamp() << " CPU: Timer interrupt received" << endl;
                 cout << "@" << sc_time_stamp() << " CPU: Jumping to interrupt handler\n" << endl << endl;
@@ -1066,6 +1083,7 @@ SC_MODULE(risc_v_model) {
             else if (exec_redirect_valid) {
                 pc = exec_redirect_pc;
                 flush = true;
+                flush_pending_cycles = 1; 
                 pipeline_flushes++; // Increment counter
             }
 

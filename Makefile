@@ -23,7 +23,8 @@ all: memory_test \
 	 load_use_test \
 	 forwarding_test \
 	 store_forwarding_test \
-	 branch_forwarding_test
+	 branch_forwarding_test \
+	 always_not_taken_test
 
 memory_test: ./testbenches/riscv_memory_testbench.cpp
 	$(CXX) -o memory_test ./testbenches/riscv_memory_testbench.cpp $(CXXFLAGS)
@@ -94,6 +95,9 @@ store_forwarding_test: ./testbenches/store_forwarding_testbench.cpp
 branch_forwarding_test: ./testbenches/branch_forwarding_testbench.cpp
 	$(CXX) -o branch_forwarding_test ./testbenches/branch_forwarding_testbench.cpp $(CXXFLAGS)
 
+always_not_taken_test: ./testbenches/always_not_taken_testbench.cpp
+	$(CXX) -o always_not_taken_test ./testbenches/always_not_taken_testbench.cpp $(CXXFLAGS)
+
 all_tests: all
 	./memory_test
 	./decode_test
@@ -118,6 +122,7 @@ all_tests: all
 	./forwarding_test
 	./store_forwarding_test
 	./branch_forwarding_test
+	./always_not_taken_test
 
 clean:
 	rm -f memory_test \
@@ -142,4 +147,5 @@ clean:
 		  load_use_test \
 		  forwarding_test \
 		  store_forwarding_test \
-		  branch_forwarding_test
+		  branch_forwarding_test \
+		  always_not_taken_test
