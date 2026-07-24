@@ -1,0 +1,2 @@
+test_name,total_cycles,committed_instructions,branches,taken_branches,correct_predictions,mispredictions,prediction_accuracy,CPI
+always_not_taken_test,23,11,5,2,3,2,60.0%,2.09091

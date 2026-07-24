@@ -76,6 +76,8 @@ int sc_main(int argc, char* argv[]) {
 
     cout << "pipeline_flushes = 2: " << (sys.cpu->pipeline_flushes == 2 ? "PASS" : "FAIL") << endl << endl;
 
+    sys.cpu->performanceStats();
+
     cout << "@" << sc_time_stamp() << " Simulation complete!" << endl;
 
     return 0;
