@@ -1,0 +1,10 @@
+test_name,predictor_type,total_branches,correct_predictions,mispredictions,prediction_accuracy,total_cycles,CPI,flushes,stalls
+one_bit_loop_test,no_predictor,4,1,3,25.0%,25,2.27,3,0
+one_bit_loop_test,one_bit,4,2,2,50.0%,23,2.09,2,0
+one_bit_loop_test,two_bit,4,1,3,25.0%,25,2.27,3,0
+one_bit_alternating_test,no_predictor,4,2,2,50.0%,26,2.00,3,0
+one_bit_alternating_test,one_bit,4,0,4,0.0%,30,2.30,5,0
+one_bit_alternating_test,two_bit,4,2,2,50.0%,26,2.00,3,0
+one_bit_mixed_branches_test,no_predictor,4,3,1,75.0%,15,2.14,1,0
+one_bit_mixed_branches_test,one_bit,4,3,1,75.0%,15,2.14,1,0
+one_bit_mixed_branches_test,two_bit,4,3,1,75.0%,15,2.14,1,0
