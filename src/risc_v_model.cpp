@@ -127,7 +127,7 @@ SC_MODULE(risc_v_model) {
     int flush_pending_cycles;
     bool ignore_fetch;
 
-    bool bht[32];
+    uint8_t bht[32];
 
     sc_uint<WIDTH> pc;
     sc_uint<WIDTH> fetch_pc_stage1;
@@ -539,7 +539,7 @@ SC_MODULE(risc_v_model) {
             if ((inst & 0x7F) == 0x63) {
                 uint32_t bht_index = (fetch_pc_stage1 >> 2) & 0x1F;
                 
-                if (bht[bht_index] == true) {
+                if (bht[bht_index] >= 2) {
                     if_id.predicted_taken = true;
                     
                     // Extract Immediate and redirect PC
@@ -806,24 +806,39 @@ SC_MODULE(risc_v_model) {
                 branches_taken++;
             }
 
-            // Update BHT with result of Branch
+            // Extract correct index and read its value
             uint32_t bht_index = (id_ex.pc >> 2) & 0x1F;
-            bht[bht_index] = branch_taken;
+            uint8_t current_state = bht[bht_index];
+            
+            if (branch_taken) {
+                // Increment count towards strongly taken
+                if (current_state < 3) {
+                    bht[bht_index]++;
+                }
+            } 
+            else {
+                // Decrement count towards strongly not taken
+                if (current_state > 0) {
+                    bht[bht_index]--;
+                }
+            }
 
-            // Check for Misprediction
+            // Check if prediction was correct or not
             if (branch_taken != id_ex.predicted_taken) {
                 branch_mispredictions++;
                 
-                // Go to correct PC value
+                // Calculate actual PC value
                 target_pc = branch_taken ? (id_ex.pc + id_ex.imm) : (id_ex.pc + 4);
-
-                branch_taken = true;
-                cout << " | Mispredicted. Correct Target: 0x" << hex << target_pc << dec;
+    
+                // Give signal to flush pipeline
+                branch_taken = true; 
+                
+                cout << " | Mispredicted. Correct target 0x" << hex << target_pc << dec;
             } 
             else {
-                // Keep current PC value
+                // Don't flush pipeline since prediction is correct
                 branch_taken = false;
-                cout << " | Prediction Correct";
+                cout << " | Prediction correct";
             }
             cout << endl << endl;
         }
@@ -1064,7 +1079,7 @@ SC_MODULE(risc_v_model) {
 
         // Reset Branch History Table
         for (int i = 0; i < 32; i++) {
-            bht[i] = false;
+            bht[i] = 0;
         }
 
         // Wait marking end of reset
