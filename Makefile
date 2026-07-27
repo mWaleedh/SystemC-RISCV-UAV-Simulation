@@ -24,7 +24,10 @@ all: memory_test \
 	 forwarding_test \
 	 store_forwarding_test \
 	 branch_forwarding_test \
-	 always_not_taken_test
+	 always_not_taken_test \
+	 one_bit_loop_test \
+	 one_bit_alternating_test \
+	 one_bit_mixed_branches_test
 
 memory_test: ./testbenches/riscv_memory_testbench.cpp
 	$(CXX) -o memory_test ./testbenches/riscv_memory_testbench.cpp $(CXXFLAGS)
@@ -98,6 +101,15 @@ branch_forwarding_test: ./testbenches/branch_forwarding_testbench.cpp
 always_not_taken_test: ./testbenches/always_not_taken_testbench.cpp
 	$(CXX) -o always_not_taken_test ./testbenches/always_not_taken_testbench.cpp $(CXXFLAGS)
 
+one_bit_loop_test: ./testbenches/one_bit_loop_testbench.cpp
+	$(CXX) -o one_bit_loop_test ./testbenches/one_bit_loop_testbench.cpp $(CXXFLAGS)
+
+one_bit_alternating_test: ./testbenches/one_bit_alternating_testbench.cpp
+	$(CXX) -o one_bit_alternating_test ./testbenches/one_bit_alternating_testbench.cpp $(CXXFLAGS)
+
+one_bit_mixed_branches_test: ./testbenches/one_bit_mixed_branches_testbench.cpp
+	$(CXX) -o one_bit_mixed_branches_test ./testbenches/one_bit_mixed_branches_testbench.cpp $(CXXFLAGS)
+
 all_tests: all
 	./memory_test
 	./decode_test
@@ -123,6 +135,9 @@ all_tests: all
 	./store_forwarding_test
 	./branch_forwarding_test
 	./always_not_taken_test
+	./one_bit_loop_test
+	./one_bit_alternating_test
+	./one_bit_mixed_branches_test
 
 clean:
 	rm -f memory_test \
@@ -148,4 +163,7 @@ clean:
 		  forwarding_test \
 		  store_forwarding_test \
 		  branch_forwarding_test \
-		  always_not_taken_test
+		  always_not_taken_test \
+		  one_bit_loop_test \
+		  one_bit_alternating_test \
+		  one_bit_mixed_branches_test

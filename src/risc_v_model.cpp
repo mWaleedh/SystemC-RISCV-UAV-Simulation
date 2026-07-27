@@ -30,6 +30,7 @@ SC_MODULE(risc_v_model) {
         sc_uint<WIDTH> pc;
         sc_uint<WIDTH> inst;
         bool valid;
+        bool predicted_taken;
     } if_id;
 
     // ID/EX Register
@@ -58,6 +59,8 @@ SC_MODULE(risc_v_model) {
         bool csr_write_enable;
         sc_uint<WIDTH> csr_address;
         sc_uint<WIDTH> csr_operation;
+
+        bool predicted_taken;
     } id_ex;
 
     // EX/MEM Register
@@ -122,6 +125,9 @@ SC_MODULE(risc_v_model) {
     bool exec_redirect_valid;
     sc_uint<WIDTH> exec_redirect_pc;
     int flush_pending_cycles;
+    bool ignore_fetch;
+
+    bool bht[32];
 
     sc_uint<WIDTH> pc;
     sc_uint<WIDTH> fetch_pc_stage1;
@@ -513,13 +519,37 @@ SC_MODULE(risc_v_model) {
             if_id.inst = 0;
             if_id.valid = false;
 
-            cout << "@" << sc_time_stamp() << " Fetch: Flushed. Bubble inserted into IF/ID." << endl << endl;
+            cout << "@" << sc_time_stamp() << " Fetch: Flushed. Bubble inserted into IF/ID" << endl << endl;
+        }
+        else if (ignore_fetch) {
+            if_id.pc = 0;
+            if_id.inst = 0;
+            if_id.valid = false;
+            ignore_fetch = false;
+
+            cout << "@" << sc_time_stamp() << " Fetch: Flushed wrongly predicted instruction" << endl << endl;
         }
         else {
             // Pass data to IF/ID register
             if_id.pc = fetch_pc_stage1;
             if_id.inst = inst;
             if_id.valid = true;
+            if_id.predicted_taken = false;
+
+            if ((inst & 0x7F) == 0x63) {
+                uint32_t bht_index = (fetch_pc_stage1 >> 2) & 0x1F;
+                
+                if (bht[bht_index] == true) {
+                    if_id.predicted_taken = true;
+                    
+                    // Extract Immediate and redirect PC
+                    sc_int<WIDTH> imm = immediateGenerator(0x63, inst);
+                    pc = fetch_pc_stage1 + imm; 
+                    ignore_fetch = true;
+                    
+                    cout << "@" << sc_time_stamp() << " Fetch: BHT Predicted Branch Taken. Redirecting PC to 0x" << hex << pc << dec << endl << endl;
+                }
+            }
         }
 
         fetch_pc_stage1 = fetch_pc_stage2;
@@ -652,6 +682,9 @@ SC_MODULE(risc_v_model) {
         id_ex.rs1_data = registers[id_ex.rs1];
         id_ex.rs2_data = registers[id_ex.rs2];
 
+        // Pass prediction
+        id_ex.predicted_taken = if_id.predicted_taken;
+
         // Mark this stage as valid
         id_ex.valid = true;
 
@@ -771,11 +804,28 @@ SC_MODULE(risc_v_model) {
             if (branch_taken) {
                 // Increment counters
                 branches_taken++;
-                branch_mispredictions++;
-
-                target_pc = id_ex.pc + id_ex.imm;
-                cout << " | Target: 0x" << hex << target_pc << dec << endl << endl;
             }
+
+            // Update BHT with result of Branch
+            uint32_t bht_index = (id_ex.pc >> 2) & 0x1F;
+            bht[bht_index] = branch_taken;
+
+            // Check for Misprediction
+            if (branch_taken != id_ex.predicted_taken) {
+                branch_mispredictions++;
+                
+                // Go to correct PC value
+                target_pc = branch_taken ? (id_ex.pc + id_ex.imm) : (id_ex.pc + 4);
+
+                branch_taken = true;
+                cout << " | Mispredicted. Correct Target: 0x" << hex << target_pc << dec;
+            } 
+            else {
+                // Keep current PC value
+                branch_taken = false;
+                cout << " | Prediction Correct";
+            }
+            cout << endl << endl;
         }
         // For JAL calculate the return address and the PC value
         else if (id_ex.opcode == 0x6F) {
@@ -1000,6 +1050,7 @@ SC_MODULE(risc_v_model) {
         interrupt_pending = false;
         exec_redirect_valid = false;
         flush_pending_cycles = 0;
+        ignore_fetch = false;
 
         // Reset Performance Counters
         total_cycles = 0;
@@ -1010,6 +1061,11 @@ SC_MODULE(risc_v_model) {
         branches_taken = 0;
         branch_mispredictions = 0;
         timer_interrupts = 0;
+
+        // Reset Branch History Table
+        for (int i = 0; i < 32; i++) {
+            bht[i] = false;
+        }
 
         // Wait marking end of reset
         wait();
