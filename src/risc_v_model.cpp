@@ -500,6 +500,8 @@ SC_MODULE(risc_v_model) {
 
         // Check for stall
         if (stall) {
+            fetch_pc_stage2 -= 4;
+
             // Request the same instruction for the next cycle
             inst_addr_bus_o.write(fetch_pc_stage2); 
             inst_read_en_o.write(true);
@@ -853,7 +855,7 @@ SC_MODULE(risc_v_model) {
         // For JALR calculate the return address and the PC value
         else if (id_ex.opcode == 0x67) {
             branch_taken = true;
-            target_pc = (id_ex.rs1_data + id_ex.imm) & ~1; 
+            target_pc = (alu_in_1 + id_ex.imm) & ~1; 
             alu_res = id_ex.pc + 4;
             
             cout << "@" << sc_time_stamp() << " Execute: JALR | Return Address: 0x" << hex << alu_res << " | PC: 0x" << target_pc << dec << endl << endl;
@@ -1138,17 +1140,25 @@ SC_MODULE(risc_v_model) {
                 timer_interrupts++;
                 pipeline_flushes++;
 
-                mepc = pc;                  // Save PC value
+                // Save PC value
+                if (exec_redirect_valid) {
+                    mepc = exec_redirect_pc; 
+                } 
+                else {
+                    mepc = pc;
+                }
+
                 mcause = 0x80000007;        // Set cause as timer interrupt
                 mstatus = mstatus & ~0x8;   // Disable global interrupts
                 in_interrupt = true;
+                interrupt_pending = false;
                 
                 pc = mtvec;     // Move to interrupt handling address
                 flush = true;   // Flush entire pipeline
                 flush_pending_cycles = 1; 
 
                 cout << "@" << sc_time_stamp() << " CPU: Timer interrupt received" << endl;
-                cout << "@" << sc_time_stamp() << " CPU: Jumping to interrupt handler\n" << endl << endl;
+                cout << "@" << sc_time_stamp() << " CPU: Jumping to interrupt handler\n" << endl;
             }
             // Then to branches/jumps
             else if (exec_redirect_valid) {
