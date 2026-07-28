@@ -1,21 +1,25 @@
 /*
-addi x1, x0, 64
-csrrw x0, 0x305, x1
-addi x2, x0, 0
-lw x3, 0(x2)
-addi x4, x3, 0
-beq x0, x0, 12
-jal x0, 0
-jal x0, 0
-jal x0, 12
-jal x0, 0
-jal x0, 0
-addi x5, x0, 56
-jalr x0, x5, 0
-jal x0, 0
-jal x0, 0
-jal x0, 0
-addi x6, x6, 1
+addi x1, x0, 80        // MTVEC = 0x50
+csrrw x0, 0x305, x1    // Write to MTVEC
+addi x1, x0, 8         
+csrrw x0, 0x300, x1    // Enable global interrupts
+addi x1, x0, 128       
+csrrw x0, 0x304, x1    // Enable timer interrupts
+addi x2, x0, 0         
+lw x3, 0(x2)           
+addi x4, x3, 0         // Load-Use Stall
+beq x0, x0, 12         
+jal x0, 0              
+jal x0, 0              
+jal x0, 12             // JAL Redirect
+jal x0, 0              
+jal x0, 0              
+addi x5, x0, 72        // x5 = 0x48
+jalr x0, x5, 0         // JALR Redirect
+jal x0, 0              
+jal x0, 0              // Infinite stop loop
+jal x0, 0              
+addi x6, x6, 1         // ISR start 
 mret
 */
 
