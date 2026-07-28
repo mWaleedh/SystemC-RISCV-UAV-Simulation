@@ -27,7 +27,10 @@ all: memory_test \
 	 always_not_taken_test \
 	 one_bit_loop_test \
 	 one_bit_alternating_test \
-	 one_bit_mixed_branches_test
+	 one_bit_mixed_branches_test \
+	 branch_interrupt_overlap_test \
+	 branch_prediction_safety_test \
+	 synchronous_fetch_pipeline_test
 
 memory_test: ./testbenches/riscv_memory_testbench.cpp
 	$(CXX) -o memory_test ./testbenches/riscv_memory_testbench.cpp $(CXXFLAGS)
@@ -110,6 +113,15 @@ one_bit_alternating_test: ./testbenches/one_bit_alternating_testbench.cpp
 one_bit_mixed_branches_test: ./testbenches/one_bit_mixed_branches_testbench.cpp
 	$(CXX) -o one_bit_mixed_branches_test ./testbenches/one_bit_mixed_branches_testbench.cpp $(CXXFLAGS)
 
+branch_interrupt_overlap_test:  ./testbenches/branch_interrupt_overlap_testbench.cpp
+	$(CXX) -o branch_interrupt_overlap_test ./testbenches/branch_interrupt_overlap_testbench.cpp $(CXXFLAGS)
+
+branch_prediction_safety_test:  ./testbenches/branch_prediction_safety_testbench.cpp
+	$(CXX) -o branch_prediction_safety_test ./testbenches/branch_prediction_safety_testbench.cpp $(CXXFLAGS)
+
+synchronous_fetch_pipeline_test:  ./testbenches/synchronous_fetch_pipeline_testbench.cpp
+	$(CXX) -o synchronous_fetch_pipeline_test ./testbenches/synchronous_fetch_pipeline_testbench.cpp $(CXXFLAGS)
+
 all_tests: all
 	./memory_test
 	./decode_test
@@ -138,6 +150,9 @@ all_tests: all
 	./one_bit_loop_test
 	./one_bit_alternating_test
 	./one_bit_mixed_branches_test
+	./branch_interrupt_overlap_test
+	./branch_prediction_safety_test
+	./synchronous_fetch_pipeline_test
 
 clean:
 	rm -f memory_test \
@@ -166,4 +181,7 @@ clean:
 		  always_not_taken_test \
 		  one_bit_loop_test \
 		  one_bit_alternating_test \
-		  one_bit_mixed_branches_test
+		  one_bit_mixed_branches_test \
+		  branch_interrupt_overlap_test \
+		  branch_prediction_safety_test \
+		  synchronous_fetch_pipeline_test
