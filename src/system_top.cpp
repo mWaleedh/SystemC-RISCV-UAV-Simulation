@@ -4,6 +4,7 @@
 #include "gpio_model.cpp"
 #include "system_bus.cpp"
 #include "timer_model.cpp"
+#include "uart_model.cpp"
 using namespace std;
 
 SC_MODULE(system_top) {
@@ -57,12 +58,20 @@ SC_MODULE(system_top) {
     sc_signal<sc_uint<WIDTH>> timer_data_in_s;
     sc_signal<sc_uint<WIDTH>> timer_data_out_s;
 
+    // UART signals
+    sc_signal<bool> uart_write_en_s;
+    sc_signal<bool> uart_read_en_s;
+    sc_signal<sc_uint<WIDTH>> uart_addr_bus_s;
+    sc_signal<sc_uint<WIDTH>> uart_data_in_s;
+    sc_signal<sc_uint<WIDTH>> uart_data_out_s;
+
     // Module Pointers
     risc_v_model *cpu;
     memory_model *mem;
     gpio_model *gpio;
     system_bus *bus;
     timer_model *timer;
+    uart_model *uart;
 
     // Function to load testbench data into memory
     void load_data(uint32_t addr, uint32_t data) {
@@ -81,6 +90,7 @@ SC_MODULE(system_top) {
         gpio = new gpio_model("gpio");
         bus = new system_bus("bus");
         timer = new timer_model("timer");
+        uart = new uart_model("uart");
 
         // Connect CPU input/output ports
         cpu->clk_i(clk_i);
@@ -138,6 +148,16 @@ SC_MODULE(system_top) {
         timer->data_bus_o(timer_data_out_s);
 
         timer->irq_timer_o(irq_timer_s);
+
+        // Connect UART input/output ports
+        uart->clk_i(clk_i);
+        uart->rst_i(rst_i);
+
+        uart->write_en_i(uart_write_en_s);
+        uart->read_en_i(uart_read_en_s);
+        uart->addr_bus_i(uart_addr_bus_s);
+        uart->data_bus_i(uart_data_in_s);
+        uart->data_bus_o(uart_data_out_s);
     
         // Connect System Bus input/output ports
         // CPU instruction ports
@@ -177,6 +197,13 @@ SC_MODULE(system_top) {
         bus->timer_addr_bus_o(timer_addr_bus_s);
         bus->timer_data_bus_o(timer_data_in_s);
         bus->timer_data_bus_i(timer_data_out_s);
+
+        // UART
+        bus->uart_write_en_o(uart_write_en_s);
+        bus->uart_read_en_o(uart_read_en_s);
+        bus->uart_addr_bus_o(uart_addr_bus_s);
+        bus->uart_data_bus_o(uart_data_in_s);
+        bus->uart_data_bus_i(uart_data_out_s);
     }
 
     ~system_top() {
@@ -185,5 +212,6 @@ SC_MODULE(system_top) {
         delete gpio;
         delete bus;
         delete timer;
+        delete uart;
     }
 };

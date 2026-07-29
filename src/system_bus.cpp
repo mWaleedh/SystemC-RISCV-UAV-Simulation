@@ -44,6 +44,13 @@ SC_MODULE(system_bus) {
     sc_out<sc_uint<WIDTH>> timer_data_bus_o;
     sc_in<sc_uint<WIDTH>> timer_data_bus_i;
 
+    // UART ports
+    sc_out<bool> uart_write_en_o;
+    sc_out<bool> uart_read_en_o;
+    sc_out<sc_uint<WIDTH>> uart_addr_bus_o;
+    sc_out<sc_uint<WIDTH>> uart_data_bus_o;
+    sc_in<sc_uint<WIDTH>> uart_data_bus_i;
+
     // Main thread
     void routeBus() {
         // Instruction memory route
@@ -144,6 +151,27 @@ SC_MODULE(system_bus) {
             return_data = timer_data_bus_i.read();
 
             cout << "@" << sc_time_stamp() << " System Bus: Address 0x" << hex << cpu_data_addr_bus_i.read() << dec << " routed to Timer" << endl << endl;
+        }
+        // Route bus to UART
+        else if (data_addr == 0x10000020 || data_addr == 0x10000024) {
+            if (data_write_en) {
+                // Set flag
+                uart_write_en_o.write(data_write_en);
+
+                // Write data and address to UART
+                uart_addr_bus_o.write(data_addr);
+                uart_data_bus_o.write(cpu_data);
+            }
+            else if (data_read_en) {
+                // Set flag
+                uart_read_en_o.write(data_read_en);
+
+                // Write address to UART
+                uart_addr_bus_o.write(data_addr);
+            }
+            return_data = uart_data_bus_i.read();
+
+            cout << "@" << sc_time_stamp() << " System Bus: Address 0x" << hex << cpu_data_addr_bus_i.read() << dec << " routed to UART" << endl << endl;
         }
         // If system_bus was called but address is invalid print error
         else if (data_write_en || data_read_en) {
