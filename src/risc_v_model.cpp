@@ -484,33 +484,28 @@ SC_MODULE(risc_v_model) {
     // IF: Instruction Fetch
     // ------------------------------
     void fetch() {
-        if (mem_stall) {
-            // Request the same instruction for the next cycle
-            inst_addr_bus_o.write(fetch_pc_stage2); 
+        static bool was_stalled = false;
+
+        if (mem_stall || stall) {
+            if (!was_stalled) {
+                 // Rewind the global PC
+                pc = pc - 4;
+                was_stalled = true;
+            }
+            
+            // Request the dropped instruction again
+            inst_addr_bus_o.write(pc - 4);
             inst_read_en_o.write(true);
-
-            fetch_pc_stage1 = fetch_pc_stage2;
-
-            cout << "@" << sc_time_stamp() << " Fetch: Stalled for MEM at PC -> 0x" << hex << pc << dec << endl << endl;
+            
+            cout << "@" << sc_time_stamp() << " Fetch: Stalled. Holding PC at -> 0x" << hex << pc << dec << endl << endl;
             return;
         }
+
+        // Stall has cleared
+        was_stalled = false;
 
         // Read instruction sent by memory
         sc_uint<WIDTH> inst = inst_bus_i.read();
-
-        // Check for stall
-        if (stall) {
-            fetch_pc_stage2 -= 4;
-
-            // Request the same instruction for the next cycle
-            inst_addr_bus_o.write(fetch_pc_stage2); 
-            inst_read_en_o.write(true);
-
-            fetch_pc_stage1 = fetch_pc_stage2;
-
-            cout << "@" << sc_time_stamp() << " Fetch: Stalled at PC -> 0x" << hex << pc << dec << endl << endl;
-            return;
-        }
 
         cout << "@" << sc_time_stamp() << " Fetch: Received Inst -> 0x" << hex << inst << dec << endl << endl;
 
