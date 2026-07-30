@@ -27,6 +27,7 @@ SC_MODULE(system_top) {
     sc_signal<sc_uint<WIDTH>> cpu_inst_bus_in_s;
 
     // CPU data signals
+    sc_signal<bool> cpu_data_ready_s;
     sc_signal<bool> cpu_data_write_en_s;
     sc_signal<bool> cpu_data_read_en_s;
     sc_signal<sc_uint<WIDTH>> cpu_data_addr_bus_s;
@@ -124,6 +125,7 @@ SC_MODULE(system_top) {
         cpu->data_read_en_o(cpu_data_read_en_s);
         cpu->data_addr_bus_o(cpu_data_addr_bus_s);
         cpu->data_bus_o(cpu_data_bus_out_s);
+        cpu->data_ready_i(cpu_data_ready_s);
         cpu->data_bus_i(cpu_data_bus_in_s);
 
         // Connect Instruction Memory input/output ports
@@ -145,11 +147,12 @@ SC_MODULE(system_top) {
             adapter->mem_inst_addr_bus_o(mem_inst_addr_bus_s);
             adapter->mem_inst_bus_i(mem_inst_bus_out_s);
 
-            // CPU data ports
+            // CPU data ports            
             adapter->cpu_data_write_en_i(cpu_data_write_en_s);
             adapter->cpu_data_read_en_i(cpu_data_read_en_s);
             adapter->cpu_data_addr_bus_i(cpu_data_addr_bus_s);
             adapter->cpu_data_bus_i(cpu_data_bus_out_s);
+            adapter->cpu_data_ready_o(cpu_data_ready_s);
             adapter->cpu_data_bus_o(cpu_data_bus_in_s);
         }
         else {
@@ -194,6 +197,7 @@ SC_MODULE(system_top) {
             bus->cpu_data_read_en_i(cpu_data_read_en_s);
             bus->cpu_data_addr_bus_i(cpu_data_addr_bus_s);
             bus->cpu_data_bus_i(cpu_data_bus_out_s);
+            bus->cpu_data_ready_o(cpu_data_ready_s);
             bus->cpu_data_bus_o(cpu_data_bus_in_s);
 
             // Memory instruction ports

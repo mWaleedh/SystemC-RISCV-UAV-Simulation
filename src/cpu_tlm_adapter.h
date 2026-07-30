@@ -12,6 +12,7 @@ SC_MODULE(tlm_adapter) {
     sc_in<bool> cpu_data_read_en_i;
     sc_in<sc_uint<WIDTH>> cpu_data_addr_bus_i;
     sc_in<sc_uint<WIDTH>> cpu_data_bus_i;
+    sc_out<bool> cpu_data_ready_o;
     sc_out<sc_uint<WIDTH>> cpu_data_bus_o;
 
     // CPU Instruction Ports

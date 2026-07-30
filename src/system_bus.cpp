@@ -16,6 +16,7 @@ SC_MODULE(system_bus) {
     sc_in<bool> cpu_data_read_en_i;
     sc_in<sc_uint<WIDTH>> cpu_data_addr_bus_i;
     sc_in<sc_uint<WIDTH>> cpu_data_bus_i;
+    sc_out<bool> cpu_data_ready_o;
     sc_out<sc_uint<WIDTH>> cpu_data_bus_o;
 
     // Memory instruction ports
@@ -78,12 +79,14 @@ SC_MODULE(system_bus) {
         uint32_t data_addr = cpu_data_addr_bus_i.read();
         uint32_t cpu_data = cpu_data_bus_i.read();
 
-        mem_data_read_en_o.write(0);
-        mem_data_write_en_o.write(0);
-        gpio_read_en_o.write(0);
-        gpio_write_en_o.write(0);
-        timer_read_en_o.write(0);
-        timer_write_en_o.write(0);
+        // Default values
+        mem_data_read_en_o.write(false);
+        mem_data_write_en_o.write(false);
+        gpio_read_en_o.write(false);
+        gpio_write_en_o.write(false);
+        timer_read_en_o.write(false);
+        timer_write_en_o.write(false);
+        cpu_data_ready_o.write(false);
 
         sc_uint<WIDTH> return_data = 0;
         
@@ -178,8 +181,11 @@ SC_MODULE(system_bus) {
             cout << "@" << sc_time_stamp() << " System Bus Error: Invalid address 0x" << hex << cpu_data_addr_bus_i.read() << dec << endl << endl;
         }
 
-        // Write data to CPU. Only the sending module has their data_bus greater than 0
+        // Send data to CPU
         cpu_data_bus_o.write(return_data);
+
+        // Tell the CPU that data is ready to read
+        cpu_data_ready_o.write(true);
     }
 
     SC_CTOR(system_bus) {

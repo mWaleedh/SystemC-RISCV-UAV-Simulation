@@ -8,9 +8,15 @@ void tlm_adapter::passInst() {
 }
 
 void tlm_adapter::processData() {
+    // Initialize ready signal as false
+    cpu_data_ready_o.write(false);
+
     while (true) {
         // Wait for next rising edge
         wait();
+
+        // Set ready signal to false  before each iteration
+        cpu_data_ready_o.write(false);
 
         bool read_en = cpu_data_read_en_i.read();
         bool write_en = cpu_data_write_en_i.read();
@@ -49,6 +55,9 @@ void tlm_adapter::processData() {
             if (read_en) {
                 cpu_data_bus_o.write(data);
             }
+
+            // Tell the CPU that data is ready
+            cpu_data_ready_o.write(true);
         }
     }
 }

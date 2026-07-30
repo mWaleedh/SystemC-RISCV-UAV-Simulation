@@ -19,6 +19,7 @@ SC_MODULE(risc_v_model) {
     sc_out<sc_uint<WIDTH>> inst_addr_bus_o;
 
     // Data ports
+    sc_in<bool> data_ready_i;
     sc_in<sc_uint<WIDTH>> data_bus_i;
     sc_out<bool> data_write_en_o;
     sc_out<bool> data_read_en_o;
@@ -117,6 +118,13 @@ SC_MODULE(risc_v_model) {
         sc_uint<WIDTH> alu_res;
         sc_uint<WIDTH> mem_data;
     } mem_wb_old;
+
+    enum mem_state_t { 
+        IDLE, 
+        REQUEST_SENT, 
+        WAITING_FOR_RESPONSE, 
+        RESPONSE_RECEIVED 
+    } mem_state;
 
     // Pipeline Control Signals
     bool stall;
@@ -475,6 +483,21 @@ SC_MODULE(risc_v_model) {
         cout << "Mispredictions:         " << branch_mispredictions << " (" << mispredict_rate << "% miss rate)" << endl;
         cout << "Timer Interrupts:       " << timer_interrupts << endl;
         cout << "----------------------------------------\n" << endl;
+    }
+
+    void passDataToWB() {
+        mem_wb.alu_res = ex_mem.alu_res;
+        mem_wb.rd = ex_mem.rd;
+        mem_wb.opcode = ex_mem.opcode;
+        mem_wb.funct3 = ex_mem.funct3;
+        mem_wb.reg_write = ex_mem.reg_write;
+
+        mem_wb.is_csr_instruction = ex_mem.is_csr_instruction;
+        mem_wb.csr_write_enable = ex_mem.csr_write_enable;
+        mem_wb.csr_address = ex_mem.csr_address;
+        mem_wb.csr_new_value = ex_mem.csr_new_value;
+
+        mem_wb.valid = true;
     }
 
     // ------------------------------------------------------------
@@ -927,61 +950,87 @@ SC_MODULE(risc_v_model) {
     // MEM: Memory/Peripheral Access
     // ------------------------------
     void memoryAccess() {
-        // Check for bubble and pass it to next stage
-        if (!ex_mem.valid) {
-            mem_wb.pc = 0;
-            mem_wb.inst = 0;
-            mem_wb.valid = false;
-            return;
-        }
-
-        // Pass necessary data to next stage register
-        mem_wb.alu_res = ex_mem.alu_res;
-        mem_wb.rd = ex_mem.rd;
-        mem_wb.opcode = ex_mem.opcode;
-        mem_wb.funct3 = ex_mem.funct3;
-        mem_wb.reg_write = ex_mem.reg_write;
-
-        // Pass CSR
-        mem_wb.is_csr_instruction = ex_mem.is_csr_instruction;
-        mem_wb.csr_write_enable = ex_mem.csr_write_enable;
-        mem_wb.csr_address = ex_mem.csr_address;
-        mem_wb.csr_new_value = ex_mem.csr_new_value;
-        
-        if (ex_mem.opcode == 0x03 || ex_mem.opcode == 0x23) {
-            if (!mem_stall) {
-                // Stall by one cycle
-                mem_stall = true;
-                pipeline_stalls++;  // Increment counter
-                data_addr_bus_o.write(ex_mem.alu_res);
-
-                if (ex_mem.opcode == 0x03) {
-                    data_read_en_o.write(true);
-                    cout << "@" << sc_time_stamp() << " Memory Access: Requesting Load from 0x" << hex << ex_mem.alu_res << dec << endl << endl;
-                } 
-                else if (ex_mem.opcode == 0x23) {
-                    data_write_en_o.write(true);
-                    data_bus_o.write(ex_mem.store_data);
-                    cout << "@" << sc_time_stamp() << " Memory Access: Storing to 0x" << hex << ex_mem.alu_res << dec << endl << endl;
+        switch (mem_state) {
+            case IDLE:
+                // Check for bubble
+                if (!ex_mem.valid) {
+                    mem_wb.pc = 0;
+                    mem_wb.inst = 0;
+                    mem_wb.valid = false;
+                    mem_stall = false; 
+                    return;
                 }
-                
-                mem_wb.pc = 0;
-                mem_wb.inst = 0;
-                mem_wb.valid = false;
-                return; 
-            } 
-            else {
-                // Wait one more cycle to read
-                mem_stall = false;
-            }
-        }
-        else {
-            mem_stall = false;
-            cout << "@" << sc_time_stamp() << " Memory Access: No Memory/Peripheral access needed" << endl << endl;
-        }
 
-        // Mark this stage as valid
-        mem_wb.valid = true;
+                // Check if it's a Load or Store
+                if (ex_mem.opcode == 0x03 || ex_mem.opcode == 0x23) {
+                    
+                    // Send address over bus
+                    data_addr_bus_o.write(ex_mem.alu_res);
+
+                    // Enable read_en for Load
+                    if (ex_mem.opcode == 0x03) {
+                        data_read_en_o.write(true);
+                        cout << "@" << sc_time_stamp() << " Memory Access: Requesting Load from 0x" << hex << ex_mem.alu_res << dec << endl << endl;
+                    } 
+                    // Enable write_en and send data to bus for Store
+                    else if (ex_mem.opcode == 0x23) {
+                        data_write_en_o.write(true);
+                        data_bus_o.write(ex_mem.store_data);
+                        cout << "@" << sc_time_stamp() << " Memory Access: Storing to 0x" << hex << ex_mem.alu_res << dec << endl << endl;
+                    }
+                    
+                    // Freeze pipeline
+                    mem_stall = true;
+                    pipeline_stalls++;  
+                    
+                    // Send bubble to the WB stage
+                    mem_wb.pc = 0;
+                    mem_wb.inst = 0;
+                    mem_wb.valid = false;
+                    
+                    // Move to next state
+                    mem_state = REQUEST_SENT;
+                }
+                else {                
+                    mem_stall = false;
+                    cout << "@" << sc_time_stamp() << " Memory Access: No Memory/Peripheral access needed" << endl << endl;
+                    
+                    // Send data to WB stage
+                    passDataToWB();
+                }
+                break;
+
+            case REQUEST_SENT:
+                // After one cycle clear the read/write flags
+                data_read_en_o.write(false);
+                data_write_en_o.write(false);
+                
+                // Keep sending bubbles to next stage
+                mem_wb.valid = false;
+                
+                mem_state = WAITING_FOR_RESPONSE;
+                break;
+
+            case WAITING_FOR_RESPONSE:
+                // Keep sending bubbles until we get a response
+                mem_wb.valid = false;
+
+                if (data_ready_i.read() == true) {
+                    mem_state = RESPONSE_RECEIVED;
+                }
+                break;
+
+            case RESPONSE_RECEIVED:
+                // When data is read set stall to false
+                mem_stall = false;
+                
+                // Send data to WB stage
+                passDataToWB();
+                
+                // Reset for the next instruction
+                mem_state = IDLE;
+                break;
+        }
     }
 
     // WB: Write Back
@@ -1078,6 +1127,9 @@ SC_MODULE(risc_v_model) {
         for (int i = 0; i < 32; i++) {
             bht[i] = 0;
         }
+
+        // Reset MEM stage state
+        mem_state = IDLE;
 
         // Wait marking end of reset
         wait();
