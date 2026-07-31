@@ -1,6 +1,7 @@
 #include "tlm_interconnect.h"
+using namespace tlm;
 
-void tlm_interconnect::b_transport(tlm::tlm_generic_payload& payload, sc_time& delay) {
+void tlm_interconnect::b_transport(tlm_generic_payload& payload, sc_time& delay) {
     uint64_t addr = payload.get_address();
 
     if (addr >= 0x00000000 && addr <= 0x00000FFF) {
@@ -19,7 +20,7 @@ void tlm_interconnect::b_transport(tlm::tlm_generic_payload& payload, sc_time& d
         uart_socket->b_transport(payload, delay);
     }
     else {
-        payload.set_response_status(tlm::TLM_ADDRESS_ERROR_RESPONSE);
+        payload.set_response_status(TLM_ADDRESS_ERROR_RESPONSE);
         return;
     }
 
