@@ -1,11 +1,23 @@
 #include <systemc.h>
+
+// CPU module
 #include "risc_v_model.cpp"
+
+// Legacy modules
 #include "memory_model.cpp"
 #include "gpio_model.cpp"
-#include "system_bus.cpp"
 #include "timer_model.cpp"
 #include "uart_model.cpp"
+#include "system_bus.cpp"
+
+// TLM modules
 #include "cpu_tlm_adapter.h"
+#include "tlm_interconnect.h"
+#include "tlm_memory_target.h"
+#include "tlm_gpio_target.h"
+#include "tlm_timer_target.h"
+#include "tlm_uart_target.h"
+
 using namespace std;
 
 const bool USE_TLM = false;
@@ -19,7 +31,7 @@ SC_MODULE(system_top) {
     sc_in<bool> clk_i;
     sc_in<bool> rst_i;
     sc_in<bool> irq_ext_i;
-    sc_in<bool> irq_sw_i;
+    sc_in<bool> irq_sw_i; 
 
     // CPU instruction signals
     sc_signal<bool> cpu_inst_read_en_s;
@@ -34,83 +46,88 @@ SC_MODULE(system_top) {
     sc_signal<sc_uint<WIDTH>> cpu_data_bus_out_s;
     sc_signal<sc_uint<WIDTH>> cpu_data_bus_in_s;  
 
-    sc_signal<bool> irq_timer_s;
+    sc_signal<bool> irq_timer_s;   
 
-    // Memory instruction signals
+    // Legacy Memory instruction signals
     sc_signal<bool> mem_inst_read_en_s;
     sc_signal<sc_uint<WIDTH>> mem_inst_addr_bus_s;
     sc_signal<sc_uint<WIDTH>> mem_inst_bus_out_s;
 
-    // Memory data signals
+    // Legacy Memory data signals
     sc_signal<bool> mem_data_write_en_s;
     sc_signal<bool> mem_data_read_en_s;
     sc_signal<sc_uint<WIDTH>> mem_data_addr_bus_s;
     sc_signal<sc_uint<WIDTH>> mem_data_bus_in_s;
     sc_signal<sc_uint<WIDTH>> mem_data_bus_out_s;
 
-    // GPIO signals
+    // Legacy GPIO signals
     sc_signal<bool> gpio_write_en_s;
     sc_signal<bool> gpio_read_en_s;
     sc_signal<sc_uint<WIDTH>> gpio_addr_bus_s;
     sc_signal<sc_uint<WIDTH>> gpio_data_in_s;
     sc_signal<sc_uint<WIDTH>> gpio_data_out_s;
 
-    // Timer signals
+    // Legacy Timer signals
     sc_signal<bool> timer_write_en_s;
     sc_signal<bool> timer_read_en_s;
     sc_signal<sc_uint<WIDTH>> timer_addr_bus_s;
     sc_signal<sc_uint<WIDTH>> timer_data_in_s;
     sc_signal<sc_uint<WIDTH>> timer_data_out_s;
 
-    // UART signals
+    // Legacy UART signals
     sc_signal<bool> uart_write_en_s;
     sc_signal<bool> uart_read_en_s;
     sc_signal<sc_uint<WIDTH>> uart_addr_bus_s;
     sc_signal<sc_uint<WIDTH>> uart_data_in_s;
     sc_signal<sc_uint<WIDTH>> uart_data_out_s;
 
-    // Module Pointers
+    // CPU pointer
     risc_v_model *cpu;
+    
+    // TLM module pointers
+    tlm_memory_target* tlm_mem;
+    tlm_gpio_target* tlm_gpio;
+    tlm_timer_target* tlm_timer;
+    tlm_uart_target* tlm_uart;
+    tlm_adapter *adapter;
+    tlm_interconnect* interconnect;
+
+    // Legacy module pointers
     memory_model *mem;
     gpio_model *gpio;
-    system_bus *bus;
     timer_model *timer;
     uart_model *uart;
-    tlm_adapter *adapter;
+    system_bus *bus;
 
     // Function to load testbench data into memory
     void load_data(uint32_t addr, uint32_t data) {
-        mem->load_data(addr, data);
+        if (USE_TLM) {
+            tlm_mem->load_data(addr, data);
+        } 
+        else {
+            mem->load_data(addr, data);
+        }
     }
     
     // Function to load entire program 
     void load_file(const string& filename = "program.hex") {
-        mem->load_file(filename);
+        if (USE_TLM) {
+            tlm_mem->load_file(filename);
+        } 
+        else {
+            mem->load_file(filename);
+        }
     }
 
     SC_CTOR(system_top) {
-        // Module instantiations
+        // CPU instantiation
         cpu = new risc_v_model("cpu");
-        mem = new memory_model("memory");
-        gpio = new gpio_model("gpio");
-        bus = new system_bus("bus");
-        timer = new timer_model("timer");
-        uart = new uart_model("uart");
-        adapter = new tlm_adapter("adapter");
 
-        // Connect Clock and Reset to all modules
+        // Connect Clock and Reset to CPU
         cpu->clk_i(clk_i);
         cpu->rst_i(rst_i);
-        mem->clk_i(clk_i);
-        mem->rst_i(rst_i);
-        gpio->clk_i(clk_i);
-        gpio->rst_i(rst_i);
-        timer->clk_i(clk_i);
-        timer->rst_i(rst_i);
-        uart->clk_i(clk_i);
-        uart->rst_i(rst_i);
 
-        // Connect CPU input/output ports
+        // Connect CPU interrupt ports
         cpu->irq_timer_i(irq_timer_s);
         cpu->irq_ext_i(irq_ext_i);
         cpu->irq_sw_i(irq_sw_i);
@@ -127,42 +144,78 @@ SC_MODULE(system_top) {
         cpu->data_bus_o(cpu_data_bus_out_s);
         cpu->data_ready_i(cpu_data_ready_s);
         cpu->data_bus_i(cpu_data_bus_in_s);
-
-        // Connect Instruction Memory input/output ports
-        mem->inst_read_en_i(mem_inst_read_en_s);
-        mem->inst_addr_bus_i(mem_inst_addr_bus_s);
-        mem->inst_bus_o(mem_inst_bus_out_s);
     
-        // Connect components to TLM Adapter
+        // Use TLM modules
         if (USE_TLM) {
+            tlm_mem = new tlm_memory_target("tlm_mem", 4096, SC_ZERO_TIME, SC_ZERO_TIME);
+            tlm_gpio = new tlm_gpio_target("tlm_gpio", SC_ZERO_TIME);
+            tlm_timer = new tlm_timer_target("tlm_timer", SC_ZERO_TIME);
+            tlm_uart = new tlm_uart_target("tlm_uart", 5, SC_ZERO_TIME);
+            adapter = new tlm_adapter("adapter");
+            interconnect = new tlm_interconnect("interconnect");
+            
+            // Connect Clock/Reset of TLM modules
+            tlm_mem->clk_i(clk_i);
+            tlm_mem->rst_i(rst_i);
+            tlm_gpio->rst_i(rst_i);
+            tlm_timer->clk_i(clk_i);
+            tlm_timer->rst_i(rst_i);
+            tlm_uart->clk_i(clk_i);
+            tlm_uart->rst_i(rst_i);
             adapter->clk_i(clk_i);
 
-            // CPU instruction ports
-            adapter->cpu_inst_read_en_i(cpu_inst_read_en_s);
-            adapter->cpu_inst_addr_bus_i(cpu_inst_addr_bus_s);
-            adapter->cpu_inst_bus_o(cpu_inst_bus_in_s);
-
-            // Memory instruction ports
-            adapter->mem_inst_read_en_o(mem_inst_read_en_s);
-            adapter->mem_inst_addr_bus_o(mem_inst_addr_bus_s);
-            adapter->mem_inst_bus_i(mem_inst_bus_out_s);
-
-            // CPU data ports            
+            // Connect CPU data ports to adapter
             adapter->cpu_data_write_en_i(cpu_data_write_en_s);
             adapter->cpu_data_read_en_i(cpu_data_read_en_s);
             adapter->cpu_data_addr_bus_i(cpu_data_addr_bus_s);
             adapter->cpu_data_bus_i(cpu_data_bus_out_s);
             adapter->cpu_data_ready_o(cpu_data_ready_s);
             adapter->cpu_data_bus_o(cpu_data_bus_in_s);
+
+            // Connect CPU instruction ports to TLM Memory (Bypass TLM)
+            tlm_mem->inst_read_en_i(cpu_inst_read_en_s);
+            tlm_mem->inst_addr_bus_i(cpu_inst_addr_bus_s);
+            tlm_mem->inst_bus_o(cpu_inst_bus_in_s);
+
+            // Connect adapter to interconnect
+            adapter->initiator_socket.bind(interconnect->target_socket);
+
+            // Connect interconnect to modules
+            interconnect->mem_socket.bind(tlm_mem->target_socket);
+            interconnect->gpio_socket.bind(tlm_gpio->target_socket);
+            interconnect->timer_socket.bind(tlm_timer->target_socket);
+            interconnect->uart_socket.bind(tlm_uart->target_socket);
         }
+        // Use legacy modules
         else {
+            mem = new memory_model("memory");
+            gpio = new gpio_model("gpio");
+            timer = new timer_model("timer");
+            uart = new uart_model("uart");
+            bus = new system_bus("bus");
+
+            // Connect Clock/Reset to modules
+            mem->clk_i(clk_i);
+            mem->rst_i(rst_i);
+            gpio->clk_i(clk_i);
+            gpio->rst_i(rst_i);
+            timer->clk_i(clk_i);
+            timer->rst_i(rst_i);
+            uart->clk_i(clk_i);
+            uart->rst_i(rst_i);
+
+            // Connect Instruction Memory input/output ports
+            mem->inst_read_en_i(mem_inst_read_en_s);
+            mem->inst_addr_bus_i(mem_inst_addr_bus_s);
+            mem->inst_bus_o(mem_inst_bus_out_s);
+
             // Connect Data Memory input/output ports
             mem->data_write_en_i(mem_data_write_en_s);
             mem->data_read_en_i(mem_data_read_en_s);
             mem->data_addr_bus_i(mem_data_addr_bus_s);
             mem->data_bus_i(mem_data_bus_in_s);
             mem->data_bus_o(mem_data_bus_out_s);
-
+            
             // Connect GPIO input/output ports
             gpio->write_en_i(gpio_write_en_s);
             gpio->read_en_i(gpio_read_en_s);
@@ -212,21 +265,21 @@ SC_MODULE(system_top) {
             bus->mem_data_bus_o(mem_data_bus_in_s);
             bus->mem_data_bus_i(mem_data_bus_out_s);
 
-            // GPIO
+            // GPIO data ports
             bus->gpio_write_en_o(gpio_write_en_s);
             bus->gpio_read_en_o(gpio_read_en_s);
             bus->gpio_addr_bus_o(gpio_addr_bus_s);
             bus->gpio_data_bus_o(gpio_data_in_s);
             bus->gpio_data_bus_i(gpio_data_out_s);
 
-            // Timer
+            // Timer data ports
             bus->timer_write_en_o(timer_write_en_s);
             bus->timer_read_en_o(timer_read_en_s);
             bus->timer_addr_bus_o(timer_addr_bus_s);
             bus->timer_data_bus_o(timer_data_in_s);
             bus->timer_data_bus_i(timer_data_out_s);
 
-            // UART
+            // UART data ports
             bus->uart_write_en_o(uart_write_en_s);
             bus->uart_read_en_o(uart_read_en_s);
             bus->uart_addr_bus_o(uart_addr_bus_s);
@@ -235,13 +288,24 @@ SC_MODULE(system_top) {
         }
     }
 
+    // Destructor
     ~system_top() {
         delete cpu;
-        delete mem;
-        delete gpio;
-        delete bus;
-        delete timer;
-        delete uart;
-        delete adapter;
+
+        if (USE_TLM) {
+            delete tlm_mem;
+            delete tlm_gpio;
+            delete tlm_timer;
+            delete tlm_uart;
+            delete adapter;
+            delete interconnect;
+        }
+        else {
+            delete mem;
+            delete gpio;
+            delete timer;
+            delete uart;
+            delete bus;
+        }
     }
 };
