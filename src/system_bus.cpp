@@ -181,11 +181,14 @@ SC_MODULE(system_bus) {
             cout << "@" << sc_time_stamp() << " System Bus Error: Invalid address 0x" << hex << cpu_data_addr_bus_i.read() << dec << endl << endl;
         }
 
-        // Send data to CPU
-        cpu_data_bus_o.write(return_data);
-
-        // Tell the CPU that data is ready to read
-        cpu_data_ready_o.write(true);
+        // Return data to the CPU
+        if (data_write_en || data_read_en) {
+            cpu_data_bus_o.write(return_data);
+            cpu_data_ready_o.write(true);
+        } 
+        else {
+            cpu_data_ready_o.write(false);
+        }
     }
 
     SC_CTOR(system_bus) {
