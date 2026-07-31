@@ -7,7 +7,17 @@ using namespace tlm;
 using namespace tlm_utils;
 
 SC_MODULE(tlm_memory_target) {
+    // Constants
+    static const int WIDTH = 32;
+
     simple_target_socket<tlm_memory_target> target_socket;
+
+    // Input/output ports (only for instructions)
+    sc_in<bool> clk_i;
+    sc_in<bool> rst_i;
+    sc_in<bool> inst_read_en_i;
+    sc_in<sc_uint<WIDTH>> inst_addr_bus_i;
+    sc_out<sc_uint<WIDTH>> inst_bus_o;
 
     // Configurable parameters
     uint32_t size_bytes;
@@ -18,8 +28,9 @@ SC_MODULE(tlm_memory_target) {
     unsigned char* memory;
     uint32_t max_addr;
 
-    // TLM function
+    // Functions
     void b_transport(tlm_generic_payload& trans, sc_time& delay);
+    void inst_fetch_thread();
 
     // Initialization functions
     void load_data(uint32_t addr, uint32_t data);
