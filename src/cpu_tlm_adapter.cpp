@@ -1,13 +1,7 @@
 #include "cpu_tlm_adapter.h"
+using namespace tlm;
 
-// Pass instruction fetch request directly to memory
-void tlm_adapter::passInst() {
-    mem_inst_read_en_o.write(cpu_inst_read_en_i.read());
-    mem_inst_addr_bus_o.write(cpu_inst_addr_bus_i.read());
-    cpu_inst_bus_o.write(mem_inst_bus_i.read());
-}
-
-void tlm_adapter::processData() {
+void tlm_adapter::process_data() {
     // Initialize ready signal as false
     cpu_data_ready_o.write(false);
 
@@ -22,7 +16,7 @@ void tlm_adapter::processData() {
         bool write_en = cpu_data_write_en_i.read();
 
         if (read_en || write_en) {
-            tlm::tlm_generic_payload payload;
+            tlm_generic_payload payload;
             sc_time delay = SC_ZERO_TIME;
 
             uint32_t addr = cpu_data_addr_bus_i.read();
@@ -30,10 +24,10 @@ void tlm_adapter::processData() {
 
             if (write_en) {
                 data = cpu_data_bus_i.read();
-                payload.set_command(tlm::TLM_WRITE_COMMAND);
+                payload.set_command(TLM_WRITE_COMMAND);
             } 
             else {
-                payload.set_command(tlm::TLM_READ_COMMAND);
+                payload.set_command(TLM_READ_COMMAND);
             }
 
             // Set TLM generic payload values
@@ -41,15 +35,17 @@ void tlm_adapter::processData() {
             payload.set_data_ptr((unsigned char*)&data);
             payload.set_data_length(4);
             payload.set_streaming_width(4);
-            payload.set_response_status(tlm::TLM_INCOMPLETE_RESPONSE);
+            payload.set_response_status(TLM_INCOMPLETE_RESPONSE);
 
             // Send transaction
-            socket->b_transport(payload, delay);
+            initiator_socket->b_transport(payload, delay);
 
             // Check if interconnect returned error
             if (payload.is_response_error()) {
                 SC_REPORT_ERROR("TLM_ADAPTER", "Transaction failed or invalid address");
             }
+
+            wait(delay);
 
             // For read send data back to CPU
             if (read_en) {

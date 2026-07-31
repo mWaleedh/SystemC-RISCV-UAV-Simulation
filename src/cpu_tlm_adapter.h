@@ -1,6 +1,7 @@
 #include <systemc.h>
 #include "tlm.h"
 #include "tlm_utils/simple_initiator_socket.h"
+using namespace tlm_utils;
 
 SC_MODULE(tlm_adapter) {
     static const int WIDTH = 32;
@@ -15,26 +16,12 @@ SC_MODULE(tlm_adapter) {
     sc_out<bool> cpu_data_ready_o;
     sc_out<sc_uint<WIDTH>> cpu_data_bus_o;
 
-    // CPU Instruction Ports
-    sc_in<bool> cpu_inst_read_en_i;
-    sc_in<sc_uint<WIDTH>> cpu_inst_addr_bus_i;
-    sc_out<sc_uint<WIDTH>> cpu_inst_bus_o;
+    simple_initiator_socket<tlm_adapter> initiator_socket;
 
-    // Memory Instruction ports
-    sc_out<bool> mem_inst_read_en_o;
-    sc_out<sc_uint<WIDTH>> mem_inst_addr_bus_o;
-    sc_in<sc_uint<WIDTH>> mem_inst_bus_i;
+    void process_data();
 
-    tlm_utils::simple_initiator_socket<tlm_adapter> socket;
-
-    void processData();
-    void passInst();
-
-    SC_CTOR(tlm_adapter) : socket("socket") {
-        SC_THREAD(processData);
+    SC_CTOR(tlm_adapter) : initiator_socket("initiator_socket") {
+        SC_THREAD(process_data);
         sensitive << clk_i.pos(); 
-
-        SC_METHOD(passInst);
-        sensitive << cpu_inst_read_en_i << cpu_inst_addr_bus_i << mem_inst_bus_i;
     }
 };
