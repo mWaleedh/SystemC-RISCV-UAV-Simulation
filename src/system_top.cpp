@@ -45,6 +45,7 @@ SC_MODULE(system_top) {
     sc_signal<sc_uint<WIDTH>> cpu_data_addr_bus_s;
     sc_signal<sc_uint<WIDTH>> cpu_data_bus_out_s;
     sc_signal<sc_uint<WIDTH>> cpu_data_bus_in_s;  
+    sc_signal<sc_uint<2>> cpu_data_size_s;  
 
     sc_signal<bool> irq_timer_s;   
 
@@ -141,6 +142,7 @@ SC_MODULE(system_top) {
         cpu->data_write_en_o(cpu_data_write_en_s);
         cpu->data_read_en_o(cpu_data_read_en_s);
         cpu->data_addr_bus_o(cpu_data_addr_bus_s);
+        cpu->data_size_o(cpu_data_size_s);
         cpu->data_bus_o(cpu_data_bus_out_s);
         cpu->data_ready_i(cpu_data_ready_s);
         cpu->data_bus_i(cpu_data_bus_in_s);
@@ -171,6 +173,7 @@ SC_MODULE(system_top) {
             adapter->cpu_data_bus_i(cpu_data_bus_out_s);
             adapter->cpu_data_ready_o(cpu_data_ready_s);
             adapter->cpu_data_bus_o(cpu_data_bus_in_s);
+            adapter->cpu_data_size_i(cpu_data_size_s);
 
             // Connect CPU instruction ports to TLM Memory (Bypass TLM)
             tlm_mem->inst_read_en_i(cpu_inst_read_en_s);

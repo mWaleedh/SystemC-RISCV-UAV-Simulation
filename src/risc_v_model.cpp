@@ -25,6 +25,7 @@ SC_MODULE(risc_v_model) {
     sc_out<bool> data_read_en_o;
     sc_out<sc_uint<WIDTH>> data_bus_o;
     sc_out<sc_uint<WIDTH>> data_addr_bus_o;
+    sc_out<sc_uint<2>> data_size_o;
 
     // IF/ID Register
     struct IF_ID {
@@ -50,6 +51,9 @@ SC_MODULE(risc_v_model) {
         sc_uint<WIDTH> rs1_data;
         sc_uint<WIDTH> rs2_data;
         sc_int<WIDTH> imm;
+
+        uint32_t mem_size;
+        bool mem_unsigned;
 
         bool reg_write;
 
@@ -77,6 +81,9 @@ SC_MODULE(risc_v_model) {
         sc_uint<WIDTH> alu_res;
         sc_uint<WIDTH> store_data;
 
+        uint32_t mem_size;
+        bool mem_unsigned;
+
         bool reg_write;
 
         // CSR Signals for Write Back
@@ -99,6 +106,9 @@ SC_MODULE(risc_v_model) {
         
         sc_uint<WIDTH> alu_res;
         sc_uint<WIDTH> mem_data;
+
+        uint32_t mem_size;
+        bool mem_unsigned;
 
         bool reg_write;
 
@@ -491,6 +501,8 @@ SC_MODULE(risc_v_model) {
         mem_wb.opcode = ex_mem.opcode;
         mem_wb.funct3 = ex_mem.funct3;
         mem_wb.reg_write = ex_mem.reg_write;
+        mem_wb.mem_size = ex_mem.mem_size;
+        mem_wb.mem_unsigned = ex_mem.mem_unsigned;
 
         mem_wb.is_csr_instruction = ex_mem.is_csr_instruction;
         mem_wb.csr_write_enable = ex_mem.csr_write_enable;
@@ -622,6 +634,8 @@ SC_MODULE(risc_v_model) {
                 id_ex.inst = 0;
                 id_ex.valid = false;
                 id_ex.reg_write = false;
+                id_ex.mem_size = 4;
+                id_ex.mem_unsigned = false;
                 
                 return;
             }
@@ -653,6 +667,8 @@ SC_MODULE(risc_v_model) {
             id_ex.inst = 0;
             id_ex.valid = false;
             id_ex.reg_write = false;
+            id_ex.mem_size = 4;
+            id_ex.mem_unsigned = false;
             cout << "@" << sc_time_stamp() << " Decode Warning: Invalid Instruction. Bubble inserted into ID/EX" << endl << endl;
             return;
         }
@@ -702,6 +718,45 @@ SC_MODULE(risc_v_model) {
         id_ex.rs1_data = registers[id_ex.rs1];
         id_ex.rs2_data = registers[id_ex.rs2];
 
+        // Default memory load/store values
+        id_ex.mem_size = 4;
+        id_ex.mem_unsigned = false;
+
+        // Check if opcode is Load
+        if (id_ex.opcode == 0x03 || id_ex.opcode == 0x23) {
+            switch (id_ex.funct3) {
+                 // LB / SB
+                case 0x0:
+                    id_ex.mem_size = 1;
+                    id_ex.mem_unsigned = false;
+                    break;
+                // LH / SH
+                case 0x1: 
+                    id_ex.mem_size = 2;
+                    id_ex.mem_unsigned = false;
+                    break;
+                // LW / SW
+                case 0x2:
+                    id_ex.mem_size = 4;
+                    id_ex.mem_unsigned = false;
+                    break;
+                // LBU
+                case 0x4:
+                    id_ex.mem_size = 1;
+                    id_ex.mem_unsigned = true;
+                    break;
+                 // LHU
+                case 0x5:
+                    id_ex.mem_size = 2;
+                    id_ex.mem_unsigned = true;
+                    break;
+                default:
+                    id_ex.mem_size = 4;
+                    id_ex.mem_unsigned = false;
+                    break;
+            }
+        }
+
         // Pass prediction
         id_ex.predicted_taken = if_id.predicted_taken;
 
@@ -731,6 +786,8 @@ SC_MODULE(risc_v_model) {
             ex_mem.pc = 0;
             ex_mem.inst = 0;
             ex_mem.valid = false;
+            ex_mem.mem_size = 4;           
+            ex_mem.mem_unsigned = false;
             return;
         }
 
@@ -936,6 +993,8 @@ SC_MODULE(risc_v_model) {
         ex_mem.opcode = id_ex.opcode;
         ex_mem.funct3 = id_ex.funct3;
         ex_mem.reg_write = id_ex.reg_write;
+        ex_mem.mem_size = id_ex.mem_size;
+        ex_mem.mem_unsigned = id_ex.mem_unsigned;
         
         // Pass CSR control signals to EX/MEM Registers
         ex_mem.is_csr_instruction = id_ex.is_csr_instruction;
@@ -963,9 +1022,9 @@ SC_MODULE(risc_v_model) {
 
                 // Check if it's a Load or Store
                 if (ex_mem.opcode == 0x03 || ex_mem.opcode == 0x23) {
-                    
-                    // Send address over bus
+                    // Send address over bus along with size of data
                     data_addr_bus_o.write(ex_mem.alu_res);
+                    data_size_o.write(ex_mem.mem_size);
 
                     // Enable read_en for Load
                     if (ex_mem.opcode == 0x03) {
@@ -1047,8 +1106,29 @@ SC_MODULE(risc_v_model) {
         sc_uint<WIDTH> write_data = mem_wb.alu_res;
 
         // Load requested data from Memory
-        if (mem_wb.opcode == 0x3) {
-            write_data = data_bus_i.read();
+        if (mem_wb.opcode == 0x03) {
+            uint32_t loaded_data = data_bus_i.read();
+            write_data = loaded_data;
+
+            // Byte Load (LB / LBU)
+            if (mem_wb.mem_size == 1) {
+                write_data = loaded_data & 0xFF; 
+                
+                // Sign extend if signed and MSB MSB is 1
+                if (!mem_wb.mem_unsigned && (write_data & 0x80)) {
+                    write_data |= 0xFFFFFF00; 
+                }
+            }
+            // Halfword Load (LH / LHU)
+            else if (mem_wb.mem_size == 2) {
+                write_data = loaded_data & 0xFFFF; 
+                
+                // Sign extend if signed and MSB is 1
+                if (!mem_wb.mem_unsigned && (write_data & 0x8000)) {
+                    write_data |= 0xFFFF0000;
+                }
+            }
+
             cout << "@" << sc_time_stamp() << " Write Back: Loaded 0x" << hex << write_data << dec << " from memory" << endl << endl;
         }
 

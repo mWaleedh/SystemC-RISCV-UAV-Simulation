@@ -20,6 +20,7 @@ void tlm_adapter::process_data() {
             sc_time delay = SC_ZERO_TIME;
 
             uint32_t addr = cpu_data_addr_bus_i.read();
+            uint32_t size = cpu_data_size_i.read();
             uint32_t data = 0;
 
             if (write_en) {
@@ -33,8 +34,8 @@ void tlm_adapter::process_data() {
             // Set TLM generic payload values
             payload.set_address(addr);
             payload.set_data_ptr((unsigned char*)&data);
-            payload.set_data_length(4);
-            payload.set_streaming_width(4);
+            payload.set_data_length(size);
+            payload.set_streaming_width(size);
             payload.set_response_status(TLM_INCOMPLETE_RESPONSE);
 
             // Send transaction
