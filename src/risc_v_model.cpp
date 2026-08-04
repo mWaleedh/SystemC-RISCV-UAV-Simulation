@@ -12,6 +12,7 @@ SC_MODULE(risc_v_model) {
     sc_in<bool> irq_timer_i;
     sc_in<bool> irq_ext_i;
     sc_in<bool> irq_sw_i;
+    sc_in<bool> data_error_i;
 
     // Instruction ports
     sc_in<sc_uint<WIDTH>> inst_bus_i;
@@ -120,14 +121,14 @@ SC_MODULE(risc_v_model) {
         sc_uint<WIDTH> csr_new_value;
     } mem_wb;
 
-    struct MEM_WB_Old {
-        bool valid;
-        bool reg_write;
-        sc_uint<5> rd;
-        sc_uint<7> opcode;
-        sc_uint<WIDTH> alu_res;
-        sc_uint<WIDTH> mem_data;
-    } mem_wb_old;
+    // struct MEM_WB_Old {
+    //     bool valid;
+    //     bool reg_write;
+    //     sc_uint<5> rd;
+    //     sc_uint<7> opcode;
+    //     sc_uint<WIDTH> alu_res;
+    //     sc_uint<WIDTH> mem_data;
+    // } mem_wb_old;
 
     enum mem_state_t { 
         IDLE, 
@@ -138,7 +139,7 @@ SC_MODULE(risc_v_model) {
 
     // Pipeline Control Signals
     bool stall;
-    bool flush;
+    bool branch_flush;
     bool interrupt_pending;
     bool exec_redirect_valid;
     sc_uint<WIDTH> exec_redirect_pc;
@@ -519,16 +520,17 @@ SC_MODULE(risc_v_model) {
     // IF: Instruction Fetch
     // ------------------------------
     void fetch() {
-        static bool was_stalled = false;
+        // static bool was_stalled = false;
 
+        // Check if Stall is triggered
         if (mem_stall || stall) {
-            if (!was_stalled) {
-                 // Rewind the global PC
-                pc = pc - 4;
-                was_stalled = true;
-            }
+            // if (!was_stalled) {
+            //      // Rewind the global PC
+            //     pc = pc - 4;
+            //     was_stalled = true;
+            // }
             
-            // Request the dropped instruction again
+            // Request the stalled instruction again
             inst_addr_bus_o.write(pc - 4);
             inst_read_en_o.write(true);
             
@@ -536,8 +538,8 @@ SC_MODULE(risc_v_model) {
             return;
         }
 
-        // Stall has cleared
-        was_stalled = false;
+        // // Stall has cleared
+        // was_stalled = false;
 
         // Read instruction sent by memory
         sc_uint<WIDTH> inst = inst_bus_i.read();
@@ -545,7 +547,7 @@ SC_MODULE(risc_v_model) {
         cout << "@" << sc_time_stamp() << " Fetch: Received Inst -> 0x" << hex << inst << dec << endl << endl;
 
         // Check for flush
-        if (flush) {
+        if (branch_flush) {
             // Insert bubble into IF/ID register
             if_id.pc = 0;
             if_id.inst = 0;
@@ -553,39 +555,40 @@ SC_MODULE(risc_v_model) {
 
             cout << "@" << sc_time_stamp() << " Fetch: Flushed. Bubble inserted into IF/ID" << endl << endl;
         }
-        else if (ignore_fetch) {
-            if_id.pc = 0;
-            if_id.inst = 0;
-            if_id.valid = false;
-            ignore_fetch = false;
+        // else if (ignore_fetch) {
+        //     if_id.pc = 0;
+        //     if_id.inst = 0;
+        //     if_id.valid = false;
+        //     ignore_fetch = false;
 
-            cout << "@" << sc_time_stamp() << " Fetch: Flushed wrongly predicted instruction" << endl << endl;
-        }
+        //     cout << "@" << sc_time_stamp() << " Fetch: Flushed wrongly predicted instruction" << endl << endl;
+        // }
         else {
             // Pass data to IF/ID register
-            if_id.pc = fetch_pc_stage1;
+            if_id.pc = pc - 4;
             if_id.inst = inst;
             if_id.valid = true;
-            if_id.predicted_taken = false;
+            // if_id.predicted_taken = false;
 
-            if ((inst & 0x7F) == 0x63) {
-                uint32_t bht_index = (fetch_pc_stage1 >> 2) & 0x1F;
+            // // If it's a branch predict its outcome
+            // if ((inst & 0x7F) == 0x63) {
+            //     uint32_t bht_index = (fetch_pc_stage1 >> 2) & 0x1F;
                 
-                if (bht[bht_index] >= 2) {
-                    if_id.predicted_taken = true;
+            //     if (bht[bht_index] >= 2) {
+            //         if_id.predicted_taken = true;
                     
-                    // Extract Immediate and redirect PC
-                    sc_int<WIDTH> imm = immediateGenerator(0x63, inst);
-                    pc = fetch_pc_stage1 + imm; 
-                    ignore_fetch = true;
+            //         // Extract Immediate and redirect PC
+            //         sc_int<WIDTH> imm = immediateGenerator(0x63, inst);
+            //         pc = fetch_pc_stage1 + imm; 
+            //         ignore_fetch = true;
                     
-                    cout << "@" << sc_time_stamp() << " Fetch: BHT Predicted Branch Taken. Redirecting PC to 0x" << hex << pc << dec << endl << endl;
-                }
-            }
+            //         cout << "@" << sc_time_stamp() << " Fetch: BHT Predicted Branch Taken. Redirecting PC to 0x" << hex << pc << dec << endl << endl;
+            //     }
+            // }
         }
 
-        fetch_pc_stage1 = fetch_pc_stage2;
-        fetch_pc_stage2 = pc;
+        // fetch_pc_stage1 = fetch_pc_stage2;
+        // fetch_pc_stage2 = pc;
 
         // Request the instruction needed in the next cycle
         inst_addr_bus_o.write(pc);
@@ -604,8 +607,8 @@ SC_MODULE(risc_v_model) {
             return;
         }
 
-        // Check for flush or bubble
-        if (flush || !if_id.valid) {
+        // Check for bubble and forward it
+        if (branch_flush || !if_id.valid) {
             id_ex.valid = false;
             return;
         }
@@ -618,29 +621,30 @@ SC_MODULE(risc_v_model) {
         uint32_t rs2 = (inst >> 20) & 0x1F;
         uint32_t opcode = inst & 0x7F;
 
-        // Check if the current operation uses rs1 or rs2
-        bool uses_rs1 = (opcode != 0x37 && opcode != 0x17 && opcode != 0x6F); 
-        bool uses_rs2 = (opcode == 0x33 || opcode == 0x23 || opcode == 0x63);
+        // // Check if the current operation uses rs1 or rs2
+        // bool uses_rs1 = (opcode != 0x37 && opcode != 0x17 && opcode != 0x6F); 
+        // bool uses_rs2 = (opcode == 0x33 || opcode == 0x23 || opcode == 0x63);
 
         // Check for load-use hazard
-        if (id_ex.valid && id_ex.opcode == 0x03 && id_ex.rd != 0) {
-            if ((uses_rs1 && id_ex.rd == rs1) || (uses_rs2 && id_ex.rd == rs2)) {
-                // Stall pipeline by one cycle
-                stall = true;
-                pipeline_stalls++;  // Increment counter
+        // if (id_ex.valid && id_ex.opcode == 0x03 && id_ex.rd != 0) {
+        //     if ((uses_rs1 && id_ex.rd == rs1) || (uses_rs2 && id_ex.rd == rs2)) {
+        //         // Stall pipeline by one cycle
+        //         stall = true;
+        //         pipeline_stalls++;  // Increment counter
                 
-                // Insert bubble in ID/EX Register
-                id_ex.pc = 0;
-                id_ex.inst = 0;
-                id_ex.valid = false;
-                id_ex.reg_write = false;
-                id_ex.mem_size = 4;
-                id_ex.mem_unsigned = false;
+        //         // Insert bubble in ID/EX Register
+        //         id_ex.pc = 0;
+        //         id_ex.inst = 0;
+        //         id_ex.valid = false;
+        //         id_ex.reg_write = false;
+        //         id_ex.mem_size = 4;
+        //         id_ex.mem_unsigned = false;
                 
-                return;
-            }
-        }
+        //         return;
+        //     }
+        // }
 
+        // Clear stall
         stall = false;
 
         cout << "@" << sc_time_stamp() << " Decode: Instruction -> 0x" << hex << inst << dec << endl << endl;
@@ -663,21 +667,17 @@ SC_MODULE(risc_v_model) {
         // Skip if invalid opcode
         if (!validInstruction(id_ex.opcode)) {
             // Insert bubble into ID/EX Register
-            id_ex.pc = 0;
-            id_ex.inst = 0;
             id_ex.valid = false;
-            id_ex.reg_write = false;
-            id_ex.mem_size = 4;
-            id_ex.mem_unsigned = false;
             cout << "@" << sc_time_stamp() << " Decode Warning: Invalid Instruction. Bubble inserted into ID/EX" << endl << endl;
             return;
         }
 
-        // Enable reg_write (used in forwarding)
-        if (id_ex.opcode == 0x33 || id_ex.opcode == 0x13 || id_ex.opcode == 0x03 || id_ex.opcode == 0x37 || id_ex.opcode == 0x17 || id_ex.opcode == 0x6F || id_ex.opcode == 0x67 || id_ex.opcode == 0x73) {
-            id_ex.reg_write = true;
-        }
-        else {
+        // Enable reg_write by default
+        id_ex.reg_write = true;
+
+        // Only store and branch don't write to register file
+        // So don't forward their data to previous stage
+        if (id_ex.opcode == 0x23 || id_ex.opcode == 0x63) {
             id_ex.reg_write = false;
         }
 
@@ -722,7 +722,7 @@ SC_MODULE(risc_v_model) {
         id_ex.mem_size = 4;
         id_ex.mem_unsigned = false;
 
-        // Check if opcode is Load
+        // Check if opcode is Load/Store
         if (id_ex.opcode == 0x03 || id_ex.opcode == 0x23) {
             switch (id_ex.funct3) {
                  // LB / SB
@@ -757,8 +757,8 @@ SC_MODULE(risc_v_model) {
             }
         }
 
-        // Pass prediction
-        id_ex.predicted_taken = if_id.predicted_taken;
+        // // Pass prediction
+        // id_ex.predicted_taken = if_id.predicted_taken;
 
         // Mark this stage as valid
         id_ex.valid = true;
@@ -782,12 +782,9 @@ SC_MODULE(risc_v_model) {
             return;
         }
 
+        // Pass bubble forward
         if (!id_ex.valid) {
-            ex_mem.pc = 0;
-            ex_mem.inst = 0;
             ex_mem.valid = false;
-            ex_mem.mem_size = 4;           
-            ex_mem.mem_unsigned = false;
             return;
         }
 
@@ -797,18 +794,18 @@ SC_MODULE(risc_v_model) {
         uint32_t alu_in_1 = id_ex.rs1_data;
         uint32_t alu_in_2 = id_ex.rs2_data;
 
-        // MEM-to_EX Forwarding
-        if (mem_wb_old.valid && mem_wb_old.reg_write && (mem_wb_old.rd != 0)) {
-            // Forward to rs1
-            if (mem_wb_old.rd == id_ex.rs1) {
-                alu_in_1 = mem_wb_old.mem_data;
-            }
+        // // MEM-to_EX Forwarding
+        // if (mem_wb_old.valid && mem_wb_old.reg_write && (mem_wb_old.rd != 0)) {
+        //     // Forward to rs1
+        //     if (mem_wb_old.rd == id_ex.rs1) {
+        //         alu_in_1 = mem_wb_old.mem_data;
+        //     }
 
-            // Forward to rs2
-            if (mem_wb_old.rd == id_ex.rs2) {
-                alu_in_2 = mem_wb_old.mem_data;
-            }
-        }
+        //     // Forward to rs2
+        //     if (mem_wb_old.rd == id_ex.rs2) {
+        //         alu_in_2 = mem_wb_old.mem_data;
+        //     }
+        // }
 
         // EX-to-EX Forwarding
         if (ex_mem.valid && ex_mem.reg_write && (ex_mem.rd != 0)) {
@@ -877,41 +874,44 @@ SC_MODULE(risc_v_model) {
                 cout << " | Branch Taken: " << (branch_taken ? "YES" : "NO");
             }
 
-            // Find next instruction address
             if (branch_taken) {
                 // Increment counters
                 branches_taken++;
-            }
-
-            // Extract correct index and read its value
-            uint32_t bht_index = (id_ex.pc >> 2) & 0x1F;
-            uint8_t current_state = bht[bht_index];
-            
-            if (branch_taken) {
-                // Increment count towards strongly taken
-                if (current_state < 3) {
-                    bht[bht_index]++;
-                }
-            } 
-            else {
-                // Decrement count towards strongly not taken
-                if (current_state > 0) {
-                    bht[bht_index]--;
-                }
-            }
-
-            // Check if prediction was correct or not
-            if (branch_taken != id_ex.predicted_taken) {
                 branch_mispredictions++;
+
+                // Move to correct instruction
+                target_pc = id_ex.pc + id_ex.imm;
+            }
+
+            // // Extract correct index and read its value
+            // uint32_t bht_index = (id_ex.pc >> 2) & 0x1F;
+            // uint8_t current_state = bht[bht_index];
+            
+            // if (branch_taken) {
+            //     // Increment count towards strongly taken
+            //     if (current_state < 3) {
+            //         bht[bht_index]++;
+            //     }
+            // } 
+            // else {
+            //     // Decrement count towards strongly not taken
+            //     if (current_state > 0) {
+            //         bht[bht_index]--;
+            //     }
+            // }
+
+            // // Check if prediction was correct or not
+            // if (branch_taken != id_ex.predicted_taken) {
+            //     branch_mispredictions++;
                 
-                // Calculate actual PC value
-                target_pc = branch_taken ? (id_ex.pc + id_ex.imm) : (id_ex.pc + 4);
+            //     // Calculate actual PC value
+            //     target_pc = branch_taken ? (id_ex.pc + id_ex.imm) : (id_ex.pc + 4);
     
-                // Give signal to flush pipeline
-                branch_taken = true; 
+            //     // Give signal to flush pipeline
+            //     branch_taken = true; 
                 
-                cout << " | Mispredicted. Correct target 0x" << hex << target_pc << dec;
-            } 
+            //     cout << " | Mispredicted. Correct target 0x" << hex << target_pc << dec;
+            // } 
             else {
                 // Don't flush pipeline since prediction is correct
                 branch_taken = false;
@@ -982,8 +982,8 @@ SC_MODULE(risc_v_model) {
 
         // Check if branch is taken or not
         if (branch_taken) {
-            exec_redirect_valid = true;
-            exec_redirect_pc = target_pc;
+            branch_flush = true;
+            pc = target_pc;
         }
 
         // Pass signals to EX/MEM Register
@@ -1013,10 +1013,8 @@ SC_MODULE(risc_v_model) {
             case IDLE:
                 // Check for bubble
                 if (!ex_mem.valid) {
-                    mem_wb.pc = 0;
-                    mem_wb.inst = 0;
                     mem_wb.valid = false;
-                    mem_stall = false; 
+                    mem_stall = false;
                     return;
                 }
 
@@ -1038,13 +1036,11 @@ SC_MODULE(risc_v_model) {
                         cout << "@" << sc_time_stamp() << " Memory Access: Storing to 0x" << hex << ex_mem.alu_res << dec << endl << endl;
                     }
                     
-                    // Freeze pipeline
+                    // Freeze pipeline until response is received
                     mem_stall = true;
-                    pipeline_stalls++;  
+                    pipeline_stalls++;
                     
                     // Send bubble to the WB stage
-                    mem_wb.pc = 0;
-                    mem_wb.inst = 0;
                     mem_wb.valid = false;
                     
                     // Move to next state
@@ -1064,7 +1060,7 @@ SC_MODULE(risc_v_model) {
                 data_read_en_o.write(false);
                 data_write_en_o.write(false);
                 
-                // Keep sending bubbles to next stage
+                // Send bubble to next stage
                 mem_wb.valid = false;
                 
                 mem_state = WAITING_FOR_RESPONSE;
@@ -1074,20 +1070,46 @@ SC_MODULE(risc_v_model) {
                 // Keep sending bubbles until we get a response
                 mem_wb.valid = false;
 
+                // Check if data has been sent
                 if (data_ready_i.read() == true) {
-                    mem_state = RESPONSE_RECEIVED;
-                }
-                break;
+                    // Send data to WB stage
+                    passDataToWB();
 
-            case RESPONSE_RECEIVED:
-                // When data is read set stall to false
-                mem_stall = false;
-                
-                // Send data to WB stage
-                passDataToWB();
-                
-                // Reset for the next instruction
-                mem_state = IDLE;
+                    // Pass received data to WB if Load
+                    if (ex_mem.opcode == 0x03) {
+                        uint32_t loaded_data = data_bus_i.read(); 
+
+                        // Byte Load (LB / LBU)
+                        if (mem_wb.mem_size == 1) {
+                            mem_wb.alu_res = loaded_data & 0xFF; 
+                            
+                            // Sign extend if signed and MSB MSB is 1
+                            if (!mem_wb.mem_unsigned && (mem_wb.alu_res & 0x80)) {
+                                mem_wb.alu_res |= 0xFFFFFF00; 
+                            }
+                        }
+                        // Halfword Load (LH / LHU)
+                        else if (mem_wb.mem_size == 2) {
+                            mem_wb.alu_res = loaded_data & 0xFFFF; 
+                            
+                            // Sign extend if signed and MSB is 1
+                            if (!mem_wb.mem_unsigned && (mem_wb.alu_res & 0x8000)) {
+                                mem_wb.alu_res |= 0xFFFF0000;
+                            }
+                        }
+                        else {
+                            mem_wb.alu_res = loaded_data;
+                        }
+
+                        cout << "@" << sc_time_stamp() << " Memory Access: Loaded 0x" << hex << mem_wb.alu_res << dec << " from memory" << endl << endl;
+                    }
+
+                    // Clear stall since data has been received
+                    mem_stall = false;
+
+                    // Change state back to Idle
+                    mem_state = IDLE;
+                }
                 break;
         }
     }
@@ -1103,35 +1125,6 @@ SC_MODULE(risc_v_model) {
         // Increment counter
         committed_instructions++;
 
-        sc_uint<WIDTH> write_data = mem_wb.alu_res;
-
-        // Load requested data from Memory
-        if (mem_wb.opcode == 0x03) {
-            uint32_t loaded_data = data_bus_i.read();
-            write_data = loaded_data;
-
-            // Byte Load (LB / LBU)
-            if (mem_wb.mem_size == 1) {
-                write_data = loaded_data & 0xFF; 
-                
-                // Sign extend if signed and MSB MSB is 1
-                if (!mem_wb.mem_unsigned && (write_data & 0x80)) {
-                    write_data |= 0xFFFFFF00; 
-                }
-            }
-            // Halfword Load (LH / LHU)
-            else if (mem_wb.mem_size == 2) {
-                write_data = loaded_data & 0xFFFF; 
-                
-                // Sign extend if signed and MSB is 1
-                if (!mem_wb.mem_unsigned && (write_data & 0x8000)) {
-                    write_data |= 0xFFFF0000;
-                }
-            }
-
-            cout << "@" << sc_time_stamp() << " Write Back: Loaded 0x" << hex << write_data << dec << " from memory" << endl << endl;
-        }
-
         // Handle CSRs
         if (mem_wb.is_csr_instruction) {
             // Write new CSR value to selected register
@@ -1143,8 +1136,8 @@ SC_MODULE(risc_v_model) {
 
         // Write data to Register File
         if (mem_wb.reg_write && mem_wb.rd != 0) {
-            registers[mem_wb.rd] = write_data;
-            cout << "@" << sc_time_stamp() << " Write Back: Register x" << mem_wb.rd << " updated to 0x" << hex << write_data << dec << endl << endl;
+            registers[mem_wb.rd] = mem_wb.alu_res;
+            cout << "@" << sc_time_stamp() << " Write Back: Register x" << mem_wb.rd << " updated to 0x" << hex << mem_wb.alu_res << dec << endl << endl;
         } 
         else {
             cout << "@" << sc_time_stamp() << " Write Back: No Register File write back" << endl << endl;
@@ -1225,7 +1218,7 @@ SC_MODULE(risc_v_model) {
             data_read_en_o.write(false);
 
             // Save old values before they get overwritten
-            // For MEM-to-EX forwarding
+            // For MEM-to-EX forwarding so that we don't forward data of store instruction)
             mem_wb_old.valid = mem_wb.valid;
             mem_wb_old.reg_write = mem_wb.reg_write;
             mem_wb_old.rd = mem_wb.rd;
@@ -1297,6 +1290,9 @@ SC_MODULE(risc_v_model) {
 
             decode();
             fetch();
+
+            // Clear branch mispredict flush after IF and ID stages have been cleared
+            branch_flush = false;
 
             wait();
         }
