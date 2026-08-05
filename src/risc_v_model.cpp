@@ -56,6 +56,8 @@ SC_MODULE(risc_v_model) {
         uint32_t mem_size;
         bool mem_unsigned;
 
+        bool predicted_taken;
+
         bool reg_write;
 
         // CSR / Interrupt Signals
@@ -65,8 +67,6 @@ SC_MODULE(risc_v_model) {
         bool csr_write_enable;
         sc_uint<WIDTH> csr_address;
         sc_uint<WIDTH> csr_operation;
-
-        bool predicted_taken;
     } id_ex;
 
     // EX/MEM Register
@@ -76,7 +76,6 @@ SC_MODULE(risc_v_model) {
         bool valid;
         
         sc_uint<7> opcode;
-        sc_uint<3> funct3;
         sc_uint<5> rd;
         
         sc_uint<WIDTH> alu_res;
@@ -91,7 +90,6 @@ SC_MODULE(risc_v_model) {
         bool is_csr_instruction;
         bool csr_write_enable;
         sc_uint<WIDTH> csr_address;
-        sc_uint<WIDTH> csr_old_value;
         sc_uint<WIDTH> csr_new_value;
     } ex_mem;
 
@@ -101,15 +99,8 @@ SC_MODULE(risc_v_model) {
         sc_uint<WIDTH> inst;
         bool valid;
         
-        sc_uint<7> opcode;
-        sc_uint<3> funct3;
         sc_uint<5> rd;
-        
         sc_uint<WIDTH> alu_res;
-        sc_uint<WIDTH> mem_data;
-
-        uint32_t mem_size;
-        bool mem_unsigned;
 
         bool reg_write;
 
@@ -117,18 +108,15 @@ SC_MODULE(risc_v_model) {
         bool is_csr_instruction;
         bool csr_write_enable;
         sc_uint<WIDTH> csr_address;
-        sc_uint<WIDTH> csr_old_value;
         sc_uint<WIDTH> csr_new_value;
     } mem_wb;
 
-    // struct MEM_WB_Old {
-    //     bool valid;
-    //     bool reg_write;
-    //     sc_uint<5> rd;
-    //     sc_uint<7> opcode;
-    //     sc_uint<WIDTH> alu_res;
-    //     sc_uint<WIDTH> mem_data;
-    // } mem_wb_old;
+    struct MEM_WB_Old {
+        bool valid;        
+        bool reg_write;
+        sc_uint<5> rd;
+        sc_uint<WIDTH> alu_res;
+    } mem_wb_old;
 
     enum mem_state_t { 
         IDLE, 
@@ -139,7 +127,9 @@ SC_MODULE(risc_v_model) {
 
     // Pipeline Control Signals
     bool stall;
+    bool mem_stall;
     bool branch_flush;
+    bool trap_flush;
     bool interrupt_pending;
     bool exec_redirect_valid;
     sc_uint<WIDTH> exec_redirect_pc;
@@ -152,7 +142,6 @@ SC_MODULE(risc_v_model) {
     sc_uint<WIDTH> fetch_pc_stage1;
     sc_uint<WIDTH> fetch_pc_stage2; 
     bool in_interrupt;
-    bool mem_stall;
 
     // Register File
     sc_uint<WIDTH> registers[WIDTH];
@@ -497,20 +486,24 @@ SC_MODULE(risc_v_model) {
     }
 
     void passDataToWB() {
+        mem_wb.valid = true;
+
         mem_wb.alu_res = ex_mem.alu_res;
         mem_wb.rd = ex_mem.rd;
-        mem_wb.opcode = ex_mem.opcode;
-        mem_wb.funct3 = ex_mem.funct3;
         mem_wb.reg_write = ex_mem.reg_write;
-        mem_wb.mem_size = ex_mem.mem_size;
-        mem_wb.mem_unsigned = ex_mem.mem_unsigned;
 
         mem_wb.is_csr_instruction = ex_mem.is_csr_instruction;
         mem_wb.csr_write_enable = ex_mem.csr_write_enable;
         mem_wb.csr_address = ex_mem.csr_address;
-        mem_wb.csr_new_value = ex_mem.csr_new_value;
+        mem_wb.csr_new_value = ex_mem.csr_new_value;        
+    }
 
-        mem_wb.valid = true;
+    void saveOldWB() {
+        mem_wb_old.valid = mem_wb.valid;
+
+        mem_wb_old.reg_write = mem_wb.reg_write;
+        mem_wb_old.rd = mem_wb.rd;
+        mem_wb_old.alu_res = mem_wb.alu_res;
     }
 
     // ------------------------------------------------------------
@@ -523,7 +516,7 @@ SC_MODULE(risc_v_model) {
         // static bool was_stalled = false;
 
         // Check if Stall is triggered
-        if (mem_stall || stall) {
+        if (stall || mem_stall) {
             // if (!was_stalled) {
             //      // Rewind the global PC
             //     pc = pc - 4;
@@ -547,13 +540,14 @@ SC_MODULE(risc_v_model) {
         cout << "@" << sc_time_stamp() << " Fetch: Received Inst -> 0x" << hex << inst << dec << endl << endl;
 
         // Check for flush
-        if (branch_flush) {
-            // Insert bubble into IF/ID register
+        if (trap_flush || branch_flush) {
+            if_id.valid = false;
             if_id.pc = 0;
             if_id.inst = 0;
-            if_id.valid = false;
-
-            cout << "@" << sc_time_stamp() << " Fetch: Flushed. Bubble inserted into IF/ID" << endl << endl;
+            
+            // Turn flushes off
+            trap_flush = false; 
+            branch_flush = false;
         }
         // else if (ignore_fetch) {
         //     if_id.pc = 0;
@@ -608,7 +602,7 @@ SC_MODULE(risc_v_model) {
         }
 
         // Check for bubble and forward it
-        if (branch_flush || !if_id.valid) {
+        if (!if_id.valid) {
             id_ex.valid = false;
             return;
         }
@@ -794,18 +788,18 @@ SC_MODULE(risc_v_model) {
         uint32_t alu_in_1 = id_ex.rs1_data;
         uint32_t alu_in_2 = id_ex.rs2_data;
 
-        // // MEM-to_EX Forwarding
-        // if (mem_wb_old.valid && mem_wb_old.reg_write && (mem_wb_old.rd != 0)) {
-        //     // Forward to rs1
-        //     if (mem_wb_old.rd == id_ex.rs1) {
-        //         alu_in_1 = mem_wb_old.mem_data;
-        //     }
+        // MEM-to_EX Forwarding
+        if (mem_wb_old.valid && mem_wb_old.reg_write && (mem_wb_old.rd != 0)) {
+            // Forward to rs1
+            if (mem_wb_old.rd == id_ex.rs1) {
+                alu_in_1 = mem_wb_old.alu_res;
+            }
 
-        //     // Forward to rs2
-        //     if (mem_wb_old.rd == id_ex.rs2) {
-        //         alu_in_2 = mem_wb_old.mem_data;
-        //     }
-        // }
+            // Forward to rs2
+            if (mem_wb_old.rd == id_ex.rs2) {
+                alu_in_2 = mem_wb_old.alu_res;
+            }
+        }
 
         // EX-to-EX Forwarding
         if (ex_mem.valid && ex_mem.reg_write && (ex_mem.rd != 0)) {
@@ -942,15 +936,10 @@ SC_MODULE(risc_v_model) {
         if (id_ex.is_mret_instruction || id_ex.is_csr_instruction) {
             // MRET
             if (id_ex.is_mret_instruction) {
-                // Restore PC
-                target_pc = mepc;
-
-                // Enable interrupts again
-                mstatus = mstatus | 0x8;
-                in_interrupt = false;
-
-                // Flush pipeline
-                branch_taken = true;
+                target_pc = mepc;           // Restore PC
+                mstatus = mstatus | 0x8;    // Enable global interrupts
+                branch_taken = true;        // Flush pipeline
+                // in_interrupt = false;
                 
                 cout << "@" << sc_time_stamp() << " Execute: MRET | Return Address: 0x" << hex << target_pc << dec << endl << endl;
             }
@@ -991,7 +980,6 @@ SC_MODULE(risc_v_model) {
         ex_mem.store_data = alu_in_2;
         ex_mem.rd = id_ex.rd;
         ex_mem.opcode = id_ex.opcode;
-        ex_mem.funct3 = id_ex.funct3;
         ex_mem.reg_write = id_ex.reg_write;
         ex_mem.mem_size = id_ex.mem_size;
         ex_mem.mem_unsigned = id_ex.mem_unsigned;
@@ -1060,14 +1048,14 @@ SC_MODULE(risc_v_model) {
                 data_read_en_o.write(false);
                 data_write_en_o.write(false);
                 
-                // Send bubble to next stage
+                // Send bubble to WB
                 mem_wb.valid = false;
                 
                 mem_state = WAITING_FOR_RESPONSE;
                 break;
 
             case WAITING_FOR_RESPONSE:
-                // Keep sending bubbles until we get a response
+                // Keep sending bubbles to WB until we get a response
                 mem_wb.valid = false;
 
                 // Check if data has been sent
@@ -1080,20 +1068,20 @@ SC_MODULE(risc_v_model) {
                         uint32_t loaded_data = data_bus_i.read(); 
 
                         // Byte Load (LB / LBU)
-                        if (mem_wb.mem_size == 1) {
+                        if (ex_mem.mem_size == 1) {
                             mem_wb.alu_res = loaded_data & 0xFF; 
                             
                             // Sign extend if signed and MSB MSB is 1
-                            if (!mem_wb.mem_unsigned && (mem_wb.alu_res & 0x80)) {
+                            if (!ex_mem.mem_unsigned && (mem_wb.alu_res & 0x80)) {
                                 mem_wb.alu_res |= 0xFFFFFF00; 
                             }
                         }
                         // Halfword Load (LH / LHU)
-                        else if (mem_wb.mem_size == 2) {
+                        else if (ex_mem.mem_size == 2) {
                             mem_wb.alu_res = loaded_data & 0xFFFF; 
                             
                             // Sign extend if signed and MSB is 1
-                            if (!mem_wb.mem_unsigned && (mem_wb.alu_res & 0x8000)) {
+                            if (!ex_mem.mem_unsigned && (mem_wb.alu_res & 0x8000)) {
                                 mem_wb.alu_res |= 0xFFFF0000;
                             }
                         }
@@ -1158,13 +1146,15 @@ SC_MODULE(risc_v_model) {
         }
 
         // Reset output ports
+        // Instruction ports
         inst_read_en_o.write(false);
         inst_addr_bus_o.write(0);
-
+        // Data ports
         data_write_en_o.write(false);
         data_read_en_o.write(false);
         data_addr_bus_o.write(0);
         data_bus_o.write(0);
+        data_size_o.write(0);
 
         // Reset CSRs
         mstatus = 0x0;
@@ -1173,18 +1163,12 @@ SC_MODULE(risc_v_model) {
         mtvec   = 0x0;
         mepc    = 0x0;
         mcause  = 0x0;
-        in_interrupt = false;
 
         // Reset pipeline valid bits
         if_id.valid = false;
         id_ex.valid = false;
         ex_mem.valid = false;
         mem_wb.valid = false;
-
-        interrupt_pending = false;
-        exec_redirect_valid = false;
-        flush_pending_cycles = 0;
-        ignore_fetch = false;
 
         // Reset Performance Counters
         total_cycles = 0;
@@ -1217,25 +1201,8 @@ SC_MODULE(risc_v_model) {
             data_write_en_o.write(false);
             data_read_en_o.write(false);
 
-            // Save old values before they get overwritten
-            // For MEM-to-EX forwarding so that we don't forward data of store instruction)
-            mem_wb_old.valid = mem_wb.valid;
-            mem_wb_old.reg_write = mem_wb.reg_write;
-            mem_wb_old.rd = mem_wb.rd;
-            mem_wb_old.opcode = mem_wb.opcode;
-            mem_wb_old.alu_res = mem_wb.alu_res;
-            mem_wb_old.mem_data = ((mem_wb.opcode == 0x03) ? data_bus_i.read() : mem_wb.alu_res);
-
-            // Hold flush for as many cycles as the fetch requires
-            if (flush_pending_cycles > 0) {
-                flush = true;
-                flush_pending_cycles--;
-            } 
-            else {
-                flush = false;
-            }
-
-            exec_redirect_valid = false;
+            // Save old values before they get overwritten (for MEM-EX forwarding)
+            saveOldWB();
 
             // Check for interrupts
             if (irq_timer_i.read() == true) {
@@ -1246,53 +1213,30 @@ SC_MODULE(risc_v_model) {
             }
 
             // Handle interrupt if triggered
-            if ((mip & 0x80) && (mie & 0x80) && (mstatus & 0x8) && in_interrupt == false) {
-                interrupt_pending = true;
+            if ((mip & 0x80) && (mie & 0x80) && (mstatus & 0x8)) {
+                // Increment counters
+                timer_interrupts++;
+                pipeline_flushes++;
+
+                mepc = pc;                  // Save PC value
+                mcause = 0x80000007;        // Set cause as timer interrupt
+                mstatus = mstatus & ~0x8;   // Disable global interrupts
+                pc = mtvec;                 // Move to interrupt handling address
+
+                // Flush pipeline
+                trap_flush = true;
+                ex_mem.valid = false;  
+                id_ex.valid = false;
+
+                cout << "@" << sc_time_stamp() << " CPU: Timer interrupt received" << endl;
+                cout << "@" << sc_time_stamp() << " CPU: Jumping to interrupt handler\n" << endl;
             }
 
             writeBack();
             memoryAccess();
             execute();
-
-            // Give priority to interrupts
-            if (interrupt_pending) {
-                // Increment counters
-                timer_interrupts++;
-                pipeline_flushes++;
-
-                // Save PC value
-                if (exec_redirect_valid) {
-                    mepc = exec_redirect_pc; 
-                } 
-                else {
-                    mepc = pc;
-                }
-
-                mcause = 0x80000007;        // Set cause as timer interrupt
-                mstatus = mstatus & ~0x8;   // Disable global interrupts
-                in_interrupt = true;
-                interrupt_pending = false;
-                
-                pc = mtvec;     // Move to interrupt handling address
-                flush = true;   // Flush entire pipeline
-                flush_pending_cycles = 1; 
-
-                cout << "@" << sc_time_stamp() << " CPU: Timer interrupt received" << endl;
-                cout << "@" << sc_time_stamp() << " CPU: Jumping to interrupt handler\n" << endl;
-            }
-            // Then to branches/jumps
-            else if (exec_redirect_valid) {
-                pc = exec_redirect_pc;
-                flush = true;
-                flush_pending_cycles = 1; 
-                pipeline_flushes++; // Increment counter
-            }
-
             decode();
             fetch();
-
-            // Clear branch mispredict flush after IF and ID stages have been cleared
-            branch_flush = false;
 
             wait();
         }
