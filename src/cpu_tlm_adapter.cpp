@@ -9,8 +9,9 @@ void tlm_adapter::process_data() {
         // Wait for next rising edge
         wait();
 
-        // Set ready signal to false  before each iteration
+        // Reset output pins every cycle
         cpu_data_ready_o.write(false);
+        cpu_data_error_o.write(false);
 
         bool read_en = cpu_data_read_en_i.read();
         bool write_en = cpu_data_write_en_i.read();
@@ -43,7 +44,8 @@ void tlm_adapter::process_data() {
 
             // Check if interconnect returned error
             if (payload.is_response_error()) {
-                SC_REPORT_ERROR("TLM_ADAPTER", "Transaction failed or invalid address");
+                // Alert CPU about error
+                cpu_data_error_o.write(true);
             }
 
             wait(delay);
