@@ -162,6 +162,7 @@ SC_MODULE(risc_v_model) {
     uint64_t branches_taken;
     uint64_t branch_mispredictions;
     uint64_t timer_interrupts;
+    uint64_t sw_interrupts;
 
     // ------------------------------------------------------------
     // Helper Functions
@@ -453,8 +454,8 @@ SC_MODULE(risc_v_model) {
                 mcause = csr_new;
                 break;
             case 0x344:
-                // Protect 7th bit of MIP from write
-                mip = (csr_new & ~0x80) | (mip & 0x80);
+                // Protect 3rd and 7th bit of MIP from write
+                mip = (csr_new & ~0x88) | (mip & 0x88);
             default: 
                 break; 
         }
@@ -1241,6 +1242,7 @@ SC_MODULE(risc_v_model) {
         branches_taken = 0;
         branch_mispredictions = 0;
         timer_interrupts = 0;
+        sw_interrupts = 0;
 
         // Reset Branch History Table
         for (int i = 0; i < 32; i++) {
@@ -1266,16 +1268,46 @@ SC_MODULE(risc_v_model) {
             // Save old values before they get overwritten (for MEM-EX forwarding)
             saveOldWB();
 
-            // Check for interrupts
-            if (irq_timer_i.read() == true) {
-                mip = mip | 0x80;   // Set Bit 7 (timer interrupt)
-            } 
-            else {
-                mip = mip & ~0x80;  // Clear Bit 7
+            // Check for software interrupts
+            if (irq_sw_i.read() == true) {
+                mip = mip | 0x8;    // Set Bit 3 (software interrupt)
+            }
+            else  {
+                mip = mip & ~0x8;   // Clear Bit 3 (software interrupt)
             }
 
-            // Handle interrupt if triggered
-            if ((mip & 0x80) && (mie & 0x80) && (mstatus & 0x8)) {
+            // Check for timer interrupts
+            if (irq_timer_i.read() == true) {
+                mip = mip | 0x80;   // Set Bit 7 (timer interrupt)    
+            }
+            else {
+                mip = mip & ~0x80;  // Clear Bit 7 (timer interrupt)
+            }
+
+            // Handle software interrupt if triggered (Higher priority)
+            if ((mip & 0x8) && (mie & 0x8) && (mstatus & 0x8)) {
+                // Increment counters
+                sw_interrupts++;
+                pipeline_flushes++;
+
+                mepc = id_ex.pc;            // Save PC value of instruction that was sent to EX
+                mcause = 0x80000003;        // Set cause as software interrupt
+                mstatus = mstatus & ~0x8;   // Disable global interrupts
+                pc = mtvec;                 // Move to interrupt handling address
+
+                // Flush pipeline
+                trap_flush = true;
+                if_id.valid = false;
+                id_ex.valid = false;
+
+                // Ignore incorrect instruction coming from Memory
+                ignore_fetch = true;
+
+                cout << "@" << sc_time_stamp() << " CPU: Software interrupt received. Flushed pipeline" << endl;
+                cout << "@" << sc_time_stamp() << " CPU: Jumping to interrupt handler\n" << endl;
+            }
+            // Handle timer interrupt if triggered (Lower priority)
+            else if ((mip & 0x80) && (mie & 0x80) && (mstatus & 0x8)) {
                 // Increment counters
                 timer_interrupts++;
                 pipeline_flushes++;
