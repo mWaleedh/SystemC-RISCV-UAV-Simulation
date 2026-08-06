@@ -4,11 +4,18 @@
 using namespace std;
 using namespace tlm;
 
-// Construction
-tlm_timer_target::tlm_timer_target(sc_module_name name, sc_time delay) : sc_module(name), target_socket("target_socket"), delay(delay) { 
+// Constructor
+tlm_timer_target::tlm_timer_target(sc_module_name name, sc_time delay) : sc_module(name), target_socket("target_socket"), timer_delay(delay) { 
     // Connect to socket
     target_socket.register_b_transport(this, &tlm_timer_target::b_transport);
     
+    // Initial state
+    count_reg = 0;
+    compare_reg = 0;
+    control_reg = 0;
+    status_reg = 0;
+    irq_timer_o.initialize(false);
+
     SC_CTHREAD(timer_tick, clk_i.pos());
     reset_signal_is(rst_i, true);
 }
@@ -114,6 +121,6 @@ void tlm_timer_target::b_transport(tlm_generic_payload& trans, sc_time& delay) {
         cout << "@" << sc_time_stamp() << " Timer: Read from address 0x" << hex << addr << dec << endl << endl;
     }
 
-    wait(delay);
+    wait(timer_delay);
     trans.set_response_status(TLM_OK_RESPONSE);
 }

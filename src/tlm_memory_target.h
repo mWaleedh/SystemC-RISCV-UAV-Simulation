@@ -38,6 +38,6 @@ SC_MODULE(tlm_memory_target) {
 
     // Constructor & Destructor
     SC_HAS_PROCESS(tlm_memory_target);
-    tlm_memory_target(sc_module_name name, uint32_t size_bytes, sc_time read_lat, sc_time write_lat);
+    tlm_memory_target(sc_module_name name, uint32_t size_b, sc_time read_lat, sc_time write_lat);
     ~tlm_memory_target();
 };

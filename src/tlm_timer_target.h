@@ -18,7 +18,7 @@ SC_MODULE(tlm_timer_target) {
     uint32_t control_reg;
     uint32_t status_reg;
 
-    sc_time delay;
+    sc_time timer_delay;
 
     // Functions
     void b_transport(tlm_generic_payload& trans, sc_time& delay);

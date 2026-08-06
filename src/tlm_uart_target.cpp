@@ -5,10 +5,14 @@ using namespace std;
 using namespace tlm;
 
 // Constructor
-tlm_uart_target::tlm_uart_target(sc_module_name name, int tx_delay, sc_time b_delay) : sc_module(name), target_socket("target_socket"), tx_delay(tx_delay), bus_delay(bus_delay) {
+tlm_uart_target::tlm_uart_target(sc_module_name name, int tx_delay, sc_time bus_delay) : sc_module(name), target_socket("target_socket"), tx_delay(tx_delay), uart_delay(bus_delay) {
     // Connect socket
     target_socket.register_b_transport(this, &tlm_uart_target::b_transport);
     
+    // Initial state
+    tx_ready = false;
+    busy_cycles = 0;
+
     SC_CTHREAD(uart_tick, clk_i.pos());
     reset_signal_is(rst_i, true);
 }
@@ -96,6 +100,6 @@ void tlm_uart_target::b_transport(tlm_generic_payload& trans, sc_time& delay) {
     }
 
     // Simulate bus delay
-    wait(bus_delay);
+    wait(uart_delay);
     trans.set_response_status(TLM_OK_RESPONSE);
 }

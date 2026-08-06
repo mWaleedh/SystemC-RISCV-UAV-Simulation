@@ -17,7 +17,7 @@ SC_MODULE(tlm_uart_target) {
     
     // Configurable delays
     int tx_delay;
-    sc_time bus_delay;
+    sc_time uart_delay;
 
     // Functions
     void b_transport(tlm_generic_payload& trans, sc_time& delay);

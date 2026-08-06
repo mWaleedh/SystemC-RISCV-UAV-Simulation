@@ -6,7 +6,7 @@ using namespace std;
 using namespace tlm;
 
 // Constructor
-tlm_memory_target::tlm_memory_target(sc_module_name name, uint32_t size_in_bytes, sc_time read_lat, sc_time write_lat) : sc_module(name), target_socket("target_socket"), size_bytes(size_bytes), read_latency(read_lat), write_latency(write_lat) {
+tlm_memory_target::tlm_memory_target(sc_module_name name, uint32_t size_b, sc_time read_lat, sc_time write_lat) : sc_module(name), target_socket("target_socket"), size_bytes(size_b), read_latency(read_lat), write_latency(write_lat) {
     // Allocate byte array and initialize to zero
     memory = new unsigned char[size_bytes]();
     max_addr = 0;
@@ -60,6 +60,7 @@ void tlm_memory_target::load_file(const string& filename) {
         }
     }
     file.close();
+
     cout << "TLM Memory: Loaded data from file " << filename << endl << endl;
 }
 
@@ -74,13 +75,13 @@ void tlm_memory_target::inst_fetch_thread() {
     while (true) {
         if (inst_read_en_i.read() == true) {
             uint32_t addr = inst_addr_bus_i.read();
-            
+
             // Check if address is within range
             if (addr + 3 < size_bytes) {
                 // Read 4 bytes from memory
                 uint32_t fetched_inst = 0;
                 memcpy(&fetched_inst, &memory[addr], 4);
-                
+
                 // Send instruction to CPU
                 inst_bus_o.write(fetched_inst);
             } 

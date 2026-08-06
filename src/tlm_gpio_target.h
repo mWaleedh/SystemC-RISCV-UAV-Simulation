@@ -12,7 +12,8 @@ SC_MODULE(tlm_gpio_target) {
     // Local variables
     uint32_t input_reg;
     uint32_t output_reg;
-    sc_time delay;
+
+    sc_time gpio_delay;
 
     // Functions
     void b_transport(tlm_generic_payload& trans, sc_time& delay);

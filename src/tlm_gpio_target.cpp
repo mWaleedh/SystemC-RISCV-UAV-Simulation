@@ -5,11 +5,15 @@ using namespace std;
 using namespace tlm;
 
 // Constructor
-tlm_gpio_target::tlm_gpio_target(sc_module_name name, sc_time delay) : sc_module(name), target_socket("target_socket"), delay(delay) {
+tlm_gpio_target::tlm_gpio_target(sc_module_name name, sc_time delay) : sc_module(name), target_socket("target_socket"), gpio_delay(delay) {
     target_socket.register_b_transport(this, &tlm_gpio_target::b_transport);
     
+    // Initial state
+    input_reg = 0;
+    output_reg = 0;
+
     SC_METHOD(reset_logic);
-    sensitive << rst_i.pos();
+    sensitive << rst_i;
 }
 
 // Function to reset GPIO
@@ -74,6 +78,6 @@ void tlm_gpio_target::b_transport(tlm_generic_payload& trans, sc_time& delay) {
         return;
     }
 
-    wait(delay);
+    wait(gpio_delay);
     trans.set_response_status(TLM_OK_RESPONSE);
 }
