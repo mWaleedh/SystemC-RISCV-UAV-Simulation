@@ -11,16 +11,38 @@
 #include "system_bus.cpp"
 
 // TLM modules
-#include "cpu_tlm_adapter.h"
-#include "tlm_interconnect.h"
-#include "tlm_memory_target.h"
-#include "tlm_gpio_target.h"
-#include "tlm_timer_target.h"
-#include "tlm_uart_target.h"
+#include "cpu_tlm_adapter.cpp"
+#include "tlm_interconnect.cpp"
+#include "tlm_memory_target.cpp"
+#include "tlm_gpio_target.cpp"
+#include "tlm_timer_target.cpp"
+#include "tlm_uart_target.cpp"
+#include "tlm_msip_target.cpp"
 
 using namespace std;
 
-const bool USE_TLM = false;
+struct system_config {
+    bool use_tlm = true;
+    uint32_t mem_size_bytes = 4096;
+
+    // Memory and peripheral latencies 
+    sc_time mem_read_lat = SC_ZERO_TIME;
+    sc_time mem_write_lat = SC_ZERO_TIME;
+    sc_time gpio_lat = SC_ZERO_TIME;
+    sc_time timer_lat = SC_ZERO_TIME;
+    sc_time uart_lat = SC_ZERO_TIME;
+    sc_time msip_lat = SC_ZERO_TIME;
+    
+    // Internal hardware delays
+    uint32_t uart_tx_delay = 0;
+
+    // Memory map base addresses
+    uint32_t mem_base = 0x00000000;
+    uint32_t gpio_base = 0x10000000;
+    uint32_t timer_base = 0x10000010;
+    uint32_t uart_base = 0x10000020;
+    uint32_t msip_base = 0x10000028;
+};
 
 SC_MODULE(system_top) {
     // constants
@@ -31,7 +53,9 @@ SC_MODULE(system_top) {
     sc_in<bool> clk_i;
     sc_in<bool> rst_i;
     sc_in<bool> irq_ext_i;
-    sc_in<bool> irq_sw_i; 
+    
+    // Config variable
+    system_config config;
 
     // CPU instruction signals
     sc_signal<bool> cpu_inst_read_en_s;
@@ -45,9 +69,12 @@ SC_MODULE(system_top) {
     sc_signal<sc_uint<WIDTH>> cpu_data_addr_bus_s;
     sc_signal<sc_uint<WIDTH>> cpu_data_bus_out_s;
     sc_signal<sc_uint<WIDTH>> cpu_data_bus_in_s;  
-    sc_signal<sc_uint<2>> cpu_data_size_s;  
+    sc_signal<sc_uint<2>> cpu_data_size_s;
+    sc_signal<bool> cpu_data_error_s;
 
-    sc_signal<bool> irq_timer_s;   
+    // Interrupt signals
+    sc_signal<bool> irq_timer_s;
+    sc_signal<bool> irq_sw_s;
 
     // Legacy Memory instruction signals
     sc_signal<bool> mem_inst_read_en_s;
@@ -90,6 +117,7 @@ SC_MODULE(system_top) {
     tlm_gpio_target* tlm_gpio;
     tlm_timer_target* tlm_timer;
     tlm_uart_target* tlm_uart;
+    tlm_msip_target* tlm_msip;
     tlm_adapter *adapter;
     tlm_interconnect* interconnect;
 
@@ -102,7 +130,7 @@ SC_MODULE(system_top) {
 
     // Function to load testbench data into memory
     void load_data(uint32_t addr, uint32_t data) {
-        if (USE_TLM) {
+        if (config.use_tlm) {
             tlm_mem->load_data(addr, data);
         } 
         else {
@@ -112,7 +140,7 @@ SC_MODULE(system_top) {
     
     // Function to load entire program 
     void load_file(const string& filename = "program.hex") {
-        if (USE_TLM) {
+        if (config.use_tlm) {
             tlm_mem->load_file(filename);
         } 
         else {
@@ -120,7 +148,11 @@ SC_MODULE(system_top) {
         }
     }
 
-    SC_CTOR(system_top) {
+    // Constructor
+    SC_HAS_PROCESS(system_top);
+    system_top(sc_module_name name, const system_config& cfg = system_config()) : sc_module(name) {
+        this->config = cfg;
+
         // CPU instantiation
         cpu = new risc_v_model("cpu");
 
@@ -130,8 +162,8 @@ SC_MODULE(system_top) {
 
         // Connect CPU interrupt ports
         cpu->irq_timer_i(irq_timer_s);
-        cpu->irq_ext_i(irq_ext_i);
-        cpu->irq_sw_i(irq_sw_i);
+        cpu->irq_sw_i(irq_sw_s);
+        cpu->irq_ext_i(irq_ext_i);        
 
         // CPU instruction port
         cpu->inst_read_en_o(cpu_inst_read_en_s);
@@ -146,15 +178,20 @@ SC_MODULE(system_top) {
         cpu->data_bus_o(cpu_data_bus_out_s);
         cpu->data_ready_i(cpu_data_ready_s);
         cpu->data_bus_i(cpu_data_bus_in_s);
+        cpu->data_error_i(cpu_data_error_s);
     
         // Use TLM modules
-        if (USE_TLM) {
-            tlm_mem = new tlm_memory_target("tlm_mem", 4096, SC_ZERO_TIME, SC_ZERO_TIME);
-            tlm_gpio = new tlm_gpio_target("tlm_gpio", SC_ZERO_TIME);
-            tlm_timer = new tlm_timer_target("tlm_timer", SC_ZERO_TIME);
-            tlm_uart = new tlm_uart_target("tlm_uart", 5, SC_ZERO_TIME);
+        if (config.use_tlm) {
+            // TLM Peripheral instantiation 
+            tlm_mem = new tlm_memory_target("tlm_mem", config.mem_size_bytes, config.mem_read_lat, config.mem_write_lat);
+            tlm_gpio = new tlm_gpio_target("tlm_gpio", config.gpio_lat);
+            tlm_timer = new tlm_timer_target("tlm_timer", config.timer_lat);
+            tlm_uart = new tlm_uart_target("tlm_uart", config.uart_tx_delay, config.uart_lat);
+            tlm_msip = new tlm_msip_target("tlm_msip", config.msip_lat);
+
+            // TLM 
             adapter = new tlm_adapter("adapter");
-            interconnect = new tlm_interconnect("interconnect");
+            interconnect = new tlm_interconnect("interconnect", config.mem_base, config.gpio_base, config.timer_base, config.uart_base);
             
             // Connect Clock/Reset of TLM modules
             tlm_mem->clk_i(clk_i);
@@ -164,6 +201,7 @@ SC_MODULE(system_top) {
             tlm_timer->rst_i(rst_i);
             tlm_uart->clk_i(clk_i);
             tlm_uart->rst_i(rst_i);
+            tlm_msip->rst_i(rst_i);
             adapter->clk_i(clk_i);
 
             // Connect CPU data ports to adapter
@@ -174,11 +212,18 @@ SC_MODULE(system_top) {
             adapter->cpu_data_ready_o(cpu_data_ready_s);
             adapter->cpu_data_bus_o(cpu_data_bus_in_s);
             adapter->cpu_data_size_i(cpu_data_size_s);
+            adapter->cpu_data_error_o(cpu_data_error_s);
 
             // Connect CPU instruction ports to TLM Memory (Bypass TLM)
             tlm_mem->inst_read_en_i(cpu_inst_read_en_s);
             tlm_mem->inst_addr_bus_i(cpu_inst_addr_bus_s);
             tlm_mem->inst_bus_o(cpu_inst_bus_in_s);
+
+            // Connect timer port to CPU
+            tlm_timer->irq_timer_o(irq_timer_s);
+
+            // Connect msip to CPU
+            tlm_msip->irq_sw_o(irq_sw_s);
 
             // Connect adapter to interconnect
             adapter->initiator_socket.bind(interconnect->target_socket);
@@ -295,7 +340,7 @@ SC_MODULE(system_top) {
     ~system_top() {
         delete cpu;
 
-        if (USE_TLM) {
+        if (config.use_tlm) {
             delete tlm_mem;
             delete tlm_gpio;
             delete tlm_timer;

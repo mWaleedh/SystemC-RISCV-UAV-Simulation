@@ -13,11 +13,17 @@ SC_MODULE(tlm_interconnect) {
     simple_initiator_socket<tlm_interconnect> gpio_socket;
     simple_initiator_socket<tlm_interconnect> timer_socket;
     simple_initiator_socket<tlm_interconnect> uart_socket;
+    simple_initiator_socket<tlm_interconnect> msip_socket;
+
+    // Variables to store peripheral base addresses
+    uint32_t mem_base;
+    uint32_t gpio_base;
+    uint32_t timer_base;
+    uint32_t uart_base;
+    uint32_t msip_base;
 
     void b_transport(tlm_generic_payload& payload, sc_time& delay);
 
-    SC_CTOR(tlm_interconnect) : target_socket("target_socket"), mem_socket("mem_socket"), gpio_socket("gpio_socket"), timer_socket("timer_socket"), uart_socket("uart_socket") {                        
-        // Receive payload from adapter
-        target_socket.register_b_transport(this, &tlm_interconnect::b_transport);
-    }
+    SC_HAS_PROCESS(tlm_interconnect);
+    tlm_interconnect(sc_module_name name, uint32_t mem_addr, uint32_t gpio_addr, uint32_t timer_addr, uint32_t uart_addr, uint32_t msip_addr);
 };
