@@ -125,23 +125,22 @@ SC_MODULE(risc_v_model) {
         RESPONSE_RECEIVED 
     } mem_state;
 
+    // Global PC values
+    sc_uint<WIDTH> pc;          // Holds PC of instruction we are requesting
+    sc_uint<WIDTH> pc_stage_1;  // Holds PC of instruction whose request has been sent
+    sc_uint<WIDTH> pc_stage_2;  // Holds PC of instruction arriving from Memory
+
+    sc_uint<WIDTH> fetch_buffer;    // Holds data arriving in IF in case of stall
+    bool buffer_full;
+
     // Pipeline Control Signals
     bool stall;
     bool mem_stall;
     bool branch_flush;
     bool trap_flush;
-    bool interrupt_pending;
-    bool exec_redirect_valid;
-    sc_uint<WIDTH> exec_redirect_pc;
-    int flush_pending_cycles;
     bool ignore_fetch;
 
     uint8_t bht[32];
-
-    sc_uint<WIDTH> pc;
-    sc_uint<WIDTH> fetch_pc_stage1;
-    sc_uint<WIDTH> fetch_pc_stage2; 
-    bool in_interrupt;
 
     // Register File
     sc_uint<WIDTH> registers[WIDTH];
@@ -513,80 +512,97 @@ SC_MODULE(risc_v_model) {
     // IF: Instruction Fetch
     // ------------------------------
     void fetch() {
-        // static bool was_stalled = false;
-
         // Check if Stall is triggered
         if (stall || mem_stall) {
-            // if (!was_stalled) {
-            //      // Rewind the global PC
-            //     pc = pc - 4;
-            //     was_stalled = true;
-            // }
-            
-            // Request the stalled instruction again
-            inst_addr_bus_o.write(pc - 4);
+            // Load arriving instruction into buffer
+            if (!buffer_full) {
+                fetch_buffer = inst_bus_i.read();
+                buffer_full = true;
+
+                cout << "@" << sc_time_stamp() << " Fetch: Stalled. Stored Inst -> 0x" << hex << fetch_buffer << " | PC -> 0x" << pc_stage_2 << dec  << " in buffer" << endl;
+            }
+            else {
+                cout << "@" << sc_time_stamp() << " Fetch: Stalled. Holding Inst -> 0x" << hex << fetch_buffer << " | PC -> 0x" << pc_stage_2 << dec  << " in buffer" << endl;
+            }
+
+            // Request the next instruction again so it arrives in time (2-cycle delay)
+            inst_addr_bus_o.write(pc_stage_1);
             inst_read_en_o.write(true);
             
-            cout << "@" << sc_time_stamp() << " Fetch: Stalled. Holding PC at -> 0x" << hex << pc << dec << endl << endl;
+            cout << "@" << sc_time_stamp() << " Fetch: Stalled. Re-requesting PC -> 0x" << hex << pc_stage_1 << dec << endl << endl;
             return;
         }
 
-        // // Stall has cleared
-        // was_stalled = false;
-
         // Read instruction sent by memory
-        sc_uint<WIDTH> inst = inst_bus_i.read();
-
-        cout << "@" << sc_time_stamp() << " Fetch: Received Inst -> 0x" << hex << inst << dec << endl << endl;
+        sc_uint<WIDTH> inst;
+        if (!buffer_full) {
+            inst = inst_bus_i.read();
+            cout << "@" << sc_time_stamp() << " Fetch: Received Inst -> 0x" << hex << inst << " | PC -> 0x" << pc_stage_2 << dec << " from Memory" << endl << endl;
+        }
+        else {
+            // Read buffer instead of data_bus
+            inst = fetch_buffer;
+            buffer_full = false;
+            cout << "@" << sc_time_stamp() << " Fetch: Using Inst -> 0x" << hex << inst << " | PC -> 0x" << pc_stage_2 << dec << " from buffer" << endl << endl;
+        }
 
         // Check for flush
-        if (trap_flush || branch_flush) {
+        if (trap_flush || branch_flush || ignore_fetch) {            
             if_id.valid = false;
             if_id.pc = 0;
             if_id.inst = 0;
+
+            if (ignore_fetch && !trap_flush && !branch_flush) {
+                cout << "@" << sc_time_stamp() << " Fetch: Ignored Inst -> 0x" << hex << inst << dec  << " for Branch jump" << endl << endl;
+                ignore_fetch = false;
+            } 
+            else {
+                cout << "@" << sc_time_stamp() << " Fetch: Flushed Inst -> 0x" << hex << inst << dec << endl << endl;
+            }
             
             // Turn flushes off
             trap_flush = false; 
             branch_flush = false;
-        }
-        // else if (ignore_fetch) {
-        //     if_id.pc = 0;
-        //     if_id.inst = 0;
-        //     if_id.valid = false;
-        //     ignore_fetch = false;
 
-        //     cout << "@" << sc_time_stamp() << " Fetch: Flushed wrongly predicted instruction" << endl << endl;
-        // }
+            // Clear buffer as it's holding an invalid instruction
+            buffer_full = false;
+        }
         else {
             // Pass data to IF/ID register
-            if_id.pc = pc - 4;
+            if_id.pc = pc_stage_2;
             if_id.inst = inst;
             if_id.valid = true;
-            // if_id.predicted_taken = false;
 
-            // // If it's a branch predict its outcome
-            // if ((inst & 0x7F) == 0x63) {
-            //     uint32_t bht_index = (fetch_pc_stage1 >> 2) & 0x1F;
+            if_id.predicted_taken = false;
+
+            // If it's a branch predict its outcome
+            if ((inst & 0x7F) == 0x63) {
+                uint32_t bht_index = (pc_stage_2 >> 2) & 0x1F;
                 
-            //     if (bht[bht_index] >= 2) {
-            //         if_id.predicted_taken = true;
+                if (bht[bht_index] >= 2) {
+                    if_id.predicted_taken = true;
                     
-            //         // Extract Immediate and redirect PC
-            //         sc_int<WIDTH> imm = immediateGenerator(0x63, inst);
-            //         pc = fetch_pc_stage1 + imm; 
-            //         ignore_fetch = true;
-                    
-            //         cout << "@" << sc_time_stamp() << " Fetch: BHT Predicted Branch Taken. Redirecting PC to 0x" << hex << pc << dec << endl << endl;
-            //     }
-            // }
-        }
+                    // Extract Immediate and redirect PC
+                    sc_int<WIDTH> imm = immediateGenerator(0x63, inst);
+                    pc = pc_stage_2 + imm;
 
-        // fetch_pc_stage1 = fetch_pc_stage2;
-        // fetch_pc_stage2 = pc;
+                    // Stall IF stage so that we ignore the wrong instruction coming from memory
+                    ignore_fetch = true;
+                    
+                    cout << "@" << sc_time_stamp() << " Fetch: BHT Predicted Branch Taken. Redirecting PC to 0x" << hex << pc << dec << endl << endl;
+                }
+                else {
+                    cout << "@" << sc_time_stamp() << " Fetch: BHT Predicted Branch Not Taken. Continuing sequential execution" << endl << endl;   
+                }
+            }
+        }
 
         // Request the instruction needed in the next cycle
         inst_addr_bus_o.write(pc);
         inst_read_en_o.write(true);
+
+        pc_stage_2 = pc_stage_1;
+        pc_stage_1 = pc;
         
         cout << "@" << sc_time_stamp() << " Fetch: Requested next PC -> 0x" << hex << pc << dec << endl << endl;
 
@@ -598,12 +614,20 @@ SC_MODULE(risc_v_model) {
     // ------------------------------
     void decode() {
         if (mem_stall) {
+            cout << "@" << sc_time_stamp() << " Decode: Stalled. Holding PC at -> 0x" << hex << if_id.pc << dec << endl << endl;
             return;
         }
 
         // Check for bubble and forward it
         if (!if_id.valid) {
             id_ex.valid = false;
+
+            if (branch_flush || trap_flush) {
+                cout << "@" << sc_time_stamp() << " Decode: Flushed inst -> 0x" << hex << if_id.inst << dec << endl << endl;
+            }
+            else {
+                cout << "@" << sc_time_stamp() << " Decode: Passed bubble forward" << endl << endl;
+            }
             return;
         }
 
@@ -615,33 +639,27 @@ SC_MODULE(risc_v_model) {
         uint32_t rs2 = (inst >> 20) & 0x1F;
         uint32_t opcode = inst & 0x7F;
 
-        // // Check if the current operation uses rs1 or rs2
-        // bool uses_rs1 = (opcode != 0x37 && opcode != 0x17 && opcode != 0x6F); 
-        // bool uses_rs2 = (opcode == 0x33 || opcode == 0x23 || opcode == 0x63);
+        // Check if the current operation uses rs1 or rs2
+        bool uses_rs1 = (opcode != 0x37 && opcode != 0x17 && opcode != 0x6F); 
+        bool uses_rs2 = (opcode == 0x33 || opcode == 0x23 || opcode == 0x63);
 
         // Check for load-use hazard
-        // if (id_ex.valid && id_ex.opcode == 0x03 && id_ex.rd != 0) {
-        //     if ((uses_rs1 && id_ex.rd == rs1) || (uses_rs2 && id_ex.rd == rs2)) {
-        //         // Stall pipeline by one cycle
-        //         stall = true;
-        //         pipeline_stalls++;  // Increment counter
+        if (id_ex.valid && id_ex.opcode == 0x03 && id_ex.rd != 0) {
+            if ((uses_rs1 && id_ex.rd == rs1) || (uses_rs2 && id_ex.rd == rs2)) {
+                // Stall pipeline by one cycle
+                stall = true;
+                pipeline_stalls++;  // Increment counter
                 
-        //         // Insert bubble in ID/EX Register
-        //         id_ex.pc = 0;
-        //         id_ex.inst = 0;
-        //         id_ex.valid = false;
-        //         id_ex.reg_write = false;
-        //         id_ex.mem_size = 4;
-        //         id_ex.mem_unsigned = false;
-                
-        //         return;
-        //     }
-        // }
+                // Insert bubble in ID/EX Register
+                id_ex.valid = false;
+                return;
+            }
+        }
 
         // Clear stall
         stall = false;
 
-        cout << "@" << sc_time_stamp() << " Decode: Instruction -> 0x" << hex << inst << dec << endl << endl;
+        cout << "@" << sc_time_stamp() << " Decode: Received Inst -> 0x" << hex << inst << dec << " from IF stage" << endl << endl;
 
         // Pass PC and instruction to next stage
         id_ex.pc = if_id.pc;
@@ -751,8 +769,8 @@ SC_MODULE(risc_v_model) {
             }
         }
 
-        // // Pass prediction
-        // id_ex.predicted_taken = if_id.predicted_taken;
+        // Pass prediction
+        id_ex.predicted_taken = if_id.predicted_taken;
 
         // Mark this stage as valid
         id_ex.valid = true;
@@ -773,12 +791,20 @@ SC_MODULE(risc_v_model) {
     // ------------------------------
     void execute() {
         if (mem_stall) {
+            cout << "@" << sc_time_stamp() << " Execute: Stalled. Holding PC at -> 0x" << hex << id_ex.pc << dec << endl << endl;
             return;
         }
 
         // Pass bubble forward
         if (!id_ex.valid) {
             ex_mem.valid = false;
+
+            if (trap_flush) {
+                cout << "@" << sc_time_stamp() << " Execute: Flushed inst -> " << hex << id_ex.inst << dec << endl << endl;
+            }
+            else {
+               cout << "@" << sc_time_stamp() << " Execute: Passed bubble forward" << endl << endl; 
+            }
             return;
         }
 
@@ -868,44 +894,36 @@ SC_MODULE(risc_v_model) {
                 cout << " | Branch Taken: " << (branch_taken ? "YES" : "NO");
             }
 
+            // Extract correct index and read its value
+            uint32_t bht_index = (id_ex.pc >> 2) & 0x1F;
+            uint8_t current_state = bht[bht_index];
+            
+            // Update BHT
             if (branch_taken) {
-                // Increment counters
+                // Increment count towards strongly taken
+                if (current_state < 3) {
+                    bht[bht_index]++;
+                }
                 branches_taken++;
-                branch_mispredictions++;
-
-                // Move to correct instruction
-                target_pc = id_ex.pc + id_ex.imm;
+            } 
+            else {
+                // Decrement count towards strongly not taken
+                if (current_state > 0) {
+                    bht[bht_index]--;
+                }
             }
 
-            // // Extract correct index and read its value
-            // uint32_t bht_index = (id_ex.pc >> 2) & 0x1F;
-            // uint8_t current_state = bht[bht_index];
-            
-            // if (branch_taken) {
-            //     // Increment count towards strongly taken
-            //     if (current_state < 3) {
-            //         bht[bht_index]++;
-            //     }
-            // } 
-            // else {
-            //     // Decrement count towards strongly not taken
-            //     if (current_state > 0) {
-            //         bht[bht_index]--;
-            //     }
-            // }
+            // Check if prediction was correct or not
+            if (branch_taken != id_ex.predicted_taken) {
+                branch_mispredictions++;
+                
+                // Calculate actual PC value
+                target_pc = branch_taken ? (id_ex.pc + id_ex.imm) : (id_ex.pc + 4);
 
-            // // Check if prediction was correct or not
-            // if (branch_taken != id_ex.predicted_taken) {
-            //     branch_mispredictions++;
+                branch_taken = true;    // Give signal to flush pipeline
                 
-            //     // Calculate actual PC value
-            //     target_pc = branch_taken ? (id_ex.pc + id_ex.imm) : (id_ex.pc + 4);
-    
-            //     // Give signal to flush pipeline
-            //     branch_taken = true; 
-                
-            //     cout << " | Mispredicted. Correct target 0x" << hex << target_pc << dec;
-            // } 
+                cout << " | Mispredicted. Correct target 0x" << hex << target_pc << dec;
+            } 
             else {
                 // Don't flush pipeline since prediction is correct
                 branch_taken = false;
@@ -971,8 +989,19 @@ SC_MODULE(risc_v_model) {
 
         // Check if branch is taken or not
         if (branch_taken) {
+            // Flush pipeline
             branch_flush = true;
+            ignore_fetch = true;
+            if_id.valid = false;
+
+            // Increment counter
+            pipeline_flushes++;
+
+            // Move to correct instruction
             pc = target_pc;
+
+            cout << "@" << sc_time_stamp() << " Execute: Flushed pipeline due to Branch/Jump/MRET" << endl;
+            cout << "@" << sc_time_stamp() << " Execute: Jumping to correct instruction"<< endl << endl;
         }
 
         // Pass signals to EX/MEM Register
@@ -1003,6 +1032,8 @@ SC_MODULE(risc_v_model) {
                 if (!ex_mem.valid) {
                     mem_wb.valid = false;
                     mem_stall = false;
+
+                    cout << "@" << sc_time_stamp() << " Memory Access: Passed bubble forward" << endl << endl; 
                     return;
                 }
 
@@ -1021,12 +1052,15 @@ SC_MODULE(risc_v_model) {
                     else if (ex_mem.opcode == 0x23) {
                         data_write_en_o.write(true);
                         data_bus_o.write(ex_mem.store_data);
-                        cout << "@" << sc_time_stamp() << " Memory Access: Storing to 0x" << hex << ex_mem.alu_res << dec << endl << endl;
+                        cout << "@" << sc_time_stamp() << " Memory Access: Storing data to 0x" << hex << ex_mem.alu_res << dec << endl << endl;
                     }
                     
                     // Freeze pipeline until response is received
                     mem_stall = true;
                     pipeline_stalls++;
+
+                    cout << "@" << sc_time_stamp() << " Memory Access: Freezing pipeline until Memory responds" << endl;
+                    cout << "@" << sc_time_stamp() << " Memory Access: Bubble sent to Write Back stage" << endl << endl;
                     
                     // Send bubble to the WB stage
                     mem_wb.valid = false;
@@ -1050,7 +1084,13 @@ SC_MODULE(risc_v_model) {
                 
                 // Send bubble to WB
                 mem_wb.valid = false;
+
+                // Increment counter
+                pipeline_stalls++;
                 
+                cout << "@" << sc_time_stamp() << " Memory Access: Load/Store request sent to memory" << endl;
+                cout << "@" << sc_time_stamp() << " Read/Write enable flags have been set to false" << endl << endl;
+
                 mem_state = WAITING_FOR_RESPONSE;
                 break;
 
@@ -1089,7 +1129,10 @@ SC_MODULE(risc_v_model) {
                             mem_wb.alu_res = loaded_data;
                         }
 
-                        cout << "@" << sc_time_stamp() << " Memory Access: Loaded 0x" << hex << mem_wb.alu_res << dec << " from memory" << endl << endl;
+                        cout << "@" << sc_time_stamp() << " Memory Access: Successfully loaded 0x" << hex << mem_wb.alu_res << dec << " from memory" << endl << endl;
+                    }
+                    else {
+                        cout << "@" << sc_time_stamp() << " Memory Access: Successfully stored data at 0x" << hex << ex_mem.alu_res << dec << endl << endl;
                     }
 
                     // Clear stall since data has been received
@@ -1097,6 +1140,11 @@ SC_MODULE(risc_v_model) {
 
                     // Change state back to Idle
                     mem_state = IDLE;
+                }
+                else {
+                    // Increment counter
+                    pipeline_stalls++;
+                    cout << "@" << sc_time_stamp() << " Memory Access: Waiting for response from memory" << endl << endl;
                 }
                 break;
         }
@@ -1107,6 +1155,7 @@ SC_MODULE(risc_v_model) {
     void writeBack() {
         // Check for bubble
         if (!mem_wb.valid) {
+            cout << "@" << sc_time_stamp() << " Write Back: Bubble was received" << endl << endl;
             return;
         }
 
@@ -1137,8 +1186,14 @@ SC_MODULE(risc_v_model) {
     // ------------------------------------------------------------
     void mainThread() {
         // Reset/initial state logic
-        // Reset PC
+        // Reset PC values
         pc = 0;
+        pc_stage_1 = 0;
+        pc_stage_2 = 0;
+
+        // Reset Fetch stage buffer
+        fetch_buffer = 0;
+        buffer_full = false;
 
         // Reset Register File
         for (int i = 0; i < WIDTH; i++) {
@@ -1169,6 +1224,13 @@ SC_MODULE(risc_v_model) {
         id_ex.valid = false;
         ex_mem.valid = false;
         mem_wb.valid = false;
+
+        // Reset pipeline control signals
+        stall = false;
+        mem_stall = false;
+        branch_flush = false;
+        trap_flush = false;
+        ignore_fetch = false;
 
         // Reset Performance Counters
         total_cycles = 0;
@@ -1218,17 +1280,20 @@ SC_MODULE(risc_v_model) {
                 timer_interrupts++;
                 pipeline_flushes++;
 
-                mepc = pc;                  // Save PC value
+                mepc = id_ex.pc;            // Save PC value of instruction that was sent to EX
                 mcause = 0x80000007;        // Set cause as timer interrupt
                 mstatus = mstatus & ~0x8;   // Disable global interrupts
                 pc = mtvec;                 // Move to interrupt handling address
 
                 // Flush pipeline
                 trap_flush = true;
-                ex_mem.valid = false;  
+                if_id.valid = false;
                 id_ex.valid = false;
 
-                cout << "@" << sc_time_stamp() << " CPU: Timer interrupt received" << endl;
+                // Ignore incorrect instruction coming from Memory
+                ignore_fetch = true;
+
+                cout << "@" << sc_time_stamp() << " CPU: Timer interrupt received. Flushed pipeline" << endl;
                 cout << "@" << sc_time_stamp() << " CPU: Jumping to interrupt handler\n" << endl;
             }
 
