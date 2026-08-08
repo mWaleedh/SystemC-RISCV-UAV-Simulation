@@ -1,4 +1,18 @@
- #include <systemc.h>
+/*
+addi x1, x0, 5        x1 = 5
+addi x2, x0, 5        x2 = 5
+
+beq  x1, x2, +8       Taken (5 == 5, true)
+addi x3, x0, 99       Skipped
+addi x3, x0, 10       x3 = 10
+
+bne  x1, x2, +8       Not taken (5 != 5, false)
+addi x4, x0, 7        x4 = 7
+
+add  x5, x3, x4       x5 = 17
+*/
+
+#include <systemc.h>
 #include "../src/system_top.cpp"
 using namespace std;
 
@@ -9,33 +23,28 @@ int sc_main(int argc, char* argv[]) {
     // Create signals to connect input ports
     sc_signal<bool> rst_s;
     sc_signal<bool> irq_ext_s;
-    sc_signal<bool> irq_sw_s;
 
     // Initialize system_top and connect input ports
     system_top sys("System_Top");
     sys.clk_i(clk_s);
     sys.rst_i(rst_s);
     sys.irq_ext_i(irq_ext_s);
-    sys.irq_sw_i(irq_sw_s);
 
     // VCD waveform trace
     sc_trace_file *wf = sc_create_vcd_trace_file("./waveforms/riscv_branch_waveform");
     sc_trace(wf, clk_s, "clock");
     sc_trace(wf, rst_s, "reset");
     sc_trace(wf, sys.cpu->pc, "pc");
-    sc_trace(wf, sys.cpu->cur_inst, "cur_inst");
-    sc_trace(wf, sys.cpu->opcode, "opcode");
-    sc_trace(wf, sys.cpu->rs1, "rs1");
-    sc_trace(wf, sys.cpu->rs2, "rs2");
-    sc_trace(wf, sys.cpu->imm, "branch_immediate");
-    sc_trace(wf, sys.cpu->branch_taken, "branch_taken");
-    sc_trace(wf, sys.cpu->pc_next, "branch_target");
-    sc_trace(wf, sys.cpu_read_en_s, "read_en");
-    sc_trace(wf, sys.cpu_write_en_s, "write_en");
+    sc_trace(wf, sys.cpu->if_id.inst, "cur_inst");
+    sc_trace(wf, sys.cpu->id_ex.opcode, "opcode");
+    sc_trace(wf, sys.cpu->id_ex.rs1, "rs1");
+    sc_trace(wf, sys.cpu->id_ex.rs2, "rs2");
+    sc_trace(wf, sys.cpu->id_ex.imm, "branch_immediate");
+    sc_trace(wf, sys.cpu_data_read_en_s, "read_en");
+    sc_trace(wf, sys.cpu_data_write_en_s, "write_en");
 
     // Clear input ports
     irq_ext_s.write(false);
-    irq_sw_s.write(false);
 
     // Reset
     cout << "@" << sc_time_stamp() << " Applying Reset..." << endl;
@@ -50,7 +59,7 @@ int sc_main(int argc, char* argv[]) {
     sys.load_file("./hex/riscv_branch_program.hex");
 
     // Run system
-    sc_start(42, SC_NS);
+    sc_start(16, SC_NS);
 
     // Verify results
     cout << "x1 = 5: " << (sys.cpu->registers[1] == 5 ? "PASS" : "FAIL") << endl;

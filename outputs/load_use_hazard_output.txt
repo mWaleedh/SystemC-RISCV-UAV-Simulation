@@ -1,3 +1,7 @@
+================
+Initial Testing:
+================
+
 @0 s Applying Reset...
 @5 ns Releasing Reset...
 
@@ -170,3 +174,188 @@ x4 = 200: PASS
 x0 = 0: PASS
 
 @15 ns Simulation complete!
+
+
+==============
+Final Testing:
+==============
+
+@0 s Applying Reset...
+@5 ns Releasing Reset...
+
+TLM Memory: Loaded data from file ./hex/load_use_hazard_program.hex
+
+@5 ns Write Back: Bubble was received
+
+@5 ns Memory Access: Passed bubble forward
+
+@5 ns Execute: Passed bubble forward
+
+@5 ns Decode: Passed bubble forward
+
+@5 ns Fetch: Received Inst -> 0x000000000 | PC -> 0x000000000 from Memory
+
+@5 ns Fetch: Requested next PC -> 0x000000000
+
+@6 ns Write Back: Bubble was received
+
+@6 ns Memory Access: Passed bubble forward
+
+@6 ns Execute: Passed bubble forward
+
+@6 ns Decode: Received Inst -> 0x000000000 from IF stage
+
+@6 ns Decode Warning: Invalid Instruction. Bubble inserted into ID/EX
+
+@6 ns Fetch: Received Inst -> 0x000000000 | PC -> 0x000000000 from Memory
+
+@6 ns Fetch: Requested next PC -> 0x000000004
+
+@7 ns Write Back: Bubble was received
+
+@7 ns Memory Access: Passed bubble forward
+
+@7 ns Execute: Passed bubble forward
+
+@7 ns Decode: Received Inst -> 0x000000000 from IF stage
+
+@7 ns Decode Warning: Invalid Instruction. Bubble inserted into ID/EX
+
+@7 ns Fetch: Received Inst -> 0x002002183 | PC -> 0x000000000 from Memory
+
+@7 ns Fetch: Requested next PC -> 0x000000008
+
+@8 ns Write Back: Bubble was received
+
+@8 ns Memory Access: Passed bubble forward
+
+@8 ns Execute: Passed bubble forward
+
+@8 ns Decode: Received Inst -> 0x002002183 from IF stage
+
+@8 ns Decode:
+1. opcode: 0x03
+2. rd: 3
+3. funct3: 2
+4. rs1: 0
+5. rs2: 0
+6. funct7: 1
+7. imm: 32
+8. rs1_data: 0
+9. rs2_data: 0
+
+@8 ns Fetch: Received Inst -> 0x000318233 | PC -> 0x000000004 from Memory
+
+@8 ns Fetch: Requested next PC -> 0x00000000c
+
+@9 ns Write Back: Bubble was received
+
+@9 ns Memory Access: Passed bubble forward
+
+@9 ns Execute: Instruction 0x002002183 is being executed
+
+@9 ns ALU (Load): Target Address = 0x000000020
+
+@9 ns Fetch: Stalled. Stored Inst -> 0x000000000 | PC -> 0x000000008 in buffer
+@9 ns Fetch: Stalled. Re-requesting PC -> 0x00000000c
+
+@10 ns Write Back: Bubble was received
+
+@10 ns Memory Access: Requesting Load from 0x000000020
+
+@10 ns Memory Access: Freezing pipeline until Memory responds
+@10 ns Memory Access: Bubble sent to Write Back stage
+
+@10 ns Execute: Stalled. Holding PC at -> 0x000000000
+
+@10 ns Decode: Stalled. Holding PC at -> 0x000000004
+
+@10 ns Fetch: Stalled. Holding Inst -> 0x000000000 | PC -> 0x000000008 in buffer
+@10 ns Fetch: Stalled. Re-requesting PC -> 0x00000000c
+
+@11 ns Write Back: Bubble was received
+
+@11 ns Memory Access: Load/Store request sent to memory
+@11 ns Read/Write enable flags have been set to false
+
+@11 ns Execute: Stalled. Holding PC at -> 0x000000000
+
+@11 ns Decode: Stalled. Holding PC at -> 0x000000004
+
+@11 ns Fetch: Stalled. Holding Inst -> 0x000000000 | PC -> 0x000000008 in buffer
+@11 ns Fetch: Stalled. Re-requesting PC -> 0x00000000c
+
+@12 ns Write Back: Bubble was received
+
+@12 ns Memory Access: Successfully loaded 0x000000064 from memory
+
+@12 ns Execute: Passed bubble forward
+
+@12 ns Decode: Received Inst -> 0x000318233 from IF stage
+
+@12 ns Decode:
+1. opcode: 0x33
+2. rd: 4
+3. funct3: 0
+4. rs1: 3
+5. rs2: 3
+6. funct7: 0
+7. imm: 0
+8. rs1_data: 0
+9. rs2_data: 0
+
+@12 ns Fetch: Using Inst -> 0x000000000 | PC -> 0x000000008 from buffer
+
+@12 ns Fetch: Requested next PC -> 0x000000010
+
+@13 ns Write Back: Register x3 updated to 0x000000064
+
+@13 ns Memory Access: Passed bubble forward
+
+@13 ns Execute: Instruction 0x000318233 is being executed
+
+@13 ns ALU: 100 + 100 = 200
+
+@13 ns ALU (R-type): Result = 200
+
+@13 ns Decode: Received Inst -> 0x000000000 from IF stage
+
+@13 ns Decode Warning: Invalid Instruction. Bubble inserted into ID/EX
+
+@13 ns Fetch: Received Inst -> 0x000000000 | PC -> 0x00000000c from Memory
+
+@13 ns Fetch: Requested next PC -> 0x000000014
+
+@14 ns Write Back: Bubble was received
+
+@14 ns Memory Access: No Memory/Peripheral access needed
+
+@14 ns Execute: Passed bubble forward
+
+@14 ns Decode: Received Inst -> 0x000000000 from IF stage
+
+@14 ns Decode Warning: Invalid Instruction. Bubble inserted into ID/EX
+
+@14 ns Fetch: Received Inst -> 0x000000000 | PC -> 0x000000010 from Memory
+
+@14 ns Fetch: Requested next PC -> 0x000000018
+
+@15 ns Write Back: Register x4 updated to 0x0000000c8
+
+@15 ns Memory Access: Passed bubble forward
+
+@15 ns Execute: Passed bubble forward
+
+@15 ns Decode: Received Inst -> 0x000000000 from IF stage
+
+@15 ns Decode Warning: Invalid Instruction. Bubble inserted into ID/EX
+
+@15 ns Fetch: Received Inst -> 0x000000000 | PC -> 0x000000014 from Memory
+
+@15 ns Fetch: Requested next PC -> 0x00000001c
+
+x3 = 100: PASS
+x4 = 200: PASS
+x0 = 0: PASS
+
+@16 ns Simulation complete!

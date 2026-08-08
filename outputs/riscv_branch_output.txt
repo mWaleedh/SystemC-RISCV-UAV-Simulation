@@ -1,3 +1,7 @@
+================
+Initial Testing:
+================
+
 @0 s Applying Reset...
 
 @5 ns Releasing Reset...
@@ -229,3 +233,328 @@ x5 = 17: PASS
 x0 = 0: PASS
 
 @47 ns Simulation complete!
+
+
+==============
+Final Testing:
+==============
+
+@0 s Applying Reset...
+@5 ns Releasing Reset...
+
+TLM Memory: Loaded data from file ./hex/riscv_branch_program.hex
+
+@5 ns Write Back: Bubble was received
+
+@5 ns Memory Access: Passed bubble forward
+
+@5 ns Execute: Passed bubble forward
+
+@5 ns Decode: Passed bubble forward
+
+@5 ns Fetch: Received Inst -> 0x000000000 | PC -> 0x000000000 from Memory
+
+@5 ns Fetch: Requested next PC -> 0x000000000
+
+@6 ns Write Back: Bubble was received
+
+@6 ns Memory Access: Passed bubble forward
+
+@6 ns Execute: Passed bubble forward
+
+@6 ns Decode: Received Inst -> 0x000000000 from IF stage
+
+@6 ns Decode Warning: Invalid Instruction. Bubble inserted into ID/EX
+
+@6 ns Fetch: Received Inst -> 0x000000000 | PC -> 0x000000000 from Memory
+
+@6 ns Fetch: Requested next PC -> 0x000000004
+
+@7 ns Write Back: Bubble was received
+
+@7 ns Memory Access: Passed bubble forward
+
+@7 ns Execute: Passed bubble forward
+
+@7 ns Decode: Received Inst -> 0x000000000 from IF stage
+
+@7 ns Decode Warning: Invalid Instruction. Bubble inserted into ID/EX
+
+@7 ns Fetch: Received Inst -> 0x000500093 | PC -> 0x000000000 from Memory
+
+@7 ns Fetch: Requested next PC -> 0x000000008
+
+@8 ns Write Back: Bubble was received
+
+@8 ns Memory Access: Passed bubble forward
+
+@8 ns Execute: Passed bubble forward
+
+@8 ns Decode: Received Inst -> 0x000500093 from IF stage
+
+@8 ns Decode:
+1. opcode: 0x13
+2. rd: 1
+3. funct3: 0
+4. rs1: 0
+5. rs2: 5
+6. funct7: 0
+7. imm: 5
+8. rs1_data: 0
+9. rs2_data: 0
+
+@8 ns Fetch: Received Inst -> 0x000500113 | PC -> 0x000000004 from Memory
+
+@8 ns Fetch: Requested next PC -> 0x00000000c
+
+@9 ns Write Back: Bubble was received
+
+@9 ns Memory Access: Passed bubble forward
+
+@9 ns Execute: Instruction 0x000500093 is being executed
+
+@9 ns ALU (I-Type): Result = 5
+
+@9 ns Decode: Received Inst -> 0x000500113 from IF stage
+
+@9 ns Decode:
+1. opcode: 0x13
+2. rd: 2
+3. funct3: 0
+4. rs1: 0
+5. rs2: 5
+6. funct7: 0
+7. imm: 5
+8. rs1_data: 0
+9. rs2_data: 0
+
+@9 ns Fetch: Received Inst -> 0x000208463 | PC -> 0x000000008 from Memory
+
+@9 ns Fetch: BHT Predicted Branch Not Taken. Continuing sequential execution
+
+@9 ns Fetch: Requested next PC -> 0x000000010
+
+@10 ns Write Back: Bubble was received
+
+@10 ns Memory Access: No Memory/Peripheral access needed
+
+@10 ns Execute: Instruction 0x000500113 is being executed
+
+@10 ns ALU (I-Type): Result = 5
+
+@10 ns Decode: Received Inst -> 0x000208463 from IF stage
+
+@10 ns Decode:
+1. opcode: 0x63
+2. rd: 8
+3. funct3: 0
+4. rs1: 1
+5. rs2: 2
+6. funct7: 0
+7. imm: 8
+8. rs1_data: 0
+9. rs2_data: 0
+
+@10 ns Fetch: Received Inst -> 0x006300193 | PC -> 0x00000000c from Memory
+
+@10 ns Fetch: Requested next PC -> 0x000000014
+
+@11 ns Write Back: Register x1 updated to 0x000000005
+
+@11 ns Memory Access: No Memory/Peripheral access needed
+
+@11 ns Execute: Instruction 0x000208463 is being executed
+
+@11 ns Execute: BEQ x1(5), x2(5) | Branch Taken: YES | Mispredicted. Correct target 0x000000010
+
+@11 ns Execute: Flushed pipeline due to Branch/Jump/MRET
+@11 ns Execute: Jumping to correct instruction
+
+@11 ns Decode: Flushed inst -> 0x006300193
+
+@11 ns Fetch: Received Inst -> 0x000a00193 | PC -> 0x000000010 from Memory
+
+@11 ns Fetch: Flushed Inst -> 0x000a00193
+
+@11 ns Fetch: Requested next PC -> 0x000000010
+
+@12 ns Write Back: Register x2 updated to 0x000000005
+
+@12 ns Memory Access: No Memory/Peripheral access needed
+
+@12 ns Execute: Passed bubble forward
+
+@12 ns Decode: Passed bubble forward
+
+@12 ns Fetch: Received Inst -> 0x000209463 | PC -> 0x000000014 from Memory
+
+@12 ns Fetch: Ignored Inst -> 0x000209463 for Branch jump
+
+@12 ns Fetch: Requested next PC -> 0x000000014
+
+@13 ns Write Back: No Register File write back
+
+@13 ns Memory Access: Passed bubble forward
+
+@13 ns Execute: Passed bubble forward
+
+@13 ns Decode: Passed bubble forward
+
+@13 ns Fetch: Received Inst -> 0x000a00193 | PC -> 0x000000010 from Memory
+
+@13 ns Fetch: Requested next PC -> 0x000000018
+
+@14 ns Write Back: Bubble was received
+
+@14 ns Memory Access: Passed bubble forward
+
+@14 ns Execute: Passed bubble forward
+
+@14 ns Decode: Received Inst -> 0x000a00193 from IF stage
+
+@14 ns Decode:
+1. opcode: 0x13
+2. rd: 3
+3. funct3: 0
+4. rs1: 0
+5. rs2: 10
+6. funct7: 0
+7. imm: 10
+8. rs1_data: 0
+9. rs2_data: 0
+
+@14 ns Fetch: Received Inst -> 0x000209463 | PC -> 0x000000014 from Memory
+
+@14 ns Fetch: BHT Predicted Branch Not Taken. Continuing sequential execution
+
+@14 ns Fetch: Requested next PC -> 0x00000001c
+
+@15 ns Write Back: Bubble was received
+
+@15 ns Memory Access: Passed bubble forward
+
+@15 ns Execute: Instruction 0x000a00193 is being executed
+
+@15 ns ALU (I-Type): Result = 10
+
+@15 ns Decode: Received Inst -> 0x000209463 from IF stage
+
+@15 ns Decode:
+1. opcode: 0x63
+2. rd: 8
+3. funct3: 1
+4. rs1: 1
+5. rs2: 2
+6. funct7: 0
+7. imm: 8
+8. rs1_data: 5
+9. rs2_data: 5
+
+@15 ns Fetch: Received Inst -> 0x000700213 | PC -> 0x000000018 from Memory
+
+@15 ns Fetch: Requested next PC -> 0x000000020
+
+@16 ns Write Back: Bubble was received
+
+@16 ns Memory Access: No Memory/Peripheral access needed
+
+@16 ns Execute: Instruction 0x000209463 is being executed
+
+@16 ns Execute: BNE x1(5), x2(5) | Branch Taken: NO | Prediction correct
+
+@16 ns Decode: Received Inst -> 0x000700213 from IF stage
+
+@16 ns Decode:
+1. opcode: 0x13
+2. rd: 4
+3. funct3: 0
+4. rs1: 0
+5. rs2: 7
+6. funct7: 0
+7. imm: 7
+8. rs1_data: 0
+9. rs2_data: 0
+
+@16 ns Fetch: Received Inst -> 0x0004182b3 | PC -> 0x00000001c from Memory
+
+@16 ns Fetch: Requested next PC -> 0x000000024
+
+@17 ns Write Back: Register x3 updated to 0x00000000a
+
+@17 ns Memory Access: No Memory/Peripheral access needed
+
+@17 ns Execute: Instruction 0x000700213 is being executed
+
+@17 ns ALU (I-Type): Result = 7
+
+@17 ns Decode: Received Inst -> 0x0004182b3 from IF stage
+
+@17 ns Decode:
+1. opcode: 0x33
+2. rd: 5
+3. funct3: 0
+4. rs1: 3
+5. rs2: 4
+6. funct7: 0
+7. imm: 0
+8. rs1_data: 10
+9. rs2_data: 0
+
+@17 ns Fetch: Received Inst -> 0x000000000 | PC -> 0x000000020 from Memory
+
+@17 ns Fetch: Requested next PC -> 0x000000028
+
+@18 ns Write Back: No Register File write back
+
+@18 ns Memory Access: No Memory/Peripheral access needed
+
+@18 ns Execute: Instruction 0x0004182b3 is being executed
+
+@18 ns ALU: 10 + 7 = 17
+
+@18 ns ALU (R-type): Result = 17
+
+@18 ns Decode: Received Inst -> 0x000000000 from IF stage
+
+@18 ns Decode Warning: Invalid Instruction. Bubble inserted into ID/EX
+
+@18 ns Fetch: Received Inst -> 0x000000000 | PC -> 0x000000024 from Memory
+
+@18 ns Fetch: Requested next PC -> 0x00000002c
+
+@19 ns Write Back: Register x4 updated to 0x000000007
+
+@19 ns Memory Access: No Memory/Peripheral access needed
+
+@19 ns Execute: Passed bubble forward
+
+@19 ns Decode: Received Inst -> 0x000000000 from IF stage
+
+@19 ns Decode Warning: Invalid Instruction. Bubble inserted into ID/EX
+
+@19 ns Fetch: Received Inst -> 0x000000000 | PC -> 0x000000028 from Memory
+
+@19 ns Fetch: Requested next PC -> 0x000000030
+
+@20 ns Write Back: Register x5 updated to 0x000000011
+
+@20 ns Memory Access: Passed bubble forward
+
+@20 ns Execute: Passed bubble forward
+
+@20 ns Decode: Received Inst -> 0x000000000 from IF stage
+
+@20 ns Decode Warning: Invalid Instruction. Bubble inserted into ID/EX
+
+@20 ns Fetch: Received Inst -> 0x000000000 | PC -> 0x00000002c from Memory
+
+@20 ns Fetch: Requested next PC -> 0x000000034
+
+x1 = 5: PASS
+x2 = 5: PASS
+x3 = 10: PASS
+x4 = 7: PASS
+x5 = 17: PASS
+x0 = 0: PASS
+
+@21 ns Simulation complete!

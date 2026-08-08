@@ -9,28 +9,23 @@ int sc_main(int argc, char* argv[]) {
     // Create signals to connect input ports
     sc_signal<bool> rst_s;
     sc_signal<bool> irq_ext_s;
-    sc_signal<bool> irq_sw_s;
 
     // Initialize system_top and connect input ports
     system_top sys("System_Top");
     sys.clk_i(clk_s);
     sys.rst_i(rst_s);
     sys.irq_ext_i(irq_ext_s);
-    sys.irq_sw_i(irq_sw_s);
 
     // VCD waveform trace
     sc_trace_file *wf = sc_create_vcd_trace_file("./waveforms/riscv_decode_waveform");
-    sc_trace(wf, clk_s, "clock");
-    sc_trace(wf, rst_s, "reset");
-    sc_trace(wf, sys.cpu_read_en_s, "read_en");
-    sc_trace(wf, sys.cpu_write_en_s, "write_en");
-    sc_trace(wf, sys.cpu_addr_bus_s, "address_bus");
-    sc_trace(wf, sys.mem_data_out_s, "mem_to_cpu_bus");
-    sc_trace(wf, sys.cpu_data_out_s, "cpu_to_mem_bus");
+    // sc_trace(wf, clk_s, "clock");
+    // sc_trace(wf, rst_s, "reset");
+    // sc_trace(wf, sys.cpu_inst_read_en_s, "read_en");
+    // sc_trace(wf, sys.cpu_inst_addr_bus_s, "address_bus");
+    // sc_trace(wf, sys.cpu_inst_bus_in_s, "data_bus");
 
     // Clear input ports
     irq_ext_s.write(false);
-    irq_sw_s.write(false);
 
     // Reset
     cout << "@" << sc_time_stamp() << " Applying Reset..." << endl;
@@ -48,24 +43,20 @@ int sc_main(int argc, char* argv[]) {
     sys.load_data(12, 0x40110233);
 
     // Verify instruction 1
-    sc_start(6, SC_NS);
-    cout << (sys.cpu->registers[1] == 5 ? "PASS" : "FAIL") << endl << endl;
+    sc_start(10, SC_NS);
+    cout << "x1 = 5: "  << (sys.cpu->registers[1] == 5 ? "PASS" : "FAIL")<< endl;
 
     // Verify instruction 2
-    sc_start(6, SC_NS);
-    cout << (sys.cpu->registers[2] == 10 ? "PASS" : "FAIL") << endl << endl;
+    cout << "x2 = 10: "  << (sys.cpu->registers[2] == 10 ? "PASS" : "FAIL") << endl;
 
     // Verify instruction 3
-    sc_start(6, SC_NS);
-    cout << (sys.cpu->registers[3] == 15 ? "PASS" : "FAIL") << endl << endl;
+    cout << "x3 = 15: "  << (sys.cpu->registers[3] == 15 ? "PASS" : "FAIL") << endl;
 
     // Verify instruction 4
-    sc_start(6, SC_NS);
-    cout << (sys.cpu->registers[4] == 5 ? "PASS" : "FAIL") << endl << endl;
+    cout << "x4 = 5: "  << (sys.cpu->registers[4] == 5 ? "PASS" : "FAIL") << endl;
 
     // Verify x0 = 0
-    cout << "Testing x0 = 0" << endl << endl;
-    cout << (sys.cpu->registers[0] == 0 ? "PASS" : "FAIL") << endl << endl;
+    cout << "x0 = 0: " << (sys.cpu->registers[0] == 0 ? "PASS" : "FAIL") << endl << endl;
 
     cout << "@" << sc_time_stamp() << " Simulation complete!" << endl;
     

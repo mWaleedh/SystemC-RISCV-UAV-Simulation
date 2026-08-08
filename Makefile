@@ -1,7 +1,8 @@
 CXX = g++
 CXXFLAGS = -I. -lsystemc
 
-all: memory_test \
+all: risc_v_test \
+	 memory_test \
 	 decode_test \
 	 load_store_test \
 	 branch_test \
@@ -32,6 +33,9 @@ all: memory_test \
 	 branch_prediction_safety_test \
 	 synchronous_fetch_pipeline_test \
 	 extended_rv32i_test
+
+risc_v_test: ./testbenches/risc_v_testbench.cpp
+	$(CXX) -o risc_v_test ./testbenches/risc_v_testbench.cpp $(CXXFLAGS)
 
 memory_test: ./testbenches/riscv_memory_testbench.cpp
 	$(CXX) -o memory_test ./testbenches/riscv_memory_testbench.cpp $(CXXFLAGS)
@@ -127,6 +131,7 @@ extended_rv32i_test: ./testbenches/extended_rv32i_testbench.cpp
 	$(CXX) -o extended_rv32i_test ./testbenches/extended_rv32i_testbench.cpp $(CXXFLAGS)
 
 all_tests: allextended_rv32i_test
+	./risc_v_test
 	./memory_test
 	./decode_test
 	./load_store_test
@@ -160,7 +165,8 @@ all_tests: allextended_rv32i_test
 	./extended_rv32i_test
 
 clean:
-	rm -f memory_test \
+	rm -f risc_v_test \
+		  memory_test \
 		  decode_test \
 		  load_store_test \
 		  branch_test \

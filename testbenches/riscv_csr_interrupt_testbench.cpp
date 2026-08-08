@@ -9,21 +9,19 @@ int sc_main(int argc, char* argv[]) {
     // Create signals to connect input ports
     sc_signal<bool> rst_s;
     sc_signal<bool> irq_ext_s;
-    sc_signal<bool> irq_sw_s;
 
     // Initialize system_top and connect input ports
     system_top sys("System_Top");
     sys.clk_i(clk_s);
     sys.rst_i(rst_s);
     sys.irq_ext_i(irq_ext_s);
-    sys.irq_sw_i(irq_sw_s);
 
     // VCD waveform trace
     sc_trace_file *wf = sc_create_vcd_trace_file("./waveforms/csr_interrupt_waveform");
     sc_trace(wf, clk_s, "clock");
     sc_trace(wf, rst_s, "reset");
     sc_trace(wf, sys.cpu->pc, "pc");
-    sc_trace(wf, sys.cpu->cur_inst, "cur_inst");
+    sc_trace(wf, sys.cpu->if_id.inst, "cur_inst");
     sc_trace(wf, sys.timer->count_reg, "count_reg");
     sc_trace(wf, sys.timer->compare_reg, "compare_reg");
     sc_trace(wf, sys.timer->status_reg, "status_reg");
@@ -37,7 +35,6 @@ int sc_main(int argc, char* argv[]) {
 
     // Clear input ports
     irq_ext_s.write(false);
-    irq_sw_s.write(false);
 
     // Reset
     cout << "@" << sc_time_stamp() << " Applying Reset..." << endl;
@@ -52,7 +49,7 @@ int sc_main(int argc, char* argv[]) {
     sys.load_file("./hex/csr_interrupt_program.hex");
 
     // Run system
-    sc_start(111, SC_NS);
+    sc_start(76, SC_NS);
 
     // Verify results
     cout << "x1 = 0x10000000: " << (sys.cpu->registers[1] == 0x10000000 ? "PASS" : "FAIL") << endl;

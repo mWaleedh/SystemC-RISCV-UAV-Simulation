@@ -29,18 +29,15 @@ int sc_main(int argc, char* argv[]) {
     // Create signals to connect input ports
     sc_signal<bool> rst_s;
     sc_signal<bool> irq_ext_s;
-    sc_signal<bool> irq_sw_s;
 
     // Initialize system_top and connect input ports
     system_top sys("System_Top");
     sys.clk_i(clk_s);
     sys.rst_i(rst_s);
     sys.irq_ext_i(irq_ext_s);
-    sys.irq_sw_i(irq_sw_s);
 
     // Clear input ports
     irq_ext_s.write(false);
-    irq_sw_s.write(false);
 
     // Reset
     cout << "@" << sc_time_stamp() << " Applying Reset..." << endl;
@@ -55,7 +52,7 @@ int sc_main(int argc, char* argv[]) {
     sys.load_file("./hex/mepc_return_program.hex");
 
     // Run system
-    sc_start(93, SC_NS);
+    sc_start(40, SC_NS);
 
     // Before interrupt
     cout << "x6 = 1: " << (sys.cpu->registers[6] == 1 ? "PASS" : "FAIL") << endl;

@@ -1,5 +1,5 @@
 /*
-LW  x3, 0(x0)  
+LW  x3, 32(x0)  
 ADD x4, x3, x3 
 */
 
@@ -14,18 +14,15 @@ int sc_main(int argc, char* argv[]) {
     // Create signals to connect input ports
     sc_signal<bool> rst_s;
     sc_signal<bool> irq_ext_s;
-    sc_signal<bool> irq_sw_s;
 
     // Initialize system_top and connect input ports
     system_top sys("System_Top");
     sys.clk_i(clk_s);
     sys.rst_i(rst_s);
     sys.irq_ext_i(irq_ext_s);
-    sys.irq_sw_i(irq_sw_s);
 
     // Clear input ports
     irq_ext_s.write(false);
-    irq_sw_s.write(false);
 
     // Reset
     cout << "@" << sc_time_stamp() << " Applying Reset..." << endl;
@@ -42,7 +39,7 @@ int sc_main(int argc, char* argv[]) {
     sys.load_data(32, 100);
 
     // Run system
-    sc_start(10, SC_NS);
+    sc_start(11, SC_NS);
 
     // Verify results
     cout << "x3 = 100: " << (sys.cpu->registers[3] == 100 ? "PASS" : "FAIL") << endl;

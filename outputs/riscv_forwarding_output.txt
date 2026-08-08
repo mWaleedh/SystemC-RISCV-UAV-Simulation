@@ -1,3 +1,7 @@
+================
+Initial Testing:
+================
+
 @0 s Applying Reset...
 @5 ns Releasing Reset...
 
@@ -175,6 +179,189 @@ Memory: Loaded data from file ./hex/riscv_forwarding_program.hex
 2. Data -> 0x000000000
 
 @13 ns System Bus (IF): Address 0x20 routed to Main Memory
+
+x1 = 10: PASS
+x2 = 20: PASS
+x3 = 30: PASS
+
+@14 ns Simulation complete!
+
+
+==============
+Final Testing:
+==============
+
+@0 s Applying Reset...
+@5 ns Releasing Reset...
+
+TLM Memory: Loaded data from file ./hex/riscv_forwarding_program.hex
+
+@5 ns Write Back: Bubble was received
+
+@5 ns Memory Access: Passed bubble forward
+
+@5 ns Execute: Passed bubble forward
+
+@5 ns Decode: Passed bubble forward
+
+@5 ns Fetch: Received Inst -> 0x000000000 | PC -> 0x000000000 from Memory
+
+@5 ns Fetch: Requested next PC -> 0x000000000
+
+@6 ns Write Back: Bubble was received
+
+@6 ns Memory Access: Passed bubble forward
+
+@6 ns Execute: Passed bubble forward
+
+@6 ns Decode: Received Inst -> 0x000000000 from IF stage
+
+@6 ns Decode Warning: Invalid Instruction. Bubble inserted into ID/EX
+
+@6 ns Fetch: Received Inst -> 0x000000000 | PC -> 0x000000000 from Memory
+
+@6 ns Fetch: Requested next PC -> 0x000000004
+
+@7 ns Write Back: Bubble was received
+
+@7 ns Memory Access: Passed bubble forward
+
+@7 ns Execute: Passed bubble forward
+
+@7 ns Decode: Received Inst -> 0x000000000 from IF stage
+
+@7 ns Decode Warning: Invalid Instruction. Bubble inserted into ID/EX
+
+@7 ns Fetch: Received Inst -> 0x000a00093 | PC -> 0x000000000 from Memory
+
+@7 ns Fetch: Requested next PC -> 0x000000008
+
+@8 ns Write Back: Bubble was received
+
+@8 ns Memory Access: Passed bubble forward
+
+@8 ns Execute: Passed bubble forward
+
+@8 ns Decode: Received Inst -> 0x000a00093 from IF stage
+
+@8 ns Decode:
+1. opcode: 0x13
+2. rd: 1
+3. funct3: 0
+4. rs1: 0
+5. rs2: 10
+6. funct7: 0
+7. imm: 10
+8. rs1_data: 0
+9. rs2_data: 0
+
+@8 ns Fetch: Received Inst -> 0x000108133 | PC -> 0x000000004 from Memory
+
+@8 ns Fetch: Requested next PC -> 0x00000000c
+
+@9 ns Write Back: Bubble was received
+
+@9 ns Memory Access: Passed bubble forward
+
+@9 ns Execute: Instruction 0x000a00093 is being executed
+
+@9 ns ALU (I-Type): Result = 10
+
+@9 ns Decode: Received Inst -> 0x000108133 from IF stage
+
+@9 ns Decode:
+1. opcode: 0x33
+2. rd: 2
+3. funct3: 0
+4. rs1: 1
+5. rs2: 1
+6. funct7: 0
+7. imm: 0
+8. rs1_data: 0
+9. rs2_data: 0
+
+@9 ns Fetch: Received Inst -> 0x0001101b3 | PC -> 0x000000008 from Memory
+
+@9 ns Fetch: Requested next PC -> 0x000000010
+
+@10 ns Write Back: Bubble was received
+
+@10 ns Memory Access: No Memory/Peripheral access needed
+
+@10 ns Execute: Instruction 0x000108133 is being executed
+
+@10 ns Execute: Forwarded new register value from EX stage
+
+@10 ns ALU: 10 + 10 = 20
+
+@10 ns ALU (R-type): Result = 20
+
+@10 ns Decode: Received Inst -> 0x0001101b3 from IF stage
+
+@10 ns Decode:
+1. opcode: 0x33
+2. rd: 3
+3. funct3: 0
+4. rs1: 2
+5. rs2: 1
+6. funct7: 0
+7. imm: 0
+8. rs1_data: 0
+9. rs2_data: 0
+
+@10 ns Fetch: Received Inst -> 0x000000000 | PC -> 0x00000000c from Memory
+
+@10 ns Fetch: Requested next PC -> 0x000000014
+
+@11 ns Write Back: Register x1 updated to 0x00000000a
+
+@11 ns Memory Access: No Memory/Peripheral access needed
+
+@11 ns Execute: Instruction 0x0001101b3 is being executed
+
+@11 ns Execute: Forwarded new register value from MEM stage
+
+@11 ns Execute: Forwarded new register value from EX stage
+
+@11 ns ALU: 20 + 10 = 30
+
+@11 ns ALU (R-type): Result = 30
+
+@11 ns Decode: Received Inst -> 0x000000000 from IF stage
+
+@11 ns Decode Warning: Invalid Instruction. Bubble inserted into ID/EX
+
+@11 ns Fetch: Received Inst -> 0x000000000 | PC -> 0x000000010 from Memory
+
+@11 ns Fetch: Requested next PC -> 0x000000018
+
+@12 ns Write Back: Register x2 updated to 0x000000014
+
+@12 ns Memory Access: No Memory/Peripheral access needed
+
+@12 ns Execute: Passed bubble forward
+
+@12 ns Decode: Received Inst -> 0x000000000 from IF stage
+
+@12 ns Decode Warning: Invalid Instruction. Bubble inserted into ID/EX
+
+@12 ns Fetch: Received Inst -> 0x000000000 | PC -> 0x000000014 from Memory
+
+@12 ns Fetch: Requested next PC -> 0x00000001c
+
+@13 ns Write Back: Register x3 updated to 0x00000001e
+
+@13 ns Memory Access: Passed bubble forward
+
+@13 ns Execute: Passed bubble forward
+
+@13 ns Decode: Received Inst -> 0x000000000 from IF stage
+
+@13 ns Decode Warning: Invalid Instruction. Bubble inserted into ID/EX
+
+@13 ns Fetch: Received Inst -> 0x000000000 | PC -> 0x000000018 from Memory
+
+@13 ns Fetch: Requested next PC -> 0x000000020
 
 x1 = 10: PASS
 x2 = 20: PASS
