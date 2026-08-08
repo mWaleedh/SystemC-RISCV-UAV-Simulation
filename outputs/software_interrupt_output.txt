@@ -1,0 +1,537 @@
+@0 s Applying Reset...
+@5 ns Releasing Reset...
+
+TLM Memory: Loaded data from file ./hex/software_interrupt_program.hex
+
+@5 ns Write Back: Bubble was received
+
+@5 ns Memory Access: Passed bubble forward
+
+@5 ns Execute: Instruction 0x000000000 is being executed
+
+@5 ns Execute: Passed bubble forward
+
+@5 ns Decode: Passed bubble forward
+
+@5 ns Fetch: Received Inst -> 0x000000000 | PC -> 0x000000000 from Memory
+
+@5 ns Fetch: Requested next PC -> 0x000000000
+
+@6 ns Write Back: Bubble was received
+
+@6 ns Memory Access: Passed bubble forward
+
+@6 ns Execute: Instruction 0x000000000 is being executed
+
+@6 ns Execute: Passed bubble forward
+
+@6 ns Decode: Received Inst -> 0x000000000 from IF stage
+
+@6 ns Decode Warning: Invalid Instruction. Bubble inserted into ID/EX
+
+@6 ns Fetch: Received Inst -> 0x000000000 | PC -> 0x000000000 from Memory
+
+@6 ns Fetch: Requested next PC -> 0x000000004
+
+@7 ns Write Back: Bubble was received
+
+@7 ns Memory Access: Passed bubble forward
+
+@7 ns Execute: Instruction 0x000000000 is being executed
+
+@7 ns Execute: Passed bubble forward
+
+@7 ns Decode: Received Inst -> 0x000000000 from IF stage
+
+@7 ns Decode Warning: Invalid Instruction. Bubble inserted into ID/EX
+
+@7 ns Fetch: Received Inst -> 0x003400293 | PC -> 0x000000000 from Memory
+
+@7 ns Fetch: Requested next PC -> 0x000000008
+
+@8 ns Write Back: Bubble was received
+
+@8 ns Memory Access: Passed bubble forward
+
+@8 ns Execute: Instruction 0x000000000 is being executed
+
+@8 ns Execute: Passed bubble forward
+
+@8 ns Decode: Received Inst -> 0x003400293 from IF stage
+
+@8 ns Decode:
+1. opcode: 0x13
+2. rd: 5
+3. funct3: 0
+4. rs1: 0
+5. rs2: 20
+6. funct7: 1
+7. imm: 52
+8. rs1_data: 0
+9. rs2_data: 0
+
+@8 ns Fetch: Received Inst -> 0x030529073 | PC -> 0x000000004 from Memory
+
+@8 ns Fetch: Requested next PC -> 0x00000000c
+
+@9 ns Write Back: Bubble was received
+
+@9 ns Memory Access: Passed bubble forward
+
+@9 ns Execute: Instruction 0x003400293 is being executed
+
+@9 ns ALU (I-Type): Result = 52
+
+@9 ns Decode: Received Inst -> 0x030529073 from IF stage
+
+@9 ns Decode:
+1. opcode: 0x73
+2. rd: 0
+3. funct3: 1
+4. rs1: 5
+5. rs2: 5
+6. funct7: 24
+7. imm: 773
+8. rs1_data: 0
+9. rs2_data: 0
+
+@9 ns Fetch: Received Inst -> 0x000800293 | PC -> 0x000000008 from Memory
+
+@9 ns Fetch: Requested next PC -> 0x000000010
+
+@10 ns Write Back: Bubble was received
+
+@10 ns Memory Access: No Memory/Peripheral access needed
+
+@10 ns Execute: Instruction 0x030529073 is being executed
+
+@10 ns Execute: Forwarded rd value to rs1 from EX stage
+
+@10 ns Execute: Forwarded rd value to rs2 from EX stage
+
+@10 ns Decode: Received Inst -> 0x000800293 from IF stage
+
+@10 ns Decode:
+1. opcode: 0x13
+2. rd: 5
+3. funct3: 0
+4. rs1: 0
+5. rs2: 8
+6. funct7: 0
+7. imm: 8
+8. rs1_data: 0
+9. rs2_data: 0
+
+@10 ns Fetch: Received Inst -> 0x030429073 | PC -> 0x00000000c from Memory
+
+@10 ns Fetch: Requested next PC -> 0x000000014
+
+@11 ns Write Back: Register x5 updated to 0x000000034
+
+@11 ns Memory Access: No Memory/Peripheral access needed
+
+@11 ns Execute: Instruction 0x000800293 is being executed
+
+@11 ns ALU (I-Type): Result = 8
+
+@11 ns Decode: Received Inst -> 0x030429073 from IF stage
+
+@11 ns Decode:
+1. opcode: 0x73
+2. rd: 0
+3. funct3: 1
+4. rs1: 5
+5. rs2: 4
+6. funct7: 24
+7. imm: 772
+8. rs1_data: 52
+9. rs2_data: 0
+
+@11 ns Fetch: Received Inst -> 0x030029073 | PC -> 0x000000010 from Memory
+
+@11 ns Fetch: Requested next PC -> 0x000000018
+
+@12 ns Write Back: CSR | Address: 0x000000305 | Old: 0x000000000 | New: 0x000000034
+
+@12 ns Write Back: No Register File write back
+
+@12 ns Memory Access: No Memory/Peripheral access needed
+
+@12 ns Execute: Instruction 0x030429073 is being executed
+
+@12 ns Execute: Forwarded rd value to rs1 from EX stage
+
+@12 ns Decode: Received Inst -> 0x030029073 from IF stage
+
+@12 ns Decode:
+1. opcode: 0x73
+2. rd: 0
+3. funct3: 1
+4. rs1: 5
+5. rs2: 0
+6. funct7: 24
+7. imm: 768
+8. rs1_data: 52
+9. rs2_data: 0
+
+@12 ns Fetch: Received Inst -> 0x010000337 | PC -> 0x000000014 from Memory
+
+@12 ns Fetch: Requested next PC -> 0x00000001c
+
+@13 ns Write Back: Register x5 updated to 0x000000008
+
+@13 ns Memory Access: No Memory/Peripheral access needed
+
+@13 ns Execute: Instruction 0x030029073 is being executed
+
+@13 ns Execute: Forwarded rd value to rs1 from MEM stage
+
+@13 ns Decode: Received Inst -> 0x010000337 from IF stage
+
+@13 ns Decode:
+1. opcode: 0x37
+2. rd: 6
+3. funct3: 0
+4. rs1: 0
+5. rs2: 0
+6. funct7: 8
+7. imm: 268435456
+8. rs1_data: 0
+9. rs2_data: 0
+
+@13 ns Fetch: Received Inst -> 0x000100393 | PC -> 0x000000018 from Memory
+
+@13 ns Fetch: Requested next PC -> 0x000000020
+
+@14 ns Write Back: CSR | Address: 0x000000304 | Old: 0x000000088 | New: 0x000000008
+
+@14 ns Write Back: No Register File write back
+
+@14 ns Memory Access: No Memory/Peripheral access needed
+
+@14 ns Execute: Instruction 0x010000337 is being executed
+
+@14 ns ALU (LUI): Result = 0x010000000
+
+@14 ns Decode: Received Inst -> 0x000100393 from IF stage
+
+@14 ns Decode:
+1. opcode: 0x13
+2. rd: 7
+3. funct3: 0
+4. rs1: 0
+5. rs2: 1
+6. funct7: 0
+7. imm: 1
+8. rs1_data: 0
+9. rs2_data: 0
+
+@14 ns Fetch: Received Inst -> 0x002732423 | PC -> 0x00000001c from Memory
+
+@14 ns Fetch: Requested next PC -> 0x000000024
+
+@15 ns Write Back: CSR | Address: 0x000000300 | Old: 0x000000008 | New: 0x000000008
+
+@15 ns Write Back: No Register File write back
+
+@15 ns Memory Access: No Memory/Peripheral access needed
+
+@15 ns Execute: Instruction 0x000100393 is being executed
+
+@15 ns ALU (I-Type): Result = 1
+
+@15 ns Decode: Received Inst -> 0x002732423 from IF stage
+
+@15 ns Decode:
+1. opcode: 0x23
+2. rd: 8
+3. funct3: 2
+4. rs1: 6
+5. rs2: 7
+6. funct7: 1
+7. imm: 40
+8. rs1_data: 0
+9. rs2_data: 0
+
+@15 ns Fetch: Received Inst -> 0x006300e13 | PC -> 0x000000020 from Memory
+
+@15 ns Fetch: Requested next PC -> 0x000000028
+
+@16 ns Write Back: Register x6 updated to 0x010000000
+
+@16 ns Memory Access: No Memory/Peripheral access needed
+
+@16 ns Execute: Instruction 0x002732423 is being executed
+
+@16 ns Execute: Forwarded rd value to rs1 from MEM stage
+
+@16 ns Execute: Forwarded rd value to rs2 from EX stage
+
+@16 ns ALU (Store): Target Address = 0x010000028
+
+@16 ns Decode: Received Inst -> 0x006300e13 from IF stage
+
+@16 ns Decode:
+1. opcode: 0x13
+2. rd: 28
+3. funct3: 0
+4. rs1: 0
+5. rs2: 3
+6. funct7: 3
+7. imm: 99
+8. rs1_data: 0
+9. rs2_data: 0
+
+@16 ns Fetch: Received Inst -> 0x000000013 | PC -> 0x000000024 from Memory
+
+@16 ns Fetch: Requested next PC -> 0x00000002c
+
+@17 ns Write Back: Register x7 updated to 0x000000001
+
+@17 ns Memory Access: Storing data to 0x010000028
+
+@17 ns Memory Access: Freezing pipeline until Memory responds
+@17 ns Memory Access: Bubble sent to Write Back stage
+
+@17 ns Execute: Instruction 0x006300e13 is being executed
+
+@17 ns Execute: Stalled. Holding PC at -> 0x000000020
+
+@17 ns Decode: Stalled. Holding PC at -> 0x000000024
+
+@17 ns Fetch: Stalled. Stored Inst -> 0x000000013 | PC -> 0x000000028 in buffer
+@17 ns Fetch: Stalled. Re-requesting PC -> 0x00000002c
+
+@18 ns Write Back: Bubble was received
+
+@18 ns Memory Access: Load/Store request sent to memory
+@18 ns Read/Write enable flags have been set to false
+
+@18 ns Execute: Instruction 0x006300e13 is being executed
+
+@18 ns Execute: Stalled. Holding PC at -> 0x000000020
+
+@18 ns Decode: Stalled. Holding PC at -> 0x000000024
+
+@18 ns Fetch: Stalled. Holding Inst -> 0x000000013 | PC -> 0x000000028 in buffer
+@18 ns Fetch: Stalled. Re-requesting PC -> 0x00000002c
+
+@18 ns MSIP: Software Interrupt bit written -> 1
+@19 ns Write Back: Bubble was received
+
+@19 ns Memory Access: Successfully stored data at 0x010000028
+
+@19 ns Execute: Instruction 0x006300e13 is being executed
+
+@19 ns ALU (I-Type): Result = 99
+
+@19 ns Decode: Received Inst -> 0x000000013 from IF stage
+
+@19 ns Decode:
+1. opcode: 0x13
+2. rd: 0
+3. funct3: 0
+4. rs1: 0
+5. rs2: 0
+6. funct7: 0
+7. imm: 0
+8. rs1_data: 0
+9. rs2_data: 0
+
+@19 ns Fetch: Using Inst -> 0x000000013 | PC -> 0x000000028 from buffer
+
+@19 ns Fetch: Requested next PC -> 0x000000030
+
+@20 ns CPU: Software interrupt received. Flushed pipeline
+@20 ns CPU: Jumping to interrupt handler
+
+@20 ns Write Back: No Register File write back
+
+@20 ns Memory Access: No Memory/Peripheral access needed
+
+@20 ns Execute: Instruction 0x000000013 is being executed
+
+@20 ns Execute: Flushed inst -> 000000013
+
+@20 ns Decode: Flushed inst -> 0x000000013
+
+@20 ns Fetch: Received Inst -> 0x000000013 | PC -> 0x00000002c from Memory
+
+@20 ns Fetch: Flushed Inst -> 0x000000013
+
+@20 ns Fetch: Requested next PC -> 0x000000034
+
+@21 ns Write Back: Register x28 updated to 0x000000063
+
+@21 ns Memory Access: Passed bubble forward
+
+@21 ns Execute: Instruction 0x000000013 is being executed
+
+@21 ns Execute: Passed bubble forward
+
+@21 ns Decode: Passed bubble forward
+
+@21 ns Fetch: Received Inst -> 0x000000013 | PC -> 0x000000030 from Memory
+
+@21 ns Fetch: Ignored Inst -> 0x000000013 (Invalid)
+
+@21 ns Fetch: Requested next PC -> 0x000000038
+
+@22 ns Write Back: Bubble was received
+
+@22 ns Memory Access: Passed bubble forward
+
+@22 ns Execute: Instruction 0x000000013 is being executed
+
+@22 ns Execute: Passed bubble forward
+
+@22 ns Decode: Passed bubble forward
+
+@22 ns Fetch: Received Inst -> 0x034202ef3 | PC -> 0x000000034 from Memory
+
+@22 ns Fetch: Requested next PC -> 0x00000003c
+
+@23 ns Write Back: Bubble was received
+
+@23 ns Memory Access: Passed bubble forward
+
+@23 ns Execute: Instruction 0x000000013 is being executed
+
+@23 ns Execute: Passed bubble forward
+
+@23 ns Decode: Received Inst -> 0x034202ef3 from IF stage
+
+@23 ns Decode:
+1. opcode: 0x73
+2. rd: 29
+3. funct3: 2
+4. rs1: 0
+5. rs2: 2
+6. funct7: 26
+7. imm: 834
+8. rs1_data: 0
+9. rs2_data: 0
+
+@23 ns Fetch: Received Inst -> 0x002032423 | PC -> 0x000000038 from Memory
+
+@23 ns Fetch: Requested next PC -> 0x000000040
+
+@24 ns Write Back: Bubble was received
+
+@24 ns Memory Access: Passed bubble forward
+
+@24 ns Execute: Instruction 0x034202ef3 is being executed
+
+@24 ns Decode: Received Inst -> 0x002032423 from IF stage
+
+@24 ns Decode:
+1. opcode: 0x23
+2. rd: 8
+3. funct3: 2
+4. rs1: 6
+5. rs2: 0
+6. funct7: 1
+7. imm: 40
+8. rs1_data: 268435456
+9. rs2_data: 0
+
+@24 ns Fetch: Received Inst -> 0x030200073 | PC -> 0x00000003c from Memory
+
+@24 ns Fetch: Requested next PC -> 0x000000044
+
+@25 ns Write Back: Bubble was received
+
+@25 ns Memory Access: No Memory/Peripheral access needed
+
+@25 ns Execute: Instruction 0x002032423 is being executed
+
+@25 ns ALU (Store): Target Address = 0x010000028
+
+@25 ns Decode: Received Inst -> 0x030200073 from IF stage
+
+@25 ns Decode:
+1. opcode: 0x73
+2. rd: 0
+3. funct3: 0
+4. rs1: 0
+5. rs2: 2
+6. funct7: 24
+7. imm: 770
+8. rs1_data: 0
+9. rs2_data: 0
+
+@25 ns Fetch: Received Inst -> 0x000000000 | PC -> 0x000000040 from Memory
+
+@25 ns Fetch: Requested next PC -> 0x000000048
+
+@26 ns Write Back: Register x29 updated to 0x080000003
+
+@26 ns Memory Access: Storing data to 0x010000028
+
+@26 ns Memory Access: Freezing pipeline until Memory responds
+@26 ns Memory Access: Bubble sent to Write Back stage
+
+@26 ns Execute: Instruction 0x030200073 is being executed
+
+@26 ns Execute: Stalled. Holding PC at -> 0x00000003c
+
+@26 ns Decode: Stalled. Holding PC at -> 0x000000040
+
+@26 ns Fetch: Stalled. Stored Inst -> 0x000000000 | PC -> 0x000000044 in buffer
+@26 ns Fetch: Stalled. Re-requesting PC -> 0x000000048
+
+@27 ns Write Back: Bubble was received
+
+@27 ns Memory Access: Load/Store request sent to memory
+@27 ns Read/Write enable flags have been set to false
+
+@27 ns Execute: Instruction 0x030200073 is being executed
+
+@27 ns Execute: Stalled. Holding PC at -> 0x00000003c
+
+@27 ns Decode: Stalled. Holding PC at -> 0x000000040
+
+@27 ns Fetch: Stalled. Holding Inst -> 0x000000000 | PC -> 0x000000044 in buffer
+@27 ns Fetch: Stalled. Re-requesting PC -> 0x000000048
+
+@27 ns MSIP: Software Interrupt bit written -> 0
+@28 ns Write Back: Bubble was received
+
+@28 ns Memory Access: Successfully stored data at 0x010000028
+
+@28 ns Execute: Instruction 0x030200073 is being executed
+
+@28 ns Execute: MRET | Return Address: 0x000000024
+
+@28 ns Execute: Flushed pipeline due to Branch/Jump/MRET
+@28 ns Execute: Jumping to correct instruction
+
+@28 ns Decode: Flushed inst -> 0x000000000
+
+@28 ns Fetch: Using Inst -> 0x000000000 | PC -> 0x000000044 from buffer
+
+@28 ns Fetch: Flushed Inst -> 0x000000000
+
+@28 ns Fetch: Requested next PC -> 0x000000024
+
+@29 ns Write Back: No Register File write back
+
+@29 ns Memory Access: No Memory/Peripheral access needed
+
+@29 ns Execute: Instruction 0x030200073 is being executed
+
+@29 ns Execute: Passed bubble forward
+
+@29 ns Decode: Passed bubble forward
+
+@29 ns Fetch: Received Inst -> 0x000000000 | PC -> 0x000000048 from Memory
+
+@29 ns Fetch: Ignored Inst -> 0x000000000 (Invalid)
+
+@29 ns Fetch: Requested next PC -> 0x000000028
+
+x29 = 0x80000003: PASS
+x28 = 99: PASS
+msip_reg = 0: PASS
+
+@30 ns Simulation complete!
