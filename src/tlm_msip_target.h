@@ -7,6 +7,7 @@ SC_MODULE(tlm_msip_target) {
     simple_target_socket<tlm_msip_target> target_socket;
     
     // Input/Output ports
+    sc_in<bool> clk_i;
     sc_in<bool> rst_i;
     sc_out<bool> irq_sw_o;
 

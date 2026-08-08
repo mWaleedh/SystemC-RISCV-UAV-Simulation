@@ -8,15 +8,17 @@ SC_MODULE(tlm_adapter) {
 
     sc_in<bool> clk_i;
 
-    // CPU Data Ports
+    // CPU Data input ports
     sc_in<bool> cpu_data_write_en_i;
     sc_in<bool> cpu_data_read_en_i;
+    sc_in<sc_uint<3>> cpu_data_size_i;
     sc_in<sc_uint<WIDTH>> cpu_data_addr_bus_i;
     sc_in<sc_uint<WIDTH>> cpu_data_bus_i;
-    sc_in<sc_uint<2>> cpu_data_size_i;
+
+    // CPU Data output ports
     sc_out<bool> cpu_data_ready_o;
-    sc_out<sc_uint<WIDTH>> cpu_data_bus_o;
     sc_out<bool> cpu_data_error_o;
+    sc_out<sc_uint<WIDTH>> cpu_data_bus_o;
 
     simple_initiator_socket<tlm_adapter> initiator_socket;
 

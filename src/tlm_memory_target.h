@@ -31,6 +31,7 @@ SC_MODULE(tlm_memory_target) {
     // Functions
     void b_transport(tlm_generic_payload& trans, sc_time& delay);
     void inst_fetch_thread();
+    void reset_logic();
 
     // Initialization functions
     void load_data(uint32_t addr, uint32_t data);

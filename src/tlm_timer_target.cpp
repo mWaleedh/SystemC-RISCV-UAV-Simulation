@@ -79,12 +79,13 @@ void tlm_timer_target::b_transport(tlm_generic_payload& trans, sc_time& delay) {
                 compare_reg = data; 
                 break;
             case 0x08: 
-                control_reg = data; 
+                control_reg = data;
                 break;
             case 0x0C: 
                 // Write 1 to clear
                 if (data == 1) {
                     status_reg = 0;
+                    cout << "@" << sc_time_stamp() << " Timer: Interrupt cleared. Restarting counter" << endl << endl;
                 }
                 break;
             default:
@@ -93,7 +94,6 @@ void tlm_timer_target::b_transport(tlm_generic_payload& trans, sc_time& delay) {
                 cout << "@" << sc_time_stamp() << " Timer Error: Writing to invalid address 0x" << hex << addr << dec << endl << endl;
                 return;
         }
-
         cout << "@" << sc_time_stamp() << " Timer: Wrote 0x" << hex << data << " to address 0x" << addr << dec << endl << endl;
     } 
     // Read from register

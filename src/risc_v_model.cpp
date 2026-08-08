@@ -12,21 +12,22 @@ SC_MODULE(risc_v_model) {
     sc_in<bool> irq_timer_i;
     sc_in<bool> irq_ext_i;
     sc_in<bool> irq_sw_i;
-    sc_in<bool> data_error_i;
 
     // Instruction ports
     sc_in<sc_uint<WIDTH>> inst_bus_i;
     sc_out<bool> inst_read_en_o;
     sc_out<sc_uint<WIDTH>> inst_addr_bus_o;
 
-    // Data ports
+    // Data input ports
     sc_in<bool> data_ready_i;
+    sc_in<bool> data_error_i;
     sc_in<sc_uint<WIDTH>> data_bus_i;
+    // Data output ports
     sc_out<bool> data_write_en_o;
     sc_out<bool> data_read_en_o;
+    sc_out<sc_uint<3>> data_size_o;
     sc_out<sc_uint<WIDTH>> data_bus_o;
     sc_out<sc_uint<WIDTH>> data_addr_bus_o;
-    sc_out<sc_uint<2>> data_size_o;
 
     // IF/ID Register
     struct IF_ID {
@@ -49,8 +50,8 @@ SC_MODULE(risc_v_model) {
         sc_uint<3> funct3;
         sc_uint<7> funct7;
         
-        sc_uint<WIDTH> rs1_data;
-        sc_uint<WIDTH> rs2_data;
+        sc_uint<WIDTH> alu_in_1;
+        sc_uint<WIDTH> alu_in_2;
         sc_int<WIDTH> imm;
 
         uint32_t mem_size;
@@ -436,7 +437,7 @@ SC_MODULE(risc_v_model) {
         return 0;
     }
 
-    void write_csr(uint32_t csr_addr, uint32_t csr_old, uint32_t csr_new) {
+    void write_csr(uint32_t csr_addr, uint32_t csr_new) {
         switch(csr_addr) {
             case 0x300: 
                 mstatus = csr_new; 
@@ -458,9 +459,7 @@ SC_MODULE(risc_v_model) {
                 mip = (csr_new & ~0x88) | (mip & 0x88);
             default: 
                 break; 
-        }
-
-        cout << "@" << sc_time_stamp() << " Execute: CSR | Address: 0x" << hex << csr_addr << " | Old: 0x" << csr_old << " | New: 0x" << csr_new << dec << endl << endl;
+        }        
     }
 
     void performanceStats() {
@@ -554,7 +553,7 @@ SC_MODULE(risc_v_model) {
             if_id.inst = 0;
 
             if (ignore_fetch && !trap_flush && !branch_flush) {
-                cout << "@" << sc_time_stamp() << " Fetch: Ignored Inst -> 0x" << hex << inst << dec  << " for Branch jump" << endl << endl;
+                cout << "@" << sc_time_stamp() << " Fetch: Ignored Inst -> 0x" << hex << inst << dec  << " (Invalid)" << endl << endl;
                 ignore_fetch = false;
             } 
             else {
@@ -653,6 +652,8 @@ SC_MODULE(risc_v_model) {
                 
                 // Insert bubble in ID/EX Register
                 id_ex.valid = false;
+
+                cout << "@" << sc_time_stamp() << " Decode: Stalling pipeline due to load-use hazard" << endl << endl;
                 return;
             }
         }
@@ -727,9 +728,9 @@ SC_MODULE(risc_v_model) {
             }
         }
         
-        // Read Register File
-        id_ex.rs1_data = registers[id_ex.rs1];
-        id_ex.rs2_data = registers[id_ex.rs2];
+        // Read Register File and set them as default values for forwarding
+        id_ex.alu_in_1 = registers[id_ex.rs1];
+        id_ex.alu_in_2 = registers[id_ex.rs2];
 
         // Default memory load/store values
         id_ex.mem_size = 4;
@@ -784,13 +785,46 @@ SC_MODULE(risc_v_model) {
         cout << "5. rs2: " << id_ex.rs2 << endl;
         cout << "6. funct7: " << id_ex.funct7 << endl;
         cout << "7. imm: " << id_ex.imm << endl;
-        cout << "8. rs1_data: " << id_ex.rs1_data << endl;
-        cout << "9. rs2_data: " << id_ex.rs2_data << endl << endl;
+        cout << "8. rs1_data: " << id_ex.alu_in_1 << endl;
+        cout << "9. rs2_data: " << id_ex.alu_in_2 << endl << endl;
     }
 
     // EX: Instruction Execute
     // ------------------------------
     void execute() {
+        cout << "@" << sc_time_stamp() << " Execute: Instruction 0x" << hex << id_ex.inst << dec << " is being executed" << endl << endl;
+
+        // We forward data first so that values don't get lost in case of stall
+        // MEM-to_EX Forwarding
+        if (mem_wb_old.valid && mem_wb_old.reg_write && (mem_wb_old.rd != 0)) {
+            // Forward to rs1
+            if (mem_wb_old.rd == id_ex.rs1) {
+                id_ex.alu_in_1 = mem_wb_old.alu_res;
+                cout << "@" << sc_time_stamp() << " Execute: Forwarded rd value to rs1 from MEM stage" << endl << endl;
+            }
+
+            // Forward to rs2
+            if (mem_wb_old.rd == id_ex.rs2) {
+                id_ex.alu_in_2 = mem_wb_old.alu_res;
+                cout << "@" << sc_time_stamp() << " Execute: Forwarded rd value to rs2 from MEM stage" << endl << endl;
+            }
+        }
+
+        // EX-to-EX Forwarding
+        if (ex_mem.valid && ex_mem.reg_write && (ex_mem.rd != 0)) {
+            // Forward to rs1
+            if (ex_mem.rd == id_ex.rs1) {
+                id_ex.alu_in_1 = ex_mem.alu_res;
+                cout << "@" << sc_time_stamp() << " Execute: Forwarded rd value to rs1 from EX stage" << endl << endl;
+            }
+
+            // Forward to rs2
+            if (ex_mem.rd == id_ex.rs2) {
+                id_ex.alu_in_2 = ex_mem.alu_res;
+                cout << "@" << sc_time_stamp() << " Execute: Forwarded rd value to rs2 from EX stage" << endl << endl;
+            }
+        }
+
         if (mem_stall) {
             cout << "@" << sc_time_stamp() << " Execute: Stalled. Holding PC at -> 0x" << hex << id_ex.pc << dec << endl << endl;
             return;
@@ -809,40 +843,8 @@ SC_MODULE(risc_v_model) {
             return;
         }
 
-        cout << "@" << sc_time_stamp() << " Execute: Instruction 0x" << hex << id_ex.inst << dec << " is being executed" << endl << endl;
-
-        // Default ALU inputs
-        uint32_t alu_in_1 = id_ex.rs1_data;
-        uint32_t alu_in_2 = id_ex.rs2_data;
-
-        // MEM-to_EX Forwarding
-        if (mem_wb_old.valid && mem_wb_old.reg_write && (mem_wb_old.rd != 0)) {
-            // Forward to rs1
-            if (mem_wb_old.rd == id_ex.rs1) {
-                alu_in_1 = mem_wb_old.alu_res;
-            }
-
-            // Forward to rs2
-            if (mem_wb_old.rd == id_ex.rs2) {
-                alu_in_2 = mem_wb_old.alu_res;
-            }
-        }
-
-        // EX-to-EX Forwarding
-        if (ex_mem.valid && ex_mem.reg_write && (ex_mem.rd != 0)) {
-            // Forward to rs1
-            if (ex_mem.rd == id_ex.rs1) {
-                alu_in_1 = ex_mem.alu_res;
-            }
-
-            // Forward to rs2
-            if (ex_mem.rd == id_ex.rs2) {
-                alu_in_2 = ex_mem.alu_res;
-            }
-        }
-
         // Perform ALU operation
-        sc_uint<WIDTH> alu_res = alu(id_ex.opcode, id_ex.funct3, id_ex.funct7, alu_in_1, alu_in_2, id_ex.imm);
+        sc_uint<WIDTH> alu_res = alu(id_ex.opcode, id_ex.funct3, id_ex.funct7, id_ex.alu_in_1, id_ex.alu_in_2, id_ex.imm);
 
         bool branch_taken = false;
         sc_uint<WIDTH> target_pc;
@@ -854,44 +856,44 @@ SC_MODULE(risc_v_model) {
 
             // BEQ
             if (id_ex.funct3 == 0x0) {
-                branch_taken = (alu_in_1 == alu_in_2);
+                branch_taken = (id_ex.alu_in_1 == id_ex.alu_in_2);
                 
-                cout << "@" << sc_time_stamp() << " Execute: BEQ x" << id_ex.rs1 << "(" << alu_in_1 << "), x" << id_ex.rs2 << "(" << alu_in_2 << ")";
+                cout << "@" << sc_time_stamp() << " Execute: BEQ x" << id_ex.rs1 << "(" << id_ex.alu_in_1 << "), x" << id_ex.rs2 << "(" << id_ex.alu_in_2 << ")";
                 cout << " | Branch Taken: " << (branch_taken ? "YES" : "NO");
             }
             // BNE
             else if (id_ex.funct3 == 0x1) {
-                branch_taken = (alu_in_1 != alu_in_2);
+                branch_taken = (id_ex.alu_in_1 != id_ex.alu_in_2);
                 
-                cout << "@" << sc_time_stamp() << " Execute: BNE x" << id_ex.rs1 << "(" << alu_in_1 << "), x" << id_ex.rs2 << "(" << alu_in_2 << ")";
+                cout << "@" << sc_time_stamp() << " Execute: BNE x" << id_ex.rs1 << "(" << id_ex.alu_in_1 << "), x" << id_ex.rs2 << "(" << id_ex.alu_in_2 << ")";
                 cout << " | Branch Taken: " << (branch_taken ? "YES" : "NO");
             }
             // BLT
             else if (id_ex.funct3 == 0x4) {
-                branch_taken = ((sc_int<WIDTH>)alu_in_1 < (sc_int<WIDTH>)alu_in_2);
+                branch_taken = ((sc_int<WIDTH>)id_ex.alu_in_1 < (sc_int<WIDTH>)id_ex.alu_in_2);
                 
-                cout << "@" << sc_time_stamp() << " Execute: BLT x" << id_ex.rs1 << "(" << alu_in_1 << "), x" << id_ex.rs2 << "(" << alu_in_2 << ")";
+                cout << "@" << sc_time_stamp() << " Execute: BLT x" << id_ex.rs1 << "(" << id_ex.alu_in_1 << "), x" << id_ex.rs2 << "(" << id_ex.alu_in_2 << ")";
                 cout << " | Branch Taken: " << (branch_taken ? "YES" : "NO");
             }
             // BGE
             else if (id_ex.funct3 == 0x5) {
-                branch_taken = ((sc_int<WIDTH>)alu_in_1 >= (sc_int<WIDTH>)alu_in_2);
+                branch_taken = ((sc_int<WIDTH>)id_ex.alu_in_1 >= (sc_int<WIDTH>)id_ex.alu_in_2);
                 
-                cout << "@" << sc_time_stamp() << " Execute: BGE x" << id_ex.rs1 << "(" << alu_in_1 << "), x" << id_ex.rs2 << "(" << alu_in_2 << ")";
+                cout << "@" << sc_time_stamp() << " Execute: BGE x" << id_ex.rs1 << "(" << id_ex.alu_in_1 << "), x" << id_ex.rs2 << "(" << id_ex.alu_in_2 << ")";
                 cout << " | Branch Taken: " << (branch_taken ? "YES" : "NO");
             }
             // BLTU
             else if (id_ex.funct3 == 0x6) {
-                branch_taken = (alu_in_1 < alu_in_2);
+                branch_taken = (id_ex.alu_in_1 < id_ex.alu_in_2);
                 
-                cout << "@" << sc_time_stamp() << " Execute: BLTU x" << id_ex.rs1 << "(" << alu_in_1 << "), x" << id_ex.rs2 << "(" << alu_in_2 << ")";
+                cout << "@" << sc_time_stamp() << " Execute: BLTU x" << id_ex.rs1 << "(" << id_ex.alu_in_1 << "), x" << id_ex.rs2 << "(" << id_ex.alu_in_2 << ")";
                 cout << " | Branch Taken: " << (branch_taken ? "YES" : "NO");
             }
             // BGEU
             else if (id_ex.funct3 == 0x7) {
-                branch_taken = (alu_in_1 >= alu_in_2);
+                branch_taken = (id_ex.alu_in_1 >= id_ex.alu_in_2);
                 
-                cout << "@" << sc_time_stamp() << " Execute: BGEU x" << id_ex.rs1 << "(" << alu_in_1 << "), x" << id_ex.rs2 << "(" << alu_in_2 << ")";
+                cout << "@" << sc_time_stamp() << " Execute: BGEU x" << id_ex.rs1 << "(" << id_ex.alu_in_1 << "), x" << id_ex.rs2 << "(" << id_ex.alu_in_2 << ")";
                 cout << " | Branch Taken: " << (branch_taken ? "YES" : "NO");
             }
 
@@ -943,7 +945,7 @@ SC_MODULE(risc_v_model) {
         // For JALR calculate the return address and the PC value
         else if (id_ex.opcode == 0x67) {
             branch_taken = true;
-            target_pc = (alu_in_1 + id_ex.imm) & ~1; 
+            target_pc = (id_ex.alu_in_1 + id_ex.imm) & ~1; 
             alu_res = id_ex.pc + 4;
             
             cout << "@" << sc_time_stamp() << " Execute: JALR | Return Address: 0x" << hex << alu_res << " | PC: 0x" << target_pc << dec << endl << endl;
@@ -958,7 +960,6 @@ SC_MODULE(risc_v_model) {
                 target_pc = mepc;           // Restore PC
                 mstatus = mstatus | 0x8;    // Enable global interrupts
                 branch_taken = true;        // Flush pipeline
-                // in_interrupt = false;
                 
                 cout << "@" << sc_time_stamp() << " Execute: MRET | Return Address: 0x" << hex << target_pc << dec << endl << endl;
             }
@@ -969,6 +970,12 @@ SC_MODULE(risc_v_model) {
                 // Read CSR
                 if (id_ex.csr_read_enable) {
                     csr_old = read_csr(id_ex.csr_address);
+
+                    // Forward old CSR value if needed
+                    if (ex_mem.valid && ex_mem.is_csr_instruction && (ex_mem.csr_address == id_ex.csr_address)) {
+                        csr_old = ex_mem.csr_new_value;
+                        cout << "@" << sc_time_stamp() << " Execute: Forwarded old CSR value from EX stage" << endl << endl;
+                    }
                 }
                 
                 csr_new = csr_old;
@@ -976,11 +983,11 @@ SC_MODULE(risc_v_model) {
                 // Calculate New CSR Value
                 // CSRRW
                 if (id_ex.csr_operation == 0x1) {
-                    csr_new = alu_in_1;
+                    csr_new = id_ex.alu_in_1;
                 } 
                 // CSRRS
                 else if (id_ex.csr_operation == 0x2) {
-                    csr_new |= alu_in_1;
+                    csr_new |= id_ex.alu_in_1;
                 }
 
                 // Prepare to write old CSR value to destination register
@@ -1007,7 +1014,7 @@ SC_MODULE(risc_v_model) {
 
         // Pass signals to EX/MEM Register
         ex_mem.alu_res = alu_res;
-        ex_mem.store_data = alu_in_2;
+        ex_mem.store_data = id_ex.alu_in_2;
         ex_mem.rd = id_ex.rd;
         ex_mem.opcode = id_ex.opcode;
         ex_mem.reg_write = id_ex.reg_write;
@@ -1132,6 +1139,16 @@ SC_MODULE(risc_v_model) {
 
                         cout << "@" << sc_time_stamp() << " Memory Access: Successfully loaded 0x" << hex << mem_wb.alu_res << dec << " from memory" << endl << endl;
                     }
+                    else if (data_error_i.read()) {
+                        // Load access fault
+                        if (ex_mem.opcode == 0x03) {
+                            mcause = 5;
+                        } 
+                        // Store/AMO access fault
+                        else {
+                            mcause = 7;
+                        }
+                    }
                     else {
                         cout << "@" << sc_time_stamp() << " Memory Access: Successfully stored data at 0x" << hex << ex_mem.alu_res << dec << endl << endl;
                     }
@@ -1167,8 +1184,8 @@ SC_MODULE(risc_v_model) {
         if (mem_wb.is_csr_instruction) {
             // Write new CSR value to selected register
             if (mem_wb.csr_write_enable) {
-                write_csr(mem_wb.csr_address, mem_wb.alu_res, mem_wb.csr_new_value);
-                cout << "@" << sc_time_stamp() << " Write Back: CSR updated to 0x" << hex << mem_wb.csr_new_value << dec << endl << endl;
+                write_csr(mem_wb.csr_address, mem_wb.csr_new_value);
+                cout << "@" << sc_time_stamp() << " Write Back: CSR | Address: 0x" << hex << mem_wb.csr_address << " | Old: 0x" << mem_wb.alu_res << " | New: 0x" << mem_wb.csr_new_value << dec << endl << endl;
             }
         }
 
@@ -1213,12 +1230,12 @@ SC_MODULE(risc_v_model) {
         data_size_o.write(0);
 
         // Reset CSRs
-        mstatus = 0x0;
-        mie     = 0x0;
-        mip     = 0x0;   
-        mtvec   = 0x0;
-        mepc    = 0x0;
-        mcause  = 0x0;
+        mstatus = 0x8;      // Enable global interrupts
+        mie = 0x88;         // Enable Timer (Bit 7) and Software (Bit 3) interrupts
+        mip = 0x0;
+        mtvec = 0x0;
+        mepc = 0x0;
+        mcause = 0x0;
 
         // Reset pipeline valid bits
         if_id.valid = false;
@@ -1285,7 +1302,7 @@ SC_MODULE(risc_v_model) {
             }
 
             // Handle software interrupt if triggered (Higher priority)
-            if ((mip & 0x8) && (mie & 0x8) && (mstatus & 0x8)) {
+            if ((mip & 0x8) && (mie & 0x8) && (mstatus & 0x8) && id_ex.valid) {
                 // Increment counters
                 sw_interrupts++;
                 pipeline_flushes++;
@@ -1307,7 +1324,7 @@ SC_MODULE(risc_v_model) {
                 cout << "@" << sc_time_stamp() << " CPU: Jumping to interrupt handler\n" << endl;
             }
             // Handle timer interrupt if triggered (Lower priority)
-            else if ((mip & 0x80) && (mie & 0x80) && (mstatus & 0x8)) {
+            else if ((mip & 0x80) && (mie & 0x80) && (mstatus & 0x8) && id_ex.valid) {
                 // Increment counters
                 timer_interrupts++;
                 pipeline_flushes++;

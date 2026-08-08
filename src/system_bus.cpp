@@ -14,10 +14,12 @@ SC_MODULE(system_bus) {
     // CPU data ports
     sc_in<bool> cpu_data_write_en_i;
     sc_in<bool> cpu_data_read_en_i;
+    sc_in<sc_uint<3>> cpu_data_size_i;
     sc_in<sc_uint<WIDTH>> cpu_data_addr_bus_i;
     sc_in<sc_uint<WIDTH>> cpu_data_bus_i;
-    sc_out<bool> cpu_data_ready_o;
     sc_out<sc_uint<WIDTH>> cpu_data_bus_o;
+    sc_out<bool> cpu_data_ready_o;
+    sc_out<bool> cpu_data_error_o;
 
     // Memory instruction ports
     sc_out<bool> mem_inst_read_en_o;
@@ -92,88 +94,63 @@ SC_MODULE(system_bus) {
         
         // Route bus to memory
         if (data_addr <= 0xFFF) {
+            // Forward the control flags and address to memory
+            mem_data_read_en_o.write(data_read_en);
+            mem_data_write_en_o.write(data_write_en);
+            mem_data_addr_bus_o.write(data_addr);
+        
             if (data_write_en) {
-                // Set flag
-                mem_data_write_en_o.write(data_write_en);
-
-                // Write data and address to memory
-                mem_data_addr_bus_o.write(data_addr);
+                // Write data to memory
                 mem_data_bus_o.write(cpu_data);
-
-                cout << "@" << sc_time_stamp() << " System Bus: Address 0x" << hex << cpu_data_addr_bus_i.read() << dec << " routed to Main Memory" << endl << endl;
             }
             else if (data_read_en) {
-                // Set flag
-                mem_data_read_en_o.write(data_read_en);
-
-                // Write address to memory
-                mem_data_addr_bus_o.write(data_addr);
-
-                cout << "@" << sc_time_stamp() << " System Bus: Address 0x" << hex << cpu_data_addr_bus_i.read() << dec << " routed to Main Memory" << endl << endl;
             }
+
             return_data = mem_data_bus_i.read();
+            cout << "@" << sc_time_stamp() << " System Bus: Address 0x" << hex << cpu_data_addr_bus_i.read() << dec << " routed to Main Memory" << endl << endl;            
         }
         // Route bus to GPIO
         else if (data_addr == 0x10000000 || data_addr == 0x10000004) {
-            if (data_write_en) {
-                // Set flag
-                gpio_write_en_o.write(data_write_en);
+            // Forward the control flags and address to GPIO
+            gpio_read_en_o.write(data_read_en);
+            gpio_write_en_o.write(data_write_en);
+            gpio_addr_bus_o.write(data_addr);
 
-                // Write data and address to GPIO
-                gpio_addr_bus_o.write(data_addr);
+            if (data_write_en) {
+                // Send data to GPIO
                 gpio_data_bus_o.write(cpu_data);
             }
-            else if (data_read_en) {
-                // Set flag
-                gpio_read_en_o.write(data_read_en);
-
-                // Write address to GPIO
-                gpio_addr_bus_o.write(data_addr);
-            }
             return_data = gpio_data_bus_i.read();
-
             cout << "@" << sc_time_stamp() << " System Bus: Address 0x" << hex << cpu_data_addr_bus_i.read() << dec << " routed to GPIO" << endl << endl;
         }
         // Route bus to Timer
         else if (data_addr == 0x10000010 || data_addr == 0x10000014 || data_addr == 0x10000018 || data_addr == 0x1000001C) {
-            if (data_write_en) {
-                // Set flag
-                timer_write_en_o.write(data_write_en);
+            // Forward the control flags and address to Timer
+            timer_read_en_o.write(data_read_en);
+            timer_write_en_o.write(data_write_en);
+            timer_data_bus_o.write(data_addr);
 
-                // Write data and address to Timer
-                timer_addr_bus_o.write(data_addr);
+            if (data_write_en) {
+                // Send data to Timer
                 timer_data_bus_o.write(cpu_data);
             }
-            else if (data_read_en) {
-                // Set flag
-                timer_read_en_o.write(data_read_en);
 
-                // Write address to Timer
-                timer_addr_bus_o.write(data_addr);
-            }
             return_data = timer_data_bus_i.read();
-
             cout << "@" << sc_time_stamp() << " System Bus: Address 0x" << hex << cpu_data_addr_bus_i.read() << dec << " routed to Timer" << endl << endl;
         }
         // Route bus to UART
         else if (data_addr == 0x10000020 || data_addr == 0x10000024) {
-            if (data_write_en) {
-                // Set flag
-                uart_write_en_o.write(data_write_en);
+            // Forward the control flags and address to Timer
+            uart_read_en_o.write(data_read_en);
+            uart_write_en_o.write(data_write_en);
+            uart_data_bus_o.write(data_addr);
 
-                // Write data and address to UART
-                uart_addr_bus_o.write(data_addr);
+            if (data_write_en) {
+                // Send data to UART
                 uart_data_bus_o.write(cpu_data);
             }
-            else if (data_read_en) {
-                // Set flag
-                uart_read_en_o.write(data_read_en);
 
-                // Write address to UART
-                uart_addr_bus_o.write(data_addr);
-            }
             return_data = uart_data_bus_i.read();
-
             cout << "@" << sc_time_stamp() << " System Bus: Address 0x" << hex << cpu_data_addr_bus_i.read() << dec << " routed to UART" << endl << endl;
         }
         // If system_bus was called but address is invalid print error

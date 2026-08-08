@@ -64,13 +64,13 @@ SC_MODULE(system_top) {
 
     // CPU data signals
     sc_signal<bool> cpu_data_ready_s;
+    sc_signal<bool> cpu_data_error_s;
     sc_signal<bool> cpu_data_write_en_s;
     sc_signal<bool> cpu_data_read_en_s;
+    sc_signal<sc_uint<3>> cpu_data_size_s;
     sc_signal<sc_uint<WIDTH>> cpu_data_addr_bus_s;
     sc_signal<sc_uint<WIDTH>> cpu_data_bus_out_s;
     sc_signal<sc_uint<WIDTH>> cpu_data_bus_in_s;  
-    sc_signal<sc_uint<2>> cpu_data_size_s;
-    sc_signal<bool> cpu_data_error_s;
 
     // Interrupt signals
     sc_signal<bool> irq_timer_s;
@@ -191,7 +191,7 @@ SC_MODULE(system_top) {
 
             // TLM 
             adapter = new tlm_adapter("adapter");
-            interconnect = new tlm_interconnect("interconnect", config.mem_base, config.gpio_base, config.timer_base, config.uart_base);
+            interconnect = new tlm_interconnect("interconnect", config.mem_base, config.gpio_base, config.timer_base, config.uart_base, config.msip_base);
             
             // Connect Clock/Reset of TLM modules
             tlm_mem->clk_i(clk_i);
@@ -201,6 +201,7 @@ SC_MODULE(system_top) {
             tlm_timer->rst_i(rst_i);
             tlm_uart->clk_i(clk_i);
             tlm_uart->rst_i(rst_i);
+            tlm_msip->clk_i(clk_i);
             tlm_msip->rst_i(rst_i);
             adapter->clk_i(clk_i);
 
@@ -233,6 +234,7 @@ SC_MODULE(system_top) {
             interconnect->gpio_socket.bind(tlm_gpio->target_socket);
             interconnect->timer_socket.bind(tlm_timer->target_socket);
             interconnect->uart_socket.bind(tlm_uart->target_socket);
+            interconnect->msip_socket.bind(tlm_msip->target_socket);
         }
         // Use legacy modules
         else {
@@ -296,10 +298,12 @@ SC_MODULE(system_top) {
             // CPU data ports
             bus->cpu_data_write_en_i(cpu_data_write_en_s);
             bus->cpu_data_read_en_i(cpu_data_read_en_s);
+            bus->cpu_data_size_i(cpu_data_size_s);
             bus->cpu_data_addr_bus_i(cpu_data_addr_bus_s);
             bus->cpu_data_bus_i(cpu_data_bus_out_s);
-            bus->cpu_data_ready_o(cpu_data_ready_s);
             bus->cpu_data_bus_o(cpu_data_bus_in_s);
+            bus->cpu_data_ready_o(cpu_data_ready_s);
+            bus->cpu_data_error_o(cpu_data_error_s);
 
             // Memory instruction ports
             bus->mem_inst_read_en_o(mem_inst_read_en_s);
@@ -345,6 +349,7 @@ SC_MODULE(system_top) {
             delete tlm_gpio;
             delete tlm_timer;
             delete tlm_uart;
+            delete tlm_msip;
             delete adapter;
             delete interconnect;
         }

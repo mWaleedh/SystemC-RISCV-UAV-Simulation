@@ -11,14 +11,16 @@ tlm_msip_target::tlm_msip_target(sc_module_name name, sc_time delay) : sc_module
     irq_sw_o.initialize(false);
 
     SC_METHOD(reset_logic);
-    sensitive << rst_i;
+    sensitive << clk_i.pos();
 }
 
 void tlm_msip_target::reset_logic() {
     if (rst_i.read() == true) {
         msip_reg = 0;
-        irq_sw_o.write(false);
     }
+    
+    // Trigger interrupt if msip_reg is 1
+    irq_sw_o.write(msip_reg != 0);
 }
 
 // TLM function
@@ -27,17 +29,10 @@ void tlm_msip_target::b_transport(tlm_generic_payload& trans, sc_time& delay) {
     unsigned char* ptr = trans.get_data_ptr();
     unsigned int len = trans.get_data_length();
 
-
     if (cmd == TLM_WRITE_COMMAND) {
         if (len == 4) {
-            // Read data sent by CPU
-            memcpy(&msip_reg, ptr, len);
-            
-            // Only keep the lowest bit
-            msip_reg &= 0x1; 
-            
-            // Trigger interrupt if msip_reg is 1
-            irq_sw_o.write(msip_reg != 0);
+            memcpy(&msip_reg, ptr, len);    // Read data sent by CPU
+            msip_reg &= 0x1;                // Only keep the lowest bit
             
             cout << "@" << sc_time_stamp() << " MSIP: Software Interrupt bit written -> " << msip_reg << endl;
             

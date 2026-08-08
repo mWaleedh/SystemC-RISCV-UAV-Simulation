@@ -4,6 +4,7 @@ using namespace tlm;
 void tlm_adapter::process_data() {
     // Initialize ready signal as false
     cpu_data_ready_o.write(false);
+    cpu_data_error_o.write(false);
 
     while (true) {
         // Wait for next rising edge

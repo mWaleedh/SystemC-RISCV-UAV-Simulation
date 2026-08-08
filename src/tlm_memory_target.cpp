@@ -17,12 +17,27 @@ tlm_memory_target::tlm_memory_target(sc_module_name name, uint32_t size_b, sc_ti
     // Thread for instruction access
     SC_CTHREAD(inst_fetch_thread, clk_i.pos());
     reset_signal_is(rst_i, true);
+    
+    // Reset logic
+    SC_METHOD(reset_logic);
+    sensitive << rst_i;
 }
 
 // Destructor
 tlm_memory_target::~tlm_memory_target() {
     delete[] memory;
 }
+
+// Reset function
+void tlm_memory_target::reset_logic() {
+    if (rst_i.read() == true) {
+        max_addr = 0;
+        for (int i = 0; i < size_bytes; i++) {
+            memory[i] = 0;
+        }
+    }
+}
+
 
 // Load data at specific address
 void tlm_memory_target::load_data(uint32_t addr, uint32_t data) {

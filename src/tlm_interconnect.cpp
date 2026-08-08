@@ -15,24 +15,24 @@ void tlm_interconnect::b_transport(tlm_generic_payload& payload, sc_time& delay)
         mem_socket->b_transport(payload, delay);
     }
     // GPIO address
-    else if (addr >= gpio_base && addr <= (gpio_base + 0x000F)) {
+    else if (addr >= gpio_base && addr <= (gpio_base + 0x0004)) {
         payload.set_address(addr - gpio_base);
         gpio_socket->b_transport(payload, delay);
     }
     // Timer address
-    else if (addr >= timer_base && addr <= (timer_base + 0x000F)) {
+    else if (addr >= timer_base && addr <= (timer_base + 0x000C)) {
         payload.set_address(addr - timer_base);
         timer_socket->b_transport(payload, delay);
     }
     // UART address
-    else if (addr >= uart_base && addr <= (uart_base + 0x000F)) {
+    else if (addr >= uart_base && addr <= (uart_base + 0x0004)) {
         payload.set_address(addr - uart_base);
         uart_socket->b_transport(payload, delay);
     }
     // MSIP address
-    else if (addr >= msip_base && addr < (msip_base + 0x000F)) {
+    else if (addr == msip_base) {
         payload.set_address(addr - msip_base);
-        uart_socket->b_transport(payload, delay);
+        msip_socket->b_transport(payload, delay);
     }
     else {
         payload.set_response_status(TLM_ADDRESS_ERROR_RESPONSE);
